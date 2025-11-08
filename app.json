@@ -67,6 +67,12 @@
           "photosPermission": "FaceFit needs access to your photos so you can upload pictures for analysis.",
           "cameraPermission": "FaceFit needs camera access to capture new photos for analysis."
         }
+      ],
+      [
+        "react-native-face-detector-camera",
+        {
+          "cameraPermission": "Allow FaceFit to access your camera for live face detection."
+        }
       ]
     ],
     "extra": {

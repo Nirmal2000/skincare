@@ -31,16 +31,6 @@ export const scanStyles = StyleSheet.create({
     elevation: 18,
   },
   fill: { width: "100%", height: "100%" },
-  facingButton: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  facingButtonText: { color: "#FFFFFF", fontWeight: "600" },
   scanLine: {
     position: "absolute",
     left: 8,
@@ -54,6 +44,14 @@ export const scanStyles = StyleSheet.create({
   inlineActions: { flexDirection: "row", gap: 12, marginTop: 12 },
   inlineButton: { flex: 1, marginVertical: 0 },
   captureButton: { backgroundColor: ACCENT },
+  detectionHint: {
+    fontSize: 13,
+    textAlign: "center",
+    color: "#6B6B6B",
+  },
+  detectionHintReady: {
+    color: ACCENT,
+  },
   status: { color: "#C03515", fontSize: 14, marginTop: 4 },
   overlay: {
     position: "absolute",

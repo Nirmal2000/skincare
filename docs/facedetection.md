@@ -244,6 +244,56 @@ You’re literally already there with: `onFacesDetected` + one oval math functio
 
 If you want, I can next turn this into a **small reusable hook** like `useFaceInFrame(ovalConfig)` you drop into any screen in your app.
 
+---
+
+## 5. How it is wired inside `app/(tabs)/scan`
+
+All of the above is now wired into the shipping codebase so there are no gaps between the guide and implementation.
+
+1. **Native capability & permissions**
+   - The dependency lives in `package.json` as `react-native-face-detector-camera@^1.0.0-beta.1`.
+   - The plugin block inside `app.json` registers `"react-native-face-detector-camera"` with a custom camera permission prompt so the dev/production builds ship ML Kit support. (Expo Go can’t run the detector.)
+   - `features/scans/permissions.ts` now imports `useCameraPermissions` from the same package, so the “Allow camera access” CTA in the UI requests the exact permission that unlocks ML Kit.
+
+2. **Live detection inside the oval**
+   - `app/(tabs)/scan/CameraStage.tsx` switched to the new `CameraView`. When the user is signed in, permissions are granted, and the tab is focused, we render:
+
+     ```tsx
+     <CameraView
+       ref={cameraRef}
+       style={styles.fill}
+       facing="front"
+       faceDetectorSettings={{
+         mode: FaceDetectorMode.fast,
+         runClassifications: FaceDetectorClassifications.none,
+         minDetectionInterval: 250,
+         tracking: true,
+       }}
+       onFacesDetected={handleFacesDetected}
+     />
+     ```
+
+  - Every detection callback runs through `handleFacesDetected`, which pulls the first face’s bounds, checks that there is only **one** face in frame, enforces a minimum face size (≥ 60 % of the oval width & height), and finally computes the oval equation `(dx²/a²) + (dy²/b²) ≤ 1`. The oval’s radii come from the layout measurement of the masked view (initially seeded with `OVAL_W`/`OVAL_H`), so the math stays in sync with the UI cutout.
+  - The helper `emitFaceStatus` only pushes a new status (`"no-face"`, `"off-target"`, `"ready"`, `"multi-face"`) when the value changes. That status flows upward via the `onFaceDetectionChange` prop.
+
+3. **Workflow state**
+  - `app/(tabs)/scan/useScanWorkflow.ts` exports `faceStatus`, `canCapture`, and `handleFaceDetectionStatus`. The state defaults to `"no-face"` and resets to `"no-face"` anytime the live preview disappears (sign-out, permission issues, captured preview, etc.). Only the `"ready"` state enables capture.
+   - `canCapture` is a derived boolean (`faceStatus === "ready"`) that simplifies gating logic elsewhere in the app.
+
+4. **UI gating & messaging**
+   - `app/(tabs)/scan.tsx` consumes `faceStatus` and `canCapture`:
+    * The “Take photo” button dynamically changes its label (`Waiting for face…`, `Align with oval`, `One face at a time`, `Take photo`) and stays disabled until `canCapture` is true.
+     * The gallery button is hidden for now (“ignore gallery” request), so the only capture path is the gated live preview.
+    * A detection hint line under the camera explains what the user needs to do (“step into frame”, “move closer”, “one face only”). Once the status flips to `"ready"`, the hint turns accent orange to confirm detection.
+   - Retake / Scan CTA flow is unchanged after you capture a valid photo.
+
+5. **Result**
+   - Camera preview + ML Kit detector + oval math run continuously while the scan tab has focus.
+   - As soon as the face center sits inside the oval, `faceStatus` transitions to `"ready"`, enabling the capture button.
+   - Any other state (`no-face`, `off-target`, paused camera, permission dialogs, preview mode) forces `faceStatus` back to `"no-face"`, disabling capture again.
+
+This means there’s no hidden glue code left to write—the package is installed, configured, referenced in TypeScript, and the UX logic enforces “only capture when a face is inside the oval.”
+
 [1]: https://github.com/luicfrr/react-native-face-detector-camera "GitHub - luicfrr/react-native-face-detector-camera: An Expo module that uses device's front camera and MLKit to detect faces"
 [2]: https://react-native-vision-camera.com/docs/guides/frame-processors?utm_source=chatgpt.com "Frame Processors"
 [3]: https://firebase.google.com/docs/ml-kit/detect-faces?utm_source=chatgpt.com "Face Detection | ML Kit for Firebase - Google"

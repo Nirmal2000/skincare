@@ -2,14 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform } from "react-native";
 
 import {
-  type CameraPermissionResponse,
+  type PermissionResponse,
   useCameraPermissions,
-} from "expo-camera";
+} from "react-native-face-detector-camera";
 import type { PermissionStatus } from "expo-modules-core";
 import * as ImagePicker from "expo-image-picker";
 
 export type PermissionState =
-  | (Pick<CameraPermissionResponse, "granted" | "canAskAgain"> & {
+  | (Pick<PermissionResponse, "granted" | "canAskAgain" | "status"> & {
       status: PermissionStatus;
     })
   | {
@@ -19,7 +19,7 @@ export type PermissionState =
     };
 
 function normalizePermission(
-  response?: CameraPermissionResponse | ImagePicker.PermissionResponse | null,
+  response?: PermissionResponse | ImagePicker.PermissionResponse | null,
 ): PermissionState {
   if (!response) {
     return { granted: false, canAskAgain: true, status: "unknown" };

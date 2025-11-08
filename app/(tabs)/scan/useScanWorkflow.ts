@@ -1,5 +1,5 @@
 import { useIsFocused } from "@react-navigation/native";
-import { CameraType, CameraView } from "expo-camera";
+import { CameraView } from "react-native-face-detector-camera";
 import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -9,6 +9,8 @@ import { encodeAnalysisPayload } from "@/features/scans/analysis-payload";
 import { analyzeFaceImage } from "@/features/scans/face-analysis-api";
 import { useScanPermissions } from "@/features/scans/permissions";
 import type { ScanSource } from "@/features/scans/scan-store";
+
+export type FaceDetectionStatus = "no-face" | "off-target" | "ready" | "multi-face";
 
 function useMountedRef() {
   const mountedRef = useRef(true);
@@ -31,13 +33,13 @@ export function useScanWorkflow() {
   const analysisController = useRef<AbortController | null>(null);
   const mountedRef = useMountedRef();
 
-  const [facing, setFacing] = useState<CameraType>("front");
   const [previewUri, setPreviewUri] = useState<string | null>(null);
   const [previewSource, setPreviewSource] = useState<ScanSource | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [takingPhoto, setTakingPhoto] = useState(false);
   const [pickingImage, setPickingImage] = useState(false);
   const [scanning, setScanning] = useState(false);
+  const [faceStatus, setFaceStatus] = useState<FaceDetectionStatus>("no-face");
 
   useEffect(() => {
     return () => {
@@ -184,9 +186,11 @@ export function useScanWorkflow() {
     setStatusMessage(null);
   }, []);
 
-  const toggleFacing = useCallback(() => {
-    setFacing((current) => (current === "front" ? "back" : "front"));
+  const handleFaceDetectionStatus = useCallback((status: FaceDetectionStatus) => {
+    setFaceStatus(status);
   }, []);
+
+  const canCapture = faceStatus === "ready";
 
   return {
     profile,
@@ -195,13 +199,14 @@ export function useScanWorkflow() {
     permissions,
     isFocused,
     cameraRef,
-    facing,
     previewUri,
     statusMessage,
     takingPhoto,
     pickingImage,
     scanning,
-    toggleFacing,
+    faceStatus,
+    canCapture,
+    handleFaceDetectionStatus,
     handleTakePhoto,
     handlePickImage,
     handleScan,

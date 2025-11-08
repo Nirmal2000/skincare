@@ -22,21 +22,46 @@ export default function ScanScreen() {
     permissions,
     isFocused,
     cameraRef,
-    facing,
     previewUri,
     statusMessage,
     takingPhoto,
-    pickingImage,
     scanning,
-    toggleFacing,
+    faceStatus,
+    canCapture,
+    handleFaceDetectionStatus,
     handleTakePhoto,
-    handlePickImage,
     handleScan,
     handleReset,
     requestCameraPermission,
   } = useScanWorkflow();
 
   const lineY = useScanLineAnimation(OVAL_H);
+  const captureLabel = (() => {
+    if (takingPhoto) return "Capturing...";
+    switch (faceStatus) {
+      case "ready":
+        return "Take photo";
+      case "no-face":
+        return "Waiting for face...";
+      case "multi-face":
+        return "One face at a time";
+      default:
+        return "Align with oval";
+    }
+  })();
+
+  const faceHint = (() => {
+    switch (faceStatus) {
+      case "ready":
+        return "Face detected. Hold still and tap capture.";
+      case "off-target":
+        return "Move closer until your face fills the oval.";
+      case "multi-face":
+        return "Only one face should be in the frame.";
+      default:
+        return "We can’t see your face yet—step into the frame.";
+    }
+  })();
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -58,43 +83,47 @@ export default function ScanScreen() {
             cameraSupported={permissions.cameraSupported}
             cameraGranted={permissions.camera.granted}
             cameraRef={cameraRef}
-            facing={facing}
             lineY={lineY}
-            onToggleFacing={toggleFacing}
             onRequireAuth={requireAuth}
             onRequestCameraPermission={() => {
               void requestCameraPermission();
             }}
+            onFaceDetectionChange={handleFaceDetectionStatus}
           />
         </View>
 
+        {!previewUri ? (
+          <Text
+            style={[
+              styles.detectionHint,
+              faceStatus === "ready" ? styles.detectionHintReady : null,
+            ]}
+          >
+            {faceHint}
+          </Text>
+        ) : null}
+
         {previewUri ? (
           <View style={styles.inlineActions}>
-            <PrimaryButton
-              label={scanning ? "Scanning..." : "Run scan"}
-              onPress={handleScan}
-              disabled={scanning}
-              style={styles.inlineButton}
-            />
             <SecondaryButton
               label="Retake"
               onPress={handleReset}
               disabled={scanning}
               style={styles.inlineButton}
             />
+            <PrimaryButton
+              label={scanning ? "Scanning..." : "Run scan"}
+              onPress={handleScan}
+              disabled={scanning}
+              style={[styles.inlineButton, styles.captureButton]}
+            />
           </View>
         ) : (
           <View style={styles.inlineActions}>
-            <SecondaryButton
-              label={pickingImage ? "Opening gallery..." : "From gallery"}
-              onPress={handlePickImage}
-              disabled={pickingImage || scanning}
-              style={styles.inlineButton}
-            />
             <PrimaryButton
-              label={takingPhoto ? "Capturing..." : "Take photo"}
+              label={captureLabel}
               onPress={handleTakePhoto}
-              disabled={takingPhoto || scanning}
+              disabled={takingPhoto || scanning || !canCapture}
               style={[styles.inlineButton, styles.captureButton]}
             />
           </View>
