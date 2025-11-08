@@ -92,19 +92,35 @@ export function Chip({ label, selected, style, ...rest }: ChipProps) {
 type ProgressDotsProps = {
   total: number;
   current: number;
+  activeColor?: string;
+  idleColor?: string;
+  activeWidth?: number;
+  idleWidth?: number;
 };
 
-export function ProgressDots({ total, current }: ProgressDotsProps) {
+export function ProgressDots({
+  total,
+  current,
+  activeColor = "#000000",
+  idleColor = "#DCDCE0",
+  activeWidth = 16,
+  idleWidth = 8,
+}: ProgressDotsProps) {
   return (
     <View style={styles.progressContainer}>
       {Array.from({ length: total }).map((_, index) => {
         const isActive = index === current;
+        const width = isActive ? activeWidth : idleWidth;
         return (
           <View
             key={`dot-${index}`}
             style={[
-              styles.progressDot,
-              isActive ? styles.progressDotActive : styles.progressDotIdle,
+              styles.progressDotBase,
+              {
+                backgroundColor: isActive ? activeColor : idleColor,
+                width,
+                borderRadius: width / 2,
+              },
             ]}
           />
         );
@@ -197,15 +213,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
   },
-  progressDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  progressDotActive: {
-    backgroundColor: "#000000",
-  },
-  progressDotIdle: {
-    backgroundColor: "#DCDCE0",
+  progressDotBase: {
+    height: 8,
   },
 });
