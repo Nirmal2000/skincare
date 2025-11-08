@@ -1,15 +1,21 @@
 {
   "expo": {
-    "name": "skincare",
-    "slug": "skincare",
+    "name": "FaceFit",
+    "slug": "facefit",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "skincare",
+    "scheme": "facefit",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "FaceFit uses your camera to capture makeup-free selfies for skin analysis.",
+        "NSMicrophoneUsageDescription": "Microphone access is required only when recording video with audio during capture.",
+        "NSPhotoLibraryUsageDescription": "FaceFit imports photos from your library so you can scan existing images.",
+        "NSPhotoLibraryAddUsageDescription": "FaceFit saves your scan photos locally within the photo library."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +25,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
     },
     "web": {
       "output": "static",
@@ -38,8 +50,27 @@
             "backgroundColor": "#000000"
           }
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow FaceFit to access your camera for skin scans.",
+          "microphonePermission": "Allow FaceFit to access your microphone when recording scan videos.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "FaceFit needs access to your photos so you can upload pictures for analysis.",
+          "cameraPermission": "FaceFit needs camera access to capture new photos for analysis."
+        }
       ]
     ],
+    "extra": {
+      "supabaseUrl": "https://szpwelqikxpjmshckqjp.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6cHdlbHFpa3hwam1zaGNrcWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MDU1MDIsImV4cCI6MjA3ODA4MTUwMn0.aj3e7ciUqm67GvSeGj_F67VQYWm44kQXHtVUBW4FecA"
+    },
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

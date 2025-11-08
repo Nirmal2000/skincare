@@ -1,33 +1,72 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
+import { BottomTabBar } from "@react-navigation/bottom-tabs";
+import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 
-import { HapticTab } from '@/components/haptic-tab';
-import { IconSymbol } from '@/components/ui/icon-symbol';
-import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+function FullWidthTabBar(props: BottomTabBarProps) {
+  return (
+    <BottomTabBar
+      {...props}
+      style={[
+        {
+          width: "100%",
+          alignSelf: "stretch",
+          justifyContent: "space-around",
+        },
+      ]}
+    />
+  );
+}
 
-export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
+export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: "#0A0A0A",
         headerShown: false,
-        tabBarButton: HapticTab,
-      }}>
+      }}
+      tabBar={(props) => <FullWidthTabBar {...props} />}
+    >
       <Tabs.Screen
-        name="index"
+        name="home"
         options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          title: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" size={size} color={color} />
+          ),
         }}
       />
       <Tabs.Screen
-        name="explore"
+        name="scan"
         options={{
-          title: 'Explore',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          title: "Scan",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="camera-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="history"
+        options={{
+          title: "History",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="images-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          title: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="result"
+        options={{
+          tabBarButton: () => null,
         }}
       />
     </Tabs>
