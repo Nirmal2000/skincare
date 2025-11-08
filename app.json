@@ -15,7 +15,8 @@
         "NSMicrophoneUsageDescription": "Microphone access is required only when recording video with audio during capture.",
         "NSPhotoLibraryUsageDescription": "FaceFit imports photos from your library so you can scan existing images.",
         "NSPhotoLibraryAddUsageDescription": "FaceFit saves your scan photos locally within the photo library."
-      }
+      },
+      "bundleIdentifier": "com.anonymous.facefit"
     },
     "android": {
       "adaptiveIcon": {
@@ -31,7 +32,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_EXTERNAL_STORAGE"
-      ]
+      ],
+      "package": "com.anonymous.facefit"
     },
     "web": {
       "output": "static",
