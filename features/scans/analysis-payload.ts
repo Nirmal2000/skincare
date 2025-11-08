@@ -1,14 +1,19 @@
 import type { FaceAnalysisResult } from "@/features/scans/face-analysis-api";
+import type { FaceLandmarkMap } from "@/features/scans/landmark-points";
 
 export type AnalysisPayload =
-  | { kind: "structured"; data: FaceAnalysisResult }
+  | {
+      kind: "structured";
+      data: FaceAnalysisResult;
+      landmarks?: FaceLandmarkMap | null;
+    }
   | { kind: "text"; data: string };
 
 export function encodeAnalysisPayload(payload: AnalysisPayload) {
   return encodeURIComponent(JSON.stringify(payload));
 }
 
-export function decodeAnalysisPayload(raw: string | null | undefined) {
+export function decodeAnalysisPayload(raw: string | null | undefined): AnalysisPayload | null {
   if (!raw) {
     return null;
   }

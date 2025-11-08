@@ -7,6 +7,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useAuthGate } from "@/features/auth/useAuthGate";
 import { encodeAnalysisPayload } from "@/features/scans/analysis-payload";
 import { analyzeFaceImage } from "@/features/scans/face-analysis-api";
+import {
+  detectFaceLandmarks,
+  type FaceLandmarkMap,
+} from "@/features/scans/landmark-points";
 import { useScanPermissions } from "@/features/scans/permissions";
 import type { ScanSource } from "@/features/scans/scan-store";
 
@@ -40,6 +44,7 @@ export function useScanWorkflow() {
   const [pickingImage, setPickingImage] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [faceStatus, setFaceStatus] = useState<FaceDetectionStatus>("no-face");
+  const [landmarks, setLandmarks] = useState<FaceLandmarkMap | null>(null);
 
   useEffect(() => {
     return () => {
@@ -106,8 +111,13 @@ export function useScanWorkflow() {
         skipProcessing: true,
       });
       if (!mountedRef.current) return;
+      if (!picture?.uri) {
+        setStatusMessage("We couldn't take that photo. Adjust lighting and retry.");
+        return;
+      }
       setPreviewUri(picture.uri);
       setPreviewSource("camera");
+      setLandmarks(null);
     } catch (error) {
       console.warn("Camera capture failed", error);
       if (mountedRef.current) {
@@ -135,6 +145,7 @@ export function useScanWorkflow() {
       if (!result.canceled && result.assets.length > 0) {
         setPreviewUri(result.assets[0].uri);
         setPreviewSource("gallery");
+        setLandmarks(null);
       }
     } catch {
       if (mountedRef.current) {
@@ -154,11 +165,21 @@ export function useScanWorkflow() {
     const controller = new AbortController();
     analysisController.current = controller;
     try {
+      const landmarkPoints = await detectFaceLandmarks(previewUri).catch(
+        (error) => {
+          console.warn("Landmark detection failed", error);
+          return null;
+        },
+      );
+      if (!mountedRef.current) return;
+      setLandmarks(landmarkPoints);
+
       const result = await analyzeFaceImage(previewUri, controller.signal);
       if (!mountedRef.current) return;
       const analysisParam = encodeAnalysisPayload({
         kind: "structured",
         data: result,
+        landmarks: landmarkPoints,
       });
       router.push({
         pathname: "/(tabs)/result",
@@ -184,6 +205,7 @@ export function useScanWorkflow() {
     setPreviewUri(null);
     setPreviewSource(null);
     setStatusMessage(null);
+    setLandmarks(null);
   }, []);
 
   const handleFaceDetectionStatus = useCallback((status: FaceDetectionStatus) => {
@@ -206,6 +228,7 @@ export function useScanWorkflow() {
     scanning,
     faceStatus,
     canCapture,
+    landmarks,
     handleFaceDetectionStatus,
     handleTakePhoto,
     handlePickImage,
