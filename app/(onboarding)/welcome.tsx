@@ -88,76 +88,86 @@ export default function Welcome() {
       : SlideOutRight.duration(200).easing(Easing.in(Easing.cubic));
 
   const introContent = (
-    <View style={{ flex: 1, padding: 24, backgroundColor: INTRO_BG }}>
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <Card style={[INTRO_CARD_STYLE, { alignSelf: "center" }]}>
-          <IntroSlideCard title={slide.title} body={slide.body} iconName={slide.iconName} />
-        </Card>
-      </View>
-
-      <BottomControls
-        style={{ marginTop: 24 }}
-        currentSlide={currentSlide}
-        totalSlides={SLIDES.length}
-        isFinalSlide={isFinalSlide}
-        canContinue={canContinue}
-        saving={saving}
-        onBack={handleBack}
-        onContinue={handleContinue}
-        accentButtonStyle={accentButtonStyle}
-        showBack={currentSlide > 0}
-        finePrintColor={INTRO_SUBTEXT}
-      />
+    <View style={styles.introContent}>
+      <Card style={[INTRO_CARD_STYLE, { alignSelf: "center" }]}>
+        <IntroSlideCard title={slide.title} body={slide.body} iconName={slide.iconName} />
+      </Card>
     </View>
   );
 
   const ageContent = (
     <ScrollView
-      style={{ flex: 1, backgroundColor: "#FFFFFF" }}
-      contentContainerStyle={{
-        flexGrow: 1,
-        padding: 24,
-        justifyContent: "space-between",
-      }}
+      style={styles.ageScroll}
+      contentContainerStyle={styles.ageScrollContent}
+      bounces={false}
     >
-      <View style={{ gap: 24 }}>
-        <Card style={INTRO_CARD_STYLE}>
-          <IntroSlideCard title={slide.title} body={slide.body} iconName={slide.iconName} />
-          <AgeScroller value={ageValue} onChange={setAgeValue} />
-        </Card>
-      </View>
-
-      <BottomControls
-        style={{ marginTop: 24 }}
-        currentSlide={currentSlide}
-        totalSlides={SLIDES.length}
-        isFinalSlide={isFinalSlide}
-        canContinue={canContinue}
-        saving={saving}
-        onBack={handleBack}
-        onContinue={handleContinue}
-        accentButtonStyle={accentButtonStyle}
-        showBack={currentSlide > 0}
-        finePrintColor="#6B6B6B"
-      />
+      <Card style={INTRO_CARD_STYLE}>
+        <IntroSlideCard title={slide.title} body={slide.body} iconName={slide.iconName} />
+        <AgeScroller value={ageValue} onChange={setAgeValue} />
+      </Card>
     </ScrollView>
   );
 
   const containerBg = isIntroSlide ? INTRO_BG : "#FFFFFF";
+  const finePrintColor = isIntroSlide ? INTRO_SUBTEXT : "#6B6B6B";
+  const showBack = currentSlide > 0;
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: isIntroSlide ? INTRO_BG : "#FFFFFF" }}>
-      <View style={{ flex: 1, overflow: "hidden", backgroundColor: containerBg }}>
-        <Animated.View
-          key={currentSlide}
-          style={StyleSheet.absoluteFillObject}
-          entering={enteringAnimation}
-          exiting={exitingAnimation}
-          layout={LinearTransition.duration(200)}
-        >
-          {isIntroSlide ? introContent : ageContent}
-        </Animated.View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: containerBg }}>
+      <View style={[styles.screenPadding, { backgroundColor: containerBg }]}>
+        <View style={styles.animatedRegion}>
+          <Animated.View
+            key={currentSlide}
+            style={StyleSheet.absoluteFillObject}
+            entering={enteringAnimation}
+            exiting={exitingAnimation}
+            layout={LinearTransition.duration(200)}
+          >
+            {isIntroSlide ? introContent : ageContent}
+          </Animated.View>
+        </View>
+
+        <BottomControls
+          style={{ marginTop: 24 }}
+          currentSlide={currentSlide}
+          totalSlides={SLIDES.length}
+          isFinalSlide={isFinalSlide}
+          canContinue={canContinue}
+          saving={saving}
+          onBack={handleBack}
+          onContinue={handleContinue}
+          accentButtonStyle={accentButtonStyle}
+          showBack={showBack}
+          finePrintColor={finePrintColor}
+        />
       </View>
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  screenPadding: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 24,
+    paddingBottom: 32,
+  },
+  animatedRegion: {
+    flex: 1,
+    overflow: "hidden",
+  },
+  introContent: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  ageScroll: {
+    flex: 1,
+  },
+  ageScrollContent: {
+    flexGrow: 1,
+    justifyContent: "space-between",
+    paddingBottom: 4,
+    gap: 24,
+  },
+});
