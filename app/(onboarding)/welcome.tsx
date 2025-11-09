@@ -1,7 +1,15 @@
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { ScrollView, View } from "react-native";
+import { useMemo, useRef, useState } from "react";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Animated, {
+  Easing,
+  LinearTransition,
+  SlideInLeft,
+  SlideInRight,
+  SlideOutLeft,
+  SlideOutRight,
+} from "react-native-reanimated";
 
 import { completeOnboarding, useOnboarding } from "@/features/onboarding/onboarding-store";
 import { Card } from "@/lib/ui/facefit-components";
@@ -23,6 +31,7 @@ export default function Welcome() {
   const router = useRouter();
   const { onboarding } = useOnboarding();
 
+  const animationDirection = useRef<"forward" | "back">("forward");
   const [currentSlide, setCurrentSlide] = useState(0);
   const storedAge = onboarding.ageBand ? Number(onboarding.ageBand) : null;
   const initialAge =
@@ -45,9 +54,14 @@ export default function Welcome() {
       }
     : null;
 
+  function goToSlide(nextIndex: number) {
+    animationDirection.current = nextIndex > currentSlide ? "forward" : "back";
+    setCurrentSlide(nextIndex);
+  }
+
   async function handleContinue() {
     if (!isFinalSlide) {
-      setCurrentSlide((prev) => Math.min(prev + 1, SLIDES.length - 1));
+      goToSlide(Math.min(currentSlide + 1, SLIDES.length - 1));
       return;
     }
 
@@ -60,75 +74,90 @@ export default function Welcome() {
   }
 
   function handleBack() {
-    setCurrentSlide((prev) => Math.max(prev - 1, 0));
+    goToSlide(Math.max(currentSlide - 1, 0));
   }
 
-  if (isIntroSlide) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: INTRO_BG }}>
-        <View style={{ flex: 1, padding: 24 }}>
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <Card style={[INTRO_CARD_STYLE, { alignSelf: "center" }]}>
-              <IntroSlideCard
-                title={slide.title}
-                body={slide.body}
-                iconName={slide.iconName}
-              />
-            </Card>
-          </View>
+  const enteringAnimation =
+    animationDirection.current === "forward"
+      ? SlideInRight.duration(220).easing(Easing.out(Easing.cubic))
+      : SlideInLeft.duration(220).easing(Easing.out(Easing.cubic));
 
-          <BottomControls
-            style={{ marginTop: 24 }}
-            currentSlide={currentSlide}
-            totalSlides={SLIDES.length}
-            isFinalSlide={isFinalSlide}
-            canContinue={canContinue}
-            saving={saving}
-            onBack={handleBack}
-            onContinue={handleContinue}
-            accentButtonStyle={accentButtonStyle}
-            showBack={currentSlide > 0}
-            finePrintColor={INTRO_SUBTEXT}
-          />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const exitingAnimation =
+    animationDirection.current === "forward"
+      ? SlideOutLeft.duration(200).easing(Easing.in(Easing.cubic))
+      : SlideOutRight.duration(200).easing(Easing.in(Easing.cubic));
+
+  const introContent = (
+    <View style={{ flex: 1, padding: 24, backgroundColor: INTRO_BG }}>
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Card style={[INTRO_CARD_STYLE, { alignSelf: "center" }]}>
+          <IntroSlideCard title={slide.title} body={slide.body} iconName={slide.iconName} />
+        </Card>
+      </View>
+
+      <BottomControls
+        style={{ marginTop: 24 }}
+        currentSlide={currentSlide}
+        totalSlides={SLIDES.length}
+        isFinalSlide={isFinalSlide}
+        canContinue={canContinue}
+        saving={saving}
+        onBack={handleBack}
+        onContinue={handleContinue}
+        accentButtonStyle={accentButtonStyle}
+        showBack={currentSlide > 0}
+        finePrintColor={INTRO_SUBTEXT}
+      />
+    </View>
+  );
+
+  const ageContent = (
+    <ScrollView
+      style={{ flex: 1, backgroundColor: "#FFFFFF" }}
+      contentContainerStyle={{
+        flexGrow: 1,
+        padding: 24,
+        justifyContent: "space-between",
+      }}
+    >
+      <View style={{ gap: 24 }}>
+        <Card style={INTRO_CARD_STYLE}>
+          <IntroSlideCard title={slide.title} body={slide.body} iconName={slide.iconName} />
+          <AgeScroller value={ageValue} onChange={setAgeValue} />
+        </Card>
+      </View>
+
+      <BottomControls
+        style={{ marginTop: 24 }}
+        currentSlide={currentSlide}
+        totalSlides={SLIDES.length}
+        isFinalSlide={isFinalSlide}
+        canContinue={canContinue}
+        saving={saving}
+        onBack={handleBack}
+        onContinue={handleContinue}
+        accentButtonStyle={accentButtonStyle}
+        showBack={currentSlide > 0}
+        finePrintColor="#6B6B6B"
+      />
+    </ScrollView>
+  );
+
+  const containerBg = isIntroSlide ? INTRO_BG : "#FFFFFF";
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-      <ScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          padding: 24,
-          justifyContent: "space-between",
-        }}
-      >
-        <View style={{ gap: 24 }}>
-          <Card style={INTRO_CARD_STYLE}>
-            <IntroSlideCard
-              title={slide.title}
-              body={slide.body}
-              iconName={slide.iconName}
-            />
-            <AgeScroller value={ageValue} onChange={setAgeValue} />
-          </Card>
-        </View>
-
-        <BottomControls
-          style={{ marginTop: 24 }}
-          currentSlide={currentSlide}
-          totalSlides={SLIDES.length}
-          isFinalSlide={isFinalSlide}
-          canContinue={canContinue}
-          saving={saving}
-          onBack={handleBack}
-          onContinue={handleContinue}
-          accentButtonStyle={accentButtonStyle}
-          showBack={currentSlide > 0}
-          finePrintColor="#6B6B6B"
-        />
-      </ScrollView>
+    <SafeAreaView style={{ flex: 1, backgroundColor: isIntroSlide ? INTRO_BG : "#FFFFFF" }}>
+      <View style={{ flex: 1, overflow: "hidden", backgroundColor: containerBg }}>
+        <Animated.View
+          key={currentSlide}
+          style={StyleSheet.absoluteFillObject}
+          entering={enteringAnimation}
+          exiting={exitingAnimation}
+          layout={LinearTransition.duration(200)}
+        >
+          {isIntroSlide ? introContent : ageContent}
+        </Animated.View>
+      </View>
     </SafeAreaView>
   );
 }
