@@ -2,13 +2,26 @@ import * as FileSystem from "expo-file-system/legacy";
 
 import { storage } from "@/features/storage/async-storage";
 import type { FaceAnalysisResult } from "@/features/scans/face-analysis-api";
+import type { FaceLandmarkMap } from "@/features/scans/landmark-points";
 
 const STORAGE_KEY = "facefit:scans";
 const SCAN_DIRECTORY = `${FileSystem.documentDirectory ?? ""}facefit/scans`;
 
 export type ScanSource = "camera" | "gallery";
 
-export type StoredFaceAnalysis = FaceAnalysisResult | string;
+export type StructuredStoredAnalysis = {
+  kind: "structured";
+  data: FaceAnalysisResult;
+  landmarks?: FaceLandmarkMap | null;
+};
+
+export type TextStoredAnalysis = { kind: "text"; data: string };
+
+export type StoredFaceAnalysis =
+  | StructuredStoredAnalysis
+  | TextStoredAnalysis
+  | FaceAnalysisResult
+  | string;
 
 export type ScanRecord = {
   id: string;
@@ -140,4 +153,45 @@ async function removeFile(uri: string) {
 
 function generateId() {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+export function normalizeStoredAnalysis(
+  input: StoredFaceAnalysis,
+): StructuredStoredAnalysis | TextStoredAnalysis {
+  if (typeof input === "string") {
+    return { kind: "text", data: input };
+  }
+  if (isStructuredStoredAnalysis(input)) {
+    return {
+      kind: "structured",
+      data: input.data,
+      landmarks: input.landmarks ?? null,
+    };
+  }
+  if (isTextStoredAnalysis(input)) {
+    return { kind: "text", data: input.data };
+  }
+  return { kind: "structured", data: input };
+}
+
+function isStructuredStoredAnalysis(
+  value: StoredFaceAnalysis,
+): value is StructuredStoredAnalysis {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "kind" in value &&
+    (value as any).kind === "structured"
+  );
+}
+
+function isTextStoredAnalysis(
+  value: StoredFaceAnalysis,
+): value is TextStoredAnalysis {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    "kind" in value &&
+    (value as any).kind === "text"
+  );
 }

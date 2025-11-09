@@ -1,5 +1,5 @@
 // app/(tabs)/scan.tsx
-import { ActivityIndicator, SafeAreaView, Text, View } from "react-native";
+import { SafeAreaView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import {
@@ -8,7 +8,7 @@ import {
 } from "@/lib/ui/facefit-components";
 
 import { CameraStage } from "./scan/CameraStage";
-import { TABBAR_CLEARANCE, OVAL_H } from "./scan/constants";
+import { OVAL_H, TABBAR_CLEARANCE } from "./scan/constants";
 import { scanStyles as styles } from "./scan/styles";
 import { useScanLineAnimation } from "./scan/useScanLineAnimation";
 import { useScanWorkflow } from "./scan/useScanWorkflow";
@@ -130,13 +130,6 @@ export default function ScanScreen() {
         )}
 
         {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
-
-        {scanning ? (
-          <View style={styles.overlay}>
-            <ActivityIndicator color="#FFFFFF" />
-            <Text style={styles.overlayText}>Analyzing skin tone...</Text>
-          </View>
-        ) : null}
       </View>
     </SafeAreaView>
   );

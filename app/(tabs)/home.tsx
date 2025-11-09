@@ -1,54 +1,17 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useEffect, useRef } from "react";
-import {
-  Animated,
-  Pressable,
-  SafeAreaView,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Pressable, SafeAreaView, StyleSheet, View } from "react-native";
 
 const ACCENT = "#F18A1B";
+const LOGO_SIZE = 220;
 
 export default function Home() {
   const router = useRouter();
-  const borderPulse = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(borderPulse, {
-          toValue: 1,
-          duration: 2600,
-          useNativeDriver: false,
-        }),
-        Animated.timing(borderPulse, {
-          toValue: 0,
-          duration: 2600,
-          useNativeDriver: false,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [borderPulse]);
-
-  const animatedRingStyle = {
-    borderColor: borderPulse.interpolate({
-      inputRange: [0, 1],
-      outputRange: ["rgba(241, 138, 27, 0.3)", ACCENT],
-    }),
-    shadowOpacity: borderPulse.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.15, 0.4],
-    }),
-  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.center}>
-        <Animated.View style={[styles.ring, animatedRingStyle]}>
+        <View style={styles.logoShell}>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Start FaceFit scan"
@@ -62,7 +25,7 @@ export default function Home() {
               contentFit="contain"
             />
           </Pressable>
-        </Animated.View>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -79,20 +42,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 24,
   },
-  ring: {
-    borderWidth: 3,
-    borderStyle: "dashed",
-    borderRadius: 200,
-    padding: 18,
+  logoShell: {
+    padding: 32,
+    alignItems: "center",
+    justifyContent: "center",
     shadowColor: ACCENT,
-    shadowOffset: { width: 0, height: 16 },
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.25,
     shadowRadius: 32,
-    elevation: 12,
+    elevation: 18,
   },
   logoButton: {
-    width: 220,
-    height: 220,
-    borderRadius: 110,
+    width: LOGO_SIZE,
+    height: LOGO_SIZE,
+    borderRadius: LOGO_SIZE / 2,
     backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",

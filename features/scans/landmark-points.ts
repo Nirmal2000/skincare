@@ -77,6 +77,11 @@ export async function detectFaceLandmarks(imageUri: string) {
 }
 
 function computeFaceLandmarkMap(face: RNMLKitFace): FaceLandmarkMap {
+  console.log("[Landmarks] frame", JSON.stringify(face.frame));
+  console.log(
+    "[Landmarks] raw landmarks",
+    JSON.stringify(face.landmarks ?? []),
+  );
   const frame = normalizeFrame(face.frame as NativeRect | undefined);
   const fallbackPoint: FaceLandmarkPoint = {
     x: frame.x + frame.width / 2,
@@ -130,7 +135,7 @@ function computeFaceLandmarkMap(face: RNMLKitFace): FaceLandmarkMap {
 
   const nasolabialPoint = midpoint(noseBase, rightMouth);
 
-  return {
+  const landmarks: FaceLandmarkMap = {
     eye_pouch: eyePouchPoint,
     dark_circles: darkCirclePoint,
     forehead_wrinkle: foreheadPoint,
@@ -141,13 +146,21 @@ function computeFaceLandmarkMap(face: RNMLKitFace): FaceLandmarkMap {
     left_cheek_pores: leftCheek,
     right_cheek_pores: rightCheek,
   };
+
+  Object.entries(landmarks).forEach(([key, value]) => {
+    console.log("[Landmarks]", key, value);
+  });
+
+  return landmarks;
 }
 
 function getContourPoints(
   face: RNMLKitFace,
   type: FaceContourType,
 ): FaceLandmarkPoint[] {
-  const contour = face.contours?.find((candidate) => candidate.type === type);
+  const contour = face.contours?.find((candidate) =>
+    matchesContourType(candidate.type, type),
+  );
   if (!contour || !contour.points) {
     return [];
   }
@@ -159,7 +172,12 @@ function getLandmarkPoint(
   type: FaceLandmarkType,
   fallback: FaceLandmarkPoint,
 ): FaceLandmarkPoint {
-  const match = face.landmarks?.find((landmark) => landmark.type === type);
+  const match = face.landmarks?.find((landmark) =>
+    matchesLandmarkType(landmark.type, type),
+  );
+  if (!match?.position) {
+    console.warn("[Landmarks] missing", type, "using fallback", fallback);
+  }
   return toPoint(match?.position as RawPoint | undefined, fallback);
 }
 
@@ -221,4 +239,26 @@ function normalizeFrame(rect: NativeRect | undefined): {
     width: rect?.size?.x ?? 0,
     height: rect?.size?.y ?? 0,
   };
+}
+
+function matchesLandmarkType(
+  value: FaceLandmarkType | string | null | undefined,
+  target: FaceLandmarkType,
+) {
+  if (!value) return false;
+  const normalized = value.toString();
+  const camel =
+    normalized.charAt(0).toLowerCase() + normalized.slice(1);
+  return camel === target;
+}
+
+function matchesContourType(
+  value: FaceContourType | string | null | undefined,
+  target: FaceContourType,
+) {
+  if (!value) return false;
+  const normalized = value.toString();
+  const camel =
+    normalized.charAt(0).toLowerCase() + normalized.slice(1);
+  return camel === target;
 }

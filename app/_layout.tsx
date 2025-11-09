@@ -37,6 +37,10 @@ export default function RootLayout() {
       <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen
+        name="edit-age"
+        options={{ headerShown: false, presentation: "modal" }}
+      />
+      <Stack.Screen
         name="(auth)/signin"
         options={{ presentation: "modal", headerShown: false }}
       />

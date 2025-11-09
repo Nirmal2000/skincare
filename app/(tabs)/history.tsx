@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
 import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -11,16 +12,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useCallback } from "react";
 
 import { useAuthGate } from "@/features/auth/useAuthGate";
 import { encodeAnalysisPayload } from "@/features/scans/analysis-payload";
-import { getExpiryBadge, type ScanRecord } from "@/features/scans/scan-store";
+import {
+  getExpiryBadge,
+  normalizeStoredAnalysis,
+  type ScanRecord,
+} from "@/features/scans/scan-store";
 import { useScanHistory } from "@/features/scans/use-scan-history";
 import {
   Card,
-  PrimaryButton,
-  SecondaryButton,
+  PrimaryButton
 } from "@/lib/ui/facefit-components";
 
 export default function HistoryScreen() {
@@ -56,11 +59,12 @@ export default function HistoryScreen() {
   }
 
   const handleOpen = (record: ScanRecord) => {
-    const analysisParam = encodeAnalysisPayload(
-      typeof record.faceAnalysis === "string"
-        ? { kind: "text", data: record.faceAnalysis }
-        : { kind: "structured", data: record.faceAnalysis },
-    );
+    const normalized = normalizeStoredAnalysis(record.faceAnalysis);
+    console.log("[History] opening scan", {
+      id: record.id,
+      regionLandmarks: normalized.kind === "structured" ? normalized.landmarks : null,
+    });
+    const analysisParam = encodeAnalysisPayload(normalized);
     router.push({
       pathname: "/(tabs)/result",
       params: {
@@ -106,15 +110,14 @@ export default function HistoryScreen() {
           <FlatList
             data={records}
             keyExtractor={(item) => item.id}
-            numColumns={2}
-            columnWrapperStyle={{ gap: 16 }}
             contentContainerStyle={
               records.length === 0
                 ? styles.emptyList
-                : { paddingBottom: 24, gap: 16 }
+                : { paddingBottom: 24, gap: 0 }
             }
             refreshing={refreshing}
             onRefresh={refresh}
+            ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
             renderItem={({ item }) => (
               <HistoryCard
                 record={item}
@@ -126,17 +129,12 @@ export default function HistoryScreen() {
               <Card style={{ gap: 12, alignItems: "flex-start" }}>
                 <Text style={styles.subtitle}>
                   No saved scans yet. Capture a fresh photo to see it here.
-                </Text>
-                <PrimaryButton
-                  label="Go to Scan"
-                  onPress={() => router.push("/(tabs)/scan")}
-                />
+                </Text>                
               </Card>
             }
           />
         )}
-
-        <SecondaryButton label="Refresh" onPress={refresh} disabled={refreshing} />
+        
       </View>
     </SafeAreaView>
   );
@@ -227,7 +225,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   card: {
-    flex: 1,
+    width: "100%",
     gap: 8,
   },
   cardImage: {

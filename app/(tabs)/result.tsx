@@ -1,3 +1,4 @@
+import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -8,22 +9,21 @@ import {
   Text,
   View,
 } from "react-native";
-import * as Haptics from "expo-haptics";
 
-import { useSettings } from "@/features/settings/settings-store";
+import {
+  buildRegionReports,
+  type RegionId,
+} from "@/features/results/region-config";
 import { decodeAnalysisPayload } from "@/features/scans/analysis-payload";
 import type { FaceAnalysisResult } from "@/features/scans/face-analysis-api";
+import type { FaceLandmarkMap } from "@/features/scans/landmark-points";
 import {
   saveScan,
   type ScanSource,
   type StoredFaceAnalysis,
 } from "@/features/scans/scan-store";
-import { PrimaryButton, SecondaryButton } from "@/lib/ui/facefit-components";
-import {
-  buildRegionReports,
-  type RegionId,
-} from "@/features/results/region-config";
-import type { FaceLandmarkMap } from "@/features/scans/landmark-points";
+import { useSettings } from "@/features/settings/settings-store";
+import { PrimaryButton } from "@/lib/ui/facefit-components";
 import { FacePreview } from "./result/components/FacePreview";
 import { RegionReport } from "./result/components/RegionReport";
 import type { RegionSelectHandler } from "./result/types";
@@ -46,7 +46,9 @@ export default function ResultScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { settings } = useSettings();
-  const [saving, setSaving] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
   const [error, setError] = useState<string | null>(null);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [selectedRegionId, setSelectedRegionId] = useState<RegionId | null>(null);
@@ -133,29 +135,49 @@ export default function ResultScreen() {
     [],
   );
 
-  const handleSave = async () => {
-    if (!decodedUri || !analysisPayload || !source) {
+  useEffect(() => {
+    if (
+      readOnly ||
+      !decodedUri ||
+      !analysisPayload ||
+      !source ||
+      autoSaveStatus !== "idle"
+    ) {
       return;
     }
-    setError(null);
-    setSaving(true);
-    try {
-      const faceAnalysis: StoredFaceAnalysis =
-        structuredAnalysis ?? analysisText ?? "";
-      await saveScan({
-        tempImageUri: decodedUri,
-        faceAnalysis,
-        retentionDays: settings.autoDeleteDays,
-        source,
-      });
-      router.replace("/(tabs)/history");
-    } catch (err) {
-      console.warn("Save scan failed", err);
-      setError("Unable to save locally. Clear space or try again.");
-    } finally {
-      setSaving(false);
+    if (!structuredAnalysis && !analysisText) {
+      return;
     }
-  };
+    setAutoSaveStatus("saving");
+    (async () => {
+      try {
+        const faceAnalysis: StoredFaceAnalysis = structuredAnalysis
+          ? { kind: "structured", data: structuredAnalysis, landmarks }
+          : { kind: "text", data: analysisText ?? "" };
+        await saveScan({
+          tempImageUri: decodedUri,
+          faceAnalysis,
+          retentionDays: settings.autoDeleteDays,
+          source,
+        });
+        setAutoSaveStatus("saved");
+      } catch (err) {
+        console.warn("Auto-save failed", err);
+        setAutoSaveStatus("error");
+        setError("Unable to save locally. Clear space or try again.");
+      }
+    })();
+  }, [
+    analysisPayload,
+    analysisText,
+    autoSaveStatus,
+    decodedUri,
+    landmarks,
+    readOnly,
+    settings.autoDeleteDays,
+    source,
+    structuredAnalysis,
+  ]);
 
   if (!decodedUri || !analysisPayload || !source) {
     return (
@@ -196,13 +218,15 @@ export default function ResultScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.resultsContainer}>
         <View style={styles.faceSection}>
-          <FacePreview
-            imageUri={decodedUri}
-            regions={regionReports.regions}
-            selectedRegionId={selectedRegionId}
-            onSelectRegion={handleSelectRegion}
-            imageSize={imageSize}
-          />
+          <View style={styles.faceCard}>
+            <FacePreview
+              imageUri={decodedUri}
+              regions={regionReports.regions}
+              selectedRegionId={selectedRegionId}
+              onSelectRegion={handleSelectRegion}
+              imageSize={imageSize}
+            />
+          </View>
         </View>
         <View style={styles.reportSection}>
           <RegionReport
@@ -214,20 +238,19 @@ export default function ResultScreen() {
             onRegionLayout={handleRegionLayout}
             analysisSummary={analysisText}
           />
-          {!readOnly ? (
-            <View style={styles.actions}>
-              <PrimaryButton
-                label={saving ? "Saving..." : "Save locally"}
-                onPress={handleSave}
-                disabled={saving}
-              />
-              <SecondaryButton
-                label="Scan again"
-                onPress={() => router.replace("/(tabs)/scan")}
-                disabled={saving}
-              />
-            </View>
-          ) : null}
+          {/* <View style={styles.actions}>
+            {!readOnly ? (
+              <Text style={styles.saveStatusText}>
+                {autoSaveStatus === "saving"
+                  ? "Saving locally..."
+                  : autoSaveStatus === "saved"
+                    ? "Saved on this device"
+                    : autoSaveStatus === "error"
+                      ? "Auto-save failed"
+                      : "Preparing save..."}
+              </Text>
+            ) : null}            
+          </View> */}
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </View>
       </View>
@@ -242,24 +265,45 @@ const styles = StyleSheet.create({
   },
   resultsContainer: {
     flex: 1,
+    backgroundColor: "#F8F8F8",
   },
   faceSection: {
     flex: 1,
-    backgroundColor: "#000000",
+    padding: 16,
+  },
+  faceCard: {
+    flex: 1,
+    borderRadius: 24,
+    backgroundColor: "#0A0A0A",
+    overflow: "hidden",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 4,
   },
   reportSection: {
     flex: 1,
-    backgroundColor: "#FDFDFD",
+    backgroundColor: "#F8F8F8",
   },
   actions: {
     paddingHorizontal: 24,
     paddingVertical: 12,
-    gap: 12,
+    gap: 8,
   },
   error: {
     color: "#C03515",
     textAlign: "center",
     paddingBottom: 16,
+  },
+  saveStatusText: {
+    fontSize: 12,
+    color: "#6B6B6B",
+  },
+  scanAgainButton: {
+    backgroundColor: "#F18A1B",
+    alignSelf: "flex-start",
+    paddingHorizontal: 24,
   },
   emptyState: {
     flex: 1,

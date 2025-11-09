@@ -1,5 +1,6 @@
-import * as WebBrowser from "expo-web-browser";
 import { useRouter } from "expo-router";
+import * as WebBrowser from "expo-web-browser";
+import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -9,11 +10,10 @@ import {
   Text,
   View,
 } from "react-native";
-import { useState } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ProfileCard } from "@/features/auth/profile-card";
 import { useSupabaseSession } from "@/features/auth/useSupabaseSession";
-import { resetOnboarding } from "@/features/onboarding/onboarding-store";
 import { deleteAllScans } from "@/features/scans/scan-store";
 import {
   setAutoDeleteDays,
@@ -25,6 +25,7 @@ import {
   PrimaryButton,
   SecondaryButton,
 } from "@/lib/ui/facefit-components";
+import { INTRO_BG, INTRO_CARD_STYLE } from "../(onboarding)/welcome.constants";
 
 const AUTO_DELETE_OPTIONS = [7, 30, 90];
 const PRIVACY_URL = "https://facefit.example.com/privacy";
@@ -35,6 +36,11 @@ export default function SettingsScreen() {
   const { profile, signOut } = useSupabaseSession();
   const { settings, ready } = useSettings();
   const [deleting, setDeleting] = useState(false);
+  const insets = useSafeAreaInsets();
+
+  const navigateToAgeEdit = () => {
+    router.push("/edit-age");
+  };
 
   const handleAutoDeleteChange = (days: number) => {
     setAutoDeleteDays(days);
@@ -62,23 +68,6 @@ export default function SettingsScreen() {
     );
   };
 
-  const handleUpdateConsent = () => {
-    Alert.alert(
-      "Update consent",
-      "We will re-open onboarding so you can adjust your age band or consent.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Continue",
-          onPress: async () => {
-            await resetOnboarding();
-            router.replace("/(onboarding)/welcome");
-          },
-        },
-      ],
-    );
-  };
-
   const openLink = (url: string) => {
     WebBrowser.openBrowserAsync(url).catch((error) => {
       console.warn("Failed to open browser", error);
@@ -97,11 +86,22 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[
+          styles.content,
+          { paddingBottom: insets.bottom + 48 },
+        ]}
+      >
         {profile ? (
-          <ProfileCard profile={profile} ageBand={settings.ageBand} />
+          <ProfileCard
+            profile={profile}
+            ageBand={settings.ageBand}
+            onEditAge={navigateToAgeEdit}
+            style={styles.cardSurface}
+          />
         ) : (
-          <Card style={{ gap: 12 }}>
+          <Card style={[styles.cardSurface, { gap: 12 }]}>
             <Text style={styles.title}>Not signed in</Text>
             <Text style={styles.subtitle}>
               Sign in from the Scan tab to access account options.
@@ -113,7 +113,7 @@ export default function SettingsScreen() {
           <SecondaryButton label="Sign out" onPress={() => signOut()} />
         ) : null}
 
-        <Card title="Auto-delete window" style={{ gap: 16 }}>
+        <Card title="Auto-delete window" style={[styles.cardSurface, { gap: 16 }]}>
           <Text style={styles.subtitle}>
             Scans stay on-device for {settings.autoDeleteDays} days.
           </Text>
@@ -129,14 +129,7 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        <Card title="Consent & privacy" style={{ gap: 12 }}>
-          <Text style={styles.meta}>
-            Age band: {settings.ageBand ?? "Not set"}
-          </Text>
-          <Text style={styles.meta}>
-            Consent: {settings.consentGranted ? "Granted" : "Pending"}
-          </Text>
-          <SecondaryButton label="Update consent" onPress={handleUpdateConsent} />
+        <Card title="Privacy & terms" style={[styles.cardSurface, { gap: 12 }]}>
           <SecondaryButton
             label="Privacy policy"
             onPress={() => openLink(PRIVACY_URL)}
@@ -144,7 +137,7 @@ export default function SettingsScreen() {
           <SecondaryButton label="Terms of use" onPress={() => openLink(TERMS_URL)} />
         </Card>
 
-        <Card title="Storage" style={{ gap: 12 }}>
+        <Card title="Storage" style={[styles.cardSurface, { gap: 12 }]}>
           <Text style={styles.subtitle}>
             All scans, tips, and metadata remain on this device only. You can
             clear them anytime.
@@ -164,7 +157,7 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: INTRO_BG,
   },
   loader: {
     flex: 1,
@@ -184,13 +177,14 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#6B6B6B",
   },
-  meta: {
-    fontSize: 14,
-    color: "#6B6B6B",
-  },
   chipRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+  },
+  cardSurface: {
+    ...INTRO_CARD_STYLE,
+    paddingVertical: 24,
+    paddingHorizontal: 24,
   },
 });

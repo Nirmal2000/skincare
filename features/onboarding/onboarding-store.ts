@@ -119,3 +119,13 @@ export async function resetOnboarding() {
     ageBand: null,
   });
 }
+
+export async function updateAgeBand(ageBand: string) {
+  const current = store.getState();
+  await store.update({ ageBand });
+  await setSettingsOnboarding({
+    completed: current.completed,
+    consentGranted: current.consentGranted,
+    ageBand,
+  });
+}

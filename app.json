@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "FaceFit uses your camera to capture makeup-free selfies for skin analysis.",
+        "NSCameraUsageDescription": "Allow FaceFit to access your camera for live face detection.",
         "NSMicrophoneUsageDescription": "Microphone access is required only when recording video with audio during capture.",
         "NSPhotoLibraryUsageDescription": "FaceFit imports photos from your library so you can scan existing images.",
         "NSPhotoLibraryAddUsageDescription": "FaceFit saves your scan photos locally within the photo library."
@@ -77,7 +77,11 @@
     ],
     "extra": {
       "supabaseUrl": "https://szpwelqikxpjmshckqjp.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6cHdlbHFpa3hwam1zaGNrcWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MDU1MDIsImV4cCI6MjA3ODA4MTUwMn0.aj3e7ciUqm67GvSeGj_F67VQYWm44kQXHtVUBW4FecA"
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6cHdlbHFpa3hwam1zaGNrcWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MDU1MDIsImV4cCI6MjA3ODA4MTUwMn0.aj3e7ciUqm67GvSeGj_F67VQYWm44kQXHtVUBW4FecA",
+      "router": {},
+      "eas": {
+        "projectId": "f240da61-1b05-46d2-9bc3-bf294cc5b3a8"
+      }
     },
     "experiments": {
       "typedRoutes": true,

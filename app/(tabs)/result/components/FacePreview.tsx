@@ -29,9 +29,11 @@ export function FacePreview({
     if (!imageSize || layout.width === 0 || layout.height === 0) {
       return [];
     }
+    console.log("[FacePreview] layoutSize", layout, "imageSize", imageSize);
     return regions
       .map((region) => {
         if (!region.dot) return null;
+        console.log("[FacePreview] raw dot", region.id, region.dot);
         const mapped = mapPoint(region.dot, imageSize, layout);
         if (!mapped) return null;
         return { ...mapped, regionId: region.id };
