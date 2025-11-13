@@ -5,8 +5,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuthGate } from "@/features/auth/useAuthGate";
-import { encodeAnalysisPayload } from "@/features/scans/analysis-payload";
-import { analyzeFaceImage } from "@/features/scans/face-analysis-api";
+import { startAnalysisTask } from "@/features/scans/face-analysis-api";
 import {
   detectFaceLandmarks,
   type FaceLandmarkMap,
@@ -44,7 +43,7 @@ export function useScanWorkflow() {
   const [pickingImage, setPickingImage] = useState(false);
   const [scanning, setScanning] = useState(false);
   const [faceStatus, setFaceStatus] = useState<FaceDetectionStatus>("no-face");
-  const [landmarks, setLandmarks] = useState<FaceLandmarkMap | null>(null);
+  const [, setLandmarks] = useState<FaceLandmarkMap | null>(null);
 
   useEffect(() => {
     return () => {
@@ -165,28 +164,31 @@ export function useScanWorkflow() {
     const controller = new AbortController();
     analysisController.current = controller;
     try {
-      const landmarkPoints = await detectFaceLandmarks(previewUri).catch(
-        (error) => {
-          console.warn("Landmark detection failed", error);
-          return null;
-        },
-      );
-      if (!mountedRef.current) return;
-      setLandmarks(landmarkPoints);
-
-      const result = await analyzeFaceImage(previewUri, controller.signal);
-      if (!mountedRef.current) return;
-      const analysisParam = encodeAnalysisPayload({
-        kind: "structured",
-        data: result,
-        landmarks: landmarkPoints,
+      const landmarkPoints = await detectFaceLandmarks(previewUri).catch((error) => {
+        console.warn("Landmark detection failed", error);
+        return null;
       });
+      if (!mountedRef.current) return;
+      if (landmarkPoints) {
+        setLandmarks(landmarkPoints);
+        try {
+          console.log("[Scan] MLKit landmarks", JSON.stringify(landmarkPoints));
+        } catch {
+          console.log("[Scan] MLKit landmarks", landmarkPoints);
+        }
+      }
+
+      const taskId = await startAnalysisTask(previewUri, controller.signal);
+      if (!mountedRef.current) return;
       router.push({
         pathname: "/(tabs)/result",
         params: {
           imageUri: encodeURIComponent(previewUri),
-          analysis: analysisParam,
+          taskId,
           source: previewSource,
+          landmarks: landmarkPoints
+            ? encodeURIComponent(JSON.stringify(landmarkPoints))
+            : undefined,
         },
       });
     } catch (error) {
@@ -228,7 +230,6 @@ export function useScanWorkflow() {
     scanning,
     faceStatus,
     canCapture,
-    landmarks,
     handleFaceDetectionStatus,
     handleTakePhoto,
     handlePickImage,

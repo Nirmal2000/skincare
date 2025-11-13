@@ -14,7 +14,6 @@ import {
 } from "react-native";
 
 import { useAuthGate } from "@/features/auth/useAuthGate";
-import { encodeAnalysisPayload } from "@/features/scans/analysis-payload";
 import {
   getExpiryBadge,
   normalizeStoredAnalysis,
@@ -62,17 +61,21 @@ export default function HistoryScreen() {
     const normalized = normalizeStoredAnalysis(record.faceAnalysis);
     console.log("[History] opening scan", {
       id: record.id,
-      regionLandmarks: normalized.kind === "structured" ? normalized.landmarks : null,
+      structured: normalized.kind === "structured",
     });
-    const analysisParam = encodeAnalysisPayload(normalized);
+    const nextParams: Record<string, string> = {
+      imageUri: encodeURIComponent(record.imageUri),
+      source: record.source,
+      readonly: "true",
+    };
+    if (normalized.kind === "structured") {
+      nextParams.initialResult = encodeURIComponent(JSON.stringify(normalized.data));
+    } else {
+      nextParams.initialText = encodeURIComponent(normalized.data);
+    }
     router.push({
       pathname: "/(tabs)/result",
-      params: {
-        imageUri: encodeURIComponent(record.imageUri),
-        analysis: analysisParam,
-        source: record.source,
-        readonly: "true",
-      },
+      params: nextParams,
     });
   };
 

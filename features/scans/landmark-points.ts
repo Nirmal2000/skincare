@@ -10,11 +10,14 @@ import {
 export type FaceLandmarkId =
   | "eye_pouch"
   | "dark_circles"
+  | "eye_left"
+  | "eye_right"
   | "forehead_wrinkle"
   | "forehead_pores"
   | "crows_feet"
   | "glabella_wrinkle"
   | "nasolabial_fold"
+  | "nose_base"
   | "left_cheek_pores"
   | "right_cheek_pores";
 
@@ -138,11 +141,14 @@ function computeFaceLandmarkMap(face: RNMLKitFace): FaceLandmarkMap {
   const landmarks: FaceLandmarkMap = {
     eye_pouch: eyePouchPoint,
     dark_circles: darkCirclePoint,
+    eye_left: leftEye,
+    eye_right: rightEye,
     forehead_wrinkle: foreheadPoint,
     forehead_pores: foreheadPoint,
     crows_feet: crowsFeetPoint,
     glabella_wrinkle: glabellaPoint,
     nasolabial_fold: nasolabialPoint,
+    nose_base: noseBase,
     left_cheek_pores: leftCheek,
     right_cheek_pores: rightCheek,
   };

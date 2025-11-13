@@ -170,6 +170,15 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="membership"
+        options={{
+          title: "Membership",
+          tabBarIcon: ({ focused }) => (
+            <TabIcon name="star-outline" focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",

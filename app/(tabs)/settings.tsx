@@ -46,6 +46,10 @@ export default function SettingsScreen() {
     setAutoDeleteDays(days);
   };
 
+  const handleMembershipPress = () => {
+    router.push("/(tabs)/membership");
+  };
+
   const handleDeleteAll = () => {
     Alert.alert(
       "Delete all scans",
@@ -112,6 +116,13 @@ export default function SettingsScreen() {
         {profile ? (
           <SecondaryButton label="Sign out" onPress={() => signOut()} />
         ) : null}
+
+        <Card title="Membership" style={[styles.cardSurface, { gap: 12 }]}>
+          <Text style={styles.subtitle}>
+            Manage BetterSkin Pro, change plans, or restore purchases anytime.
+          </Text>
+          <PrimaryButton label="Manage membership" onPress={handleMembershipPress} />
+        </Card>
 
         <Card title="Auto-delete window" style={[styles.cardSurface, { gap: 16 }]}>
           <Text style={styles.subtitle}>
