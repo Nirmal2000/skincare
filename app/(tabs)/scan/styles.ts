@@ -1,71 +1,170 @@
 import { StyleSheet } from "react-native";
 
-import { ACCENT, OVAL_H, OVAL_W } from "./constants";
+import { ACCENT } from "./constants";
 
 export const scanStyles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "#FFFFFF" },
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 24, gap: 16 },
-  heading: {
-    fontSize: 22,
-    fontWeight: "700",
-    textAlign: "center",
-    color: "#0A0A0A",
-  },
-  subhead: {
-    fontSize: 14,
-    textAlign: "center",
-    color: "#6B6B6B",
-  },
-  stage: {
+  screen: {
     flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
+    backgroundColor: "#030303",
   },
-  ovalShadow: {
-    width: OVAL_W,
-    height: OVAL_H,
-    shadowColor: "#000",
-    shadowOpacity: 0.35,
-    shadowRadius: 32,
-    shadowOffset: { width: 0, height: 20 },
-    elevation: 18,
+  cameraStage: {
+    flex: 1,
   },
-  fill: { width: "100%", height: "100%" },
-  scanLine: {
-    position: "absolute",
-    left: 8,
-    width: OVAL_W - 16,
-    height: 2,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    shadowColor: "#FFFFFF",
-    shadowOpacity: 0.4,
-    shadowRadius: 4,
+  cameraLayer: {
+    flex: 1,
+    backgroundColor: "#000000",
   },
-  inlineActions: { flexDirection: "row", gap: 12, marginTop: 12 },
-  inlineButton: { flex: 1, marginVertical: 0 },
-  captureButton: { backgroundColor: ACCENT },
-  detectionHint: {
-    fontSize: 13,
-    textAlign: "center",
-    color: "#6B6B6B",
+  cameraFill: {
+    flex: 1,
   },
-  detectionHintReady: {
-    color: ACCENT,
+  previewImage: {
+    flex: 1,
+    resizeMode: "cover",
   },
-  status: { color: "#C03515", fontSize: 14, marginTop: 4 },
-  overlay: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    padding: 16,
+  overlayLayer: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: "column",
+    justifyContent: "space-between",
+    paddingHorizontal: 24,
+  },
+  topRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-    backgroundColor: "rgba(10,10,10,0.9)",
+    justifyContent: "space-between",
+    gap: 16,
   },
-  overlayText: { color: "#FFFFFF", fontWeight: "600" },
-  cardTitle: { fontSize: 18, fontWeight: "600", color: "#0A0A0A" },
-  cardCopy: { color: "#6B6B6B", fontSize: 14 },
+  iconButton: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "rgba(10,10,10,0.7)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  homeButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(10,10,10,0.85)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  iconButtonIcon: {
+    color: "#FFFFFF",
+  },
+  sampleThumb: {
+    width: 72,
+    height: 72,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.5)",
+  },
+  spacer: {
+    flex: 1,
+  },
+  bottomSection: {
+    gap: 16,
+  },
+  hintText: {
+    textAlign: "center",
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+  },
+  captureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  galleryButton: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.3)",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  captureButton: {
+    flex: 1,
+    height: 68,
+    borderRadius: 999,
+    backgroundColor: "#FFFFFF",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000000",
+    shadowOpacity: 0.4,
+    shadowOffset: { width: 0, height: 12 },
+    shadowRadius: 24,
+  },
+  captureButtonDisabled: {
+    opacity: 0.5,
+  },
+  captureButtonPressed: {
+    transform: [{ scale: 0.98 }],
+  },
+  captureLabel: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0A0A0A",
+  },
+  previewActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  secondaryAction: {
+    flex: 1,
+    height: 56,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "transparent",
+  },
+  secondaryLabel: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  primaryAction: {
+    flex: 1,
+    height: 56,
+    borderRadius: 999,
+    backgroundColor: ACCENT,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "rgba(241, 138, 27, 0.35)",
+    shadowOpacity: 1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 14 },
+  },
+  primaryLabel: {
+    color: "#000000",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  disabledAction: {
+    opacity: 0.5,
+  },
+  galleryIcon: {
+    color: "#FFFFFF",
+  },
+  statusText: {
+    textAlign: "center",
+    color: "#F7A399",
+    fontSize: 13,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#0A0A0A",
+  },
+  cardCopy: {
+    color: "#6B6B6B",
+    fontSize: 14,
+  },
 });

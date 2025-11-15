@@ -1,18 +1,32 @@
 // app/(tabs)/scan.tsx
-import { Text, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { Image } from "expo-image";
+import { useFocusEffect, useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { Pressable, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import {
-  PrimaryButton,
-  SecondaryButton,
-} from "@/lib/ui/facefit-components";
+import { useTabBarVisibility } from "@/features/navigation/tab-bar-visibility";
 
 import { CameraStage } from "./scan/CameraStage";
-import { OVAL_H, TABBAR_CLEARANCE } from "./scan/constants";
 import { scanStyles as styles } from "./scan/styles";
-import { useScanLineAnimation } from "./scan/useScanLineAnimation";
 import { useScanWorkflow } from "./scan/useScanWorkflow";
 
+const FACE_SAMPLE = require("@/assets/images/facesample.png");
+
 export default function ScanScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const setTabHidden = useTabBarVisibility((state) => state.setHidden);
+  const cameraFacing: "front" | "back" = "front";
+
+  useFocusEffect(
+    useCallback(() => {
+      setTabHidden(true);
+      return () => setTabHidden(false);
+    }, [setTabHidden]),
+  );
+
   const {
     profile,
     loading,
@@ -23,17 +37,18 @@ export default function ScanScreen() {
     previewUri,
     statusMessage,
     takingPhoto,
+    pickingImage,
     scanning,
     faceStatus,
     canCapture,
     handleFaceDetectionStatus,
     handleTakePhoto,
+    handlePickImage,
     handleScan,
     handleReset,
     requestCameraPermission,
   } = useScanWorkflow();
 
-  const lineY = useScanLineAnimation(OVAL_H);
   const captureLabel = (() => {
     if (takingPhoto) return "Capturing...";
     switch (faceStatus) {
@@ -44,7 +59,7 @@ export default function ScanScreen() {
       case "multi-face":
         return "One face at a time";
       default:
-        return "Align with oval";
+        return "Align with frame";
     }
   })();
 
@@ -53,7 +68,7 @@ export default function ScanScreen() {
       case "ready":
         return "Face detected. Hold still and tap capture.";
       case "off-target":
-        return "Move closer until your face fills the oval.";
+        return "Move closer until your face fills the frame.";
       case "multi-face":
         return "Only one face should be in the frame.";
       default:
@@ -61,73 +76,102 @@ export default function ScanScreen() {
     }
   })();
 
+  const captureDisabled = takingPhoto || scanning || !canCapture;
+  const galleryDisabled = pickingImage || scanning || takingPhoto;
+
+  function goHome() {
+    setTabHidden(false);
+    router.replace("/(tabs)/home");
+  }
+
   return (
-    <View style={styles.safeArea}>
+    <View style={styles.screen}>
+      <View style={styles.cameraStage}>
+        <CameraStage
+          profile={profile}
+          loading={loading}
+          previewUri={previewUri}
+          isFocused={isFocused}
+          cameraSupported={permissions.cameraSupported}
+          cameraGranted={permissions.camera.granted}
+          cameraRef={cameraRef}
+          facing={cameraFacing}
+          onRequireAuth={requireAuth}
+          onRequestCameraPermission={() => {
+            void requestCameraPermission();
+          }}
+          onFaceDetectionChange={handleFaceDetectionStatus}
+        />
+      </View>
       <View
+        pointerEvents="box-none"
         style={[
-          styles.container,
-          { paddingBottom: TABBAR_CLEARANCE },
+          styles.overlayLayer,
+          {
+            paddingTop: insets.top + 12,
+            paddingBottom: insets.bottom + 32,
+          },
         ]}
       >
-        <Text style={styles.heading}>Put your face in the oval</Text>
-        <Text style={styles.subhead}>Make sure you’re well-lit and makeup-free.</Text>
-
-        <View style={styles.stage}>
-          <CameraStage
-            profile={profile}
-            loading={loading}
-            previewUri={previewUri}
-            isFocused={isFocused}
-            cameraSupported={permissions.cameraSupported}
-            cameraGranted={permissions.camera.granted}
-            cameraRef={cameraRef}
-            lineY={lineY}
-            onRequireAuth={requireAuth}
-            onRequestCameraPermission={() => {
-              void requestCameraPermission();
-            }}
-            onFaceDetectionChange={handleFaceDetectionStatus}
-          />
+        <View style={styles.topRow}>
+          <Pressable style={styles.homeButton} onPress={goHome}>
+            <Feather name="home" size={26} style={styles.iconButtonIcon} />
+          </Pressable>
+          <View style={styles.iconButton} />
+          <Image source={FACE_SAMPLE} style={styles.sampleThumb} />
         </View>
-
-        {!previewUri ? (
-          <Text
-            style={[
-              styles.detectionHint,
-              faceStatus === "ready" ? styles.detectionHintReady : null,
-            ]}
-          >
-            {faceHint}
-          </Text>
-        ) : null}
-
-        {previewUri ? (
-          <View style={styles.inlineActions}>
-            <SecondaryButton
-              label="Retake"
-              onPress={handleReset}
-              disabled={scanning}
-              style={styles.inlineButton}
-            />
-            <PrimaryButton
-              label={scanning ? "Scanning..." : "Run scan"}
-              onPress={handleScan}
-              disabled={scanning}
-              style={[styles.inlineButton, styles.captureButton]}
-            />
-          </View>
-        ) : (
-          <View style={styles.inlineActions}>
-            <PrimaryButton
-              label={captureLabel}
-              onPress={handleTakePhoto}
-              disabled={takingPhoto || scanning || !canCapture}
-              style={[styles.inlineButton, styles.captureButton]}
-            />
-          </View>
-        )}
-
-        {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
+        <View style={styles.spacer} />
+        <View style={styles.bottomSection}>
+          <Text style={styles.hintText}>{faceHint}</Text>
+          {previewUri ? (
+            <View style={styles.previewActions}>
+              <Pressable
+                style={styles.secondaryAction}
+                onPress={handleReset}
+                disabled={scanning}
+              >
+                <Text style={styles.secondaryLabel}>Retake</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.primaryAction,
+                  scanning ? styles.disabledAction : null,
+                ]}
+                onPress={handleScan}
+                disabled={scanning}
+              >
+                <Text style={styles.primaryLabel}>
+                  {scanning ? "Scanning..." : "Run scan"}
+                </Text>
+              </Pressable>
+            </View>
+          ) : (
+            <View style={styles.captureRow}>
+              <Pressable
+                style={[
+                  styles.galleryButton,
+                  galleryDisabled ? styles.disabledAction : null,
+                ]}
+                onPress={handlePickImage}
+                disabled={galleryDisabled}
+              >
+                <Feather name="image" size={26} style={styles.galleryIcon} />
+              </Pressable>
+              <Pressable
+                onPress={handleTakePhoto}
+                disabled={captureDisabled}
+                style={({ pressed }) => [
+                  styles.captureButton,
+                  captureDisabled && styles.captureButtonDisabled,
+                  pressed && !captureDisabled ? styles.captureButtonPressed : null,
+                ]}
+              >
+                <Text style={styles.captureLabel}>{captureLabel}</Text>
+              </Pressable>
+            </View>
+          )}
+          {statusMessage ? <Text style={styles.statusText}>{statusMessage}</Text> : null}
+        </View>
       </View>
     </View>
   );

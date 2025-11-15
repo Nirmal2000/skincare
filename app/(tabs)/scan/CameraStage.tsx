@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { Animated, LayoutChangeEvent, Text, View } from "react-native";
+import { LayoutChangeEvent, Text, View } from "react-native";
 import { Image } from "expo-image";
 import {
   CameraView,
@@ -11,8 +11,6 @@ import {
 import type { UserProfile } from "@/features/auth/useSupabaseSession";
 import { Card, PrimaryButton } from "@/lib/ui/facefit-components";
 
-import { OVAL_H, OVAL_W } from "./constants";
-import { OvalMask } from "./OvalMask";
 import { scanStyles as styles } from "./styles";
 import type { FaceDetectionStatus } from "./useScanWorkflow";
 
@@ -24,7 +22,7 @@ type CameraStageProps = {
   cameraSupported: boolean;
   cameraGranted: boolean;
   cameraRef: React.RefObject<CameraView | null>;
-  lineY: Animated.Value;
+  facing: "front" | "back";
   onRequireAuth: () => void;
   onRequestCameraPermission: () => void;
   onFaceDetectionChange: (status: FaceDetectionStatus) => void;
@@ -38,12 +36,12 @@ export function CameraStage({
   cameraSupported,
   cameraGranted,
   cameraRef,
-  lineY,
+  facing,
   onRequireAuth,
   onRequestCameraPermission,
   onFaceDetectionChange,
 }: CameraStageProps) {
-  const maskLayoutRef = useRef({ width: OVAL_W, height: OVAL_H });
+  const maskLayoutRef = useRef({ width: 0, height: 0 });
   const lastStatusRef = useRef<FaceDetectionStatus | null>(null);
   const faceDetectorSettings = useMemo(
     () => ({
@@ -144,10 +142,8 @@ export function CameraStage({
 
   if (previewUri) {
     return (
-      <View style={styles.ovalShadow}>
-        <OvalMask>
-          <Image source={{ uri: previewUri }} style={styles.fill} />
-        </OvalMask>
+      <View style={styles.cameraLayer} onLayout={handleMaskLayout}>
+        <Image source={{ uri: previewUri }} style={styles.previewImage} />
       </View>
     );
   }
@@ -190,20 +186,14 @@ export function CameraStage({
   }
 
   return (
-    <View style={styles.ovalShadow} onLayout={handleMaskLayout}>
-      <OvalMask>
-        <CameraView
-          ref={cameraRef}
-          style={styles.fill}
-          facing="front"
-          faceDetectorSettings={faceDetectorSettings}
-          onFacesDetected={handleFacesDetected}
-        />
-        <Animated.View
-          pointerEvents="none"
-          style={[styles.scanLine, { transform: [{ translateY: lineY }] }]}
-        />
-      </OvalMask>
+    <View style={styles.cameraLayer} onLayout={handleMaskLayout}>
+      <CameraView
+        ref={cameraRef}
+        style={styles.cameraFill}
+        facing={facing}
+        faceDetectorSettings={faceDetectorSettings}
+        onFacesDetected={handleFacesDetected}
+      />
     </View>
   );
 }

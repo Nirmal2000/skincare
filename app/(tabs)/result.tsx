@@ -10,6 +10,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 import {
   fetchTaskStatus,
@@ -19,10 +20,7 @@ import {
   type FaceAnalysisTaskStatus,
   type RoutineIntake,
 } from "@/features/scans/face-analysis-api";
-import {
-  saveScan,
-  type ScanSource,
-} from "@/features/scans/scan-store";
+import { type ScanSource } from "@/features/scans/scan-store";
 import {
   isRoutineStreaming,
   markRoutineStreaming,
@@ -44,6 +42,7 @@ import {
   useRoutineIntake,
   type RoutineIntakeAnswers,
 } from "@/features/scans/routine-intake-store";
+import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
 
 import {
   FaceIssueOverlay,
@@ -131,6 +130,7 @@ export default function ResultScreen() {
   const params = useLocalSearchParams<Params>();
   const { settings } = useSettings();
   const { height: screenHeight } = useWindowDimensions();
+  const scrollHandler = useTabBarAutoHideScrollHandler();
 
   const taskId = toSingle(params.taskId);
   const encodedImageUri = toSingle(params.imageUri);
@@ -148,7 +148,6 @@ export default function ResultScreen() {
   const [result, setResult] = useState<FaceAnalysisResult | null>(initialStructured);
   const [textResult, setTextResult] = useState<string | null>(initialText ?? null);
   const [error, setError] = useState<string | null>(null);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [selectedIssueKey, setSelectedIssueKey] = useState<string | null>(null);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [routineMarkdown, setRoutineMarkdown] = useState<string | null>(null);
@@ -278,36 +277,6 @@ export default function ResultScreen() {
       }
     };
   }, [pollingActive, taskId]);
-
-  useEffect(() => {
-    if (readOnly) return;
-    if (!decodedImageUri || !source || !taskId) return;
-    if (!result || status !== "completed") return;
-    if (autoSaveStatus !== "idle") return;
-
-    setAutoSaveStatus("saving");
-    saveScan({
-      taskId,
-      tempImageUri: decodedImageUri,
-      retentionDays: settings.autoDeleteDays,
-      source,
-    })
-      .then(() => {
-        setAutoSaveStatus("saved");
-      })
-      .catch(() => {
-        setAutoSaveStatus("error");
-      });
-  }, [
-    autoSaveStatus,
-    decodedImageUri,
-    readOnly,
-    result,
-    settings.autoDeleteDays,
-    source,
-    status,
-    taskId,
-  ]);
 
   const stopRoutineStream = useCallback(() => {
     if (routineStreamCleanupRef.current) {
@@ -490,18 +459,17 @@ export default function ResultScreen() {
 
   return (
     <View style={styles.safeArea}>
-      <ScrollView
+      <Animated.ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         <View style={styles.section}>
           <Text style={styles.sectionHeading}>Analysis Status</Text>
           <View style={styles.card}>
             <Text style={styles.statusText}>{`Status: ${status ?? "pending"}`}</Text>
             {error ? <Text style={styles.error}>{error}</Text> : null}
-            {!readOnly && autoSaveStatus === "error" ? (
-              <Text style={styles.error}>Unable to save locally.</Text>
-            ) : null}
           </View>
         </View>
 
@@ -630,7 +598,7 @@ export default function ResultScreen() {
         </View>
 
         <PrimaryButton label="Back to Scan" onPress={() => router.replace("/(tabs)/scan")} />
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
