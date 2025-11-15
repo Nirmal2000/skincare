@@ -20,15 +20,16 @@ import {
   type FaceAnalysisResult,
   type FaceAnalysisTaskStatus,
 } from "@/features/scans/face-analysis-api";
+import { isTaskPending, unmarkTaskPending } from "@/features/scans/pending-task-store";
 import { useRoutineIntake, type RoutineIntakeAnswers } from "@/features/scans/routine-intake-store";
 import {
   isRoutineStreaming,
   markRoutineStreaming,
   unmarkRoutineStreaming,
 } from "@/features/scans/routine-stream-store";
-import { type ScanSource } from "@/features/scans/scan-store";
-import { useSettings } from "@/features/settings/settings-store";
+import { deleteScan, type ScanSource } from "@/features/scans/scan-store";
 import { PrimaryButton } from "@/lib/ui/facefit-components";
+import { MarkdownStream, type UseMarkdownStreamResult } from "react-native-markdown-stream";
 
 import {
   FaceIssueOverlay,
@@ -49,6 +50,16 @@ import {
   toSingle,
 } from "./result/utils";
 
+function extractFailureToken(message: string | null | undefined) {
+  if (!message) return null;
+  const match = message.match(/\[ERROR\]\s*([A-Za-z0-9_-]+)/);
+  return match?.[1] ?? null;
+}
+
+function logRoutineStream(...args: unknown[]) {
+  console.log("[RoutineStream]", ...args);
+}
+
 type Params = {
   taskId?: string | string[];
   imageUri?: string | string[];
@@ -57,12 +68,12 @@ type Params = {
   initialResult?: string | string[];
   initialText?: string | string[];
   landmarks?: string | string[];
+  initialRoutine?: string | string[];
 };
 
 export default function ResultScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<Params>();
-  const { settings } = useSettings();
   const { height: screenHeight } = useWindowDimensions();
   const scrollHandler = useTabBarAutoHideScrollHandler();
   const insets = useSafeAreaInsets();
@@ -76,10 +87,19 @@ export default function ResultScreen() {
   const readOnly = toSingle(params.readonly) === "true";
   const initialStructured = useMemo(() => parseJsonParam(params.initialResult), [params.initialResult]);
   const initialText = useMemo(() => decodeMaybe(toSingle(params.initialText)), [params.initialText]);
+  const initialRoutine = useMemo(
+    () => decodeMaybe(toSingle(params.initialRoutine)),
+    [params.initialRoutine],
+  );
   const landmarksParam = toSingle(params.landmarks);
   const landmarks = useMemo(() => parseLandmarksParam(landmarksParam), [landmarksParam]);
 
-  const [status, setStatus] = useState<FaceAnalysisTaskStatus | null>(taskId ? "queued" : null);
+  const initialStatus = useMemo<FaceAnalysisTaskStatus | null>(() => {
+    if (initialStructured) return "completed";
+    if (initialText) return "failed";
+    return taskId ? "queued" : null;
+  }, [initialStructured, initialText, taskId]);
+  const [status, setStatus] = useState<FaceAnalysisTaskStatus | null>(() => initialStatus);
   const [result, setResult] = useState<FaceAnalysisResult | null>(initialStructured);
   const [textResult, setTextResult] = useState<string | null>(initialText ?? null);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +110,10 @@ export default function ResultScreen() {
     "idle" | "requesting" | "streaming" | "done" | "error"
   >("idle");
   const [routineError, setRoutineError] = useState<string | null>(null);
-  const [pollingActive, setPollingActive] = useState(true);
+  const [pollingActive, setPollingActive] = useState(false);
+  const [isTrackedTask, setIsTrackedTask] = useState(false);
+  const failureMessage = error ?? textResult;
+  const failureToken = useMemo(() => extractFailureToken(failureMessage), [failureMessage]);
   const {
     intake: storedIntake,
     completed: intakeCompleted,
@@ -99,6 +122,56 @@ export default function ResultScreen() {
 
   const hasLoggedRef = useRef(false);
   const routineStreamCleanupRef = useRef<null | (() => void)>(null);
+  const routineMarkdownRef = useRef("");
+  const markdownStreamControlsRef = useRef<UseMarkdownStreamResult | null>(null);
+  const previousRoutineStatusRef = useRef<typeof routineStatus | null>(routineStatus);
+  const markdownTheme = useMemo(
+    () => ({
+      base: "light" as const,
+      colors: {
+        backgroundColor: "transparent",
+        textColor: "#2A2A2A",
+        mutedTextColor: "#6B6B6B",
+        linkColor: "#F18A1B",
+        quoteBorderColor: "#F18A1B",
+      },
+    }),
+    [],
+  );
+  const handleMarkdownReady = useCallback((controls: UseMarkdownStreamResult) => {
+    logRoutineStream("MarkdownStream ready");
+    markdownStreamControlsRef.current = controls;
+    controls.setContent(routineMarkdownRef.current);
+  }, []);
+
+  useEffect(() => {
+    routineMarkdownRef.current = routineMarkdown ?? "";
+    logRoutineStream("routineMarkdown updated", routineMarkdownRef.current.length);
+  }, [routineMarkdown]);
+
+  useEffect(() => {
+    return () => {
+      markdownStreamControlsRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const previousStatus = previousRoutineStatusRef.current;
+    if (previousStatus === routineStatus) return;
+    previousRoutineStatusRef.current = routineStatus;
+    logRoutineStream("status changed", previousStatus, "→", routineStatus);
+    if (routineStatus === "streaming") {
+      markdownStreamControlsRef.current?.reset();
+    }
+  }, [routineStatus]);
+
+  useEffect(() => {
+    if (routineStatus === "streaming") return;
+    const controls = markdownStreamControlsRef.current;
+    if (!controls) return;
+    logRoutineStream("syncing content to MarkdownStream", routineMarkdown?.length ?? 0);
+    controls.setContent(routineMarkdown ?? "");
+  }, [routineMarkdown, routineStatus]);
 
   const issuesSummary = useMemo(() => buildIssueSummaries(result?.issues), [result]);
   const selectedIssue = useMemo(() => {
@@ -139,7 +212,60 @@ export default function ResultScreen() {
   }, [decodedImageUri]);
 
   useEffect(() => {
-    setPollingActive(true);
+    setStatus(initialStatus);
+  }, [initialStatus]);
+
+  useEffect(() => {
+    setResult(initialStructured ?? null);
+    setTextResult(initialText ?? null);
+  }, [initialStructured, initialText]);
+
+  useEffect(() => {
+    if (initialRoutine == null) return;
+    setRoutineMarkdown(initialRoutine);
+    setRoutineStatus((prev) => (prev === "streaming" ? prev : "done"));
+    setRoutineError(null);
+  }, [initialRoutine]);
+
+  useEffect(() => {
+    stopRoutineStream();
+    setError(null);
+    setSelectedIssueKey(null);
+    setRoutineMarkdown(null);
+    routineMarkdownRef.current = "";
+    if (markdownStreamControlsRef.current) {
+      markdownStreamControlsRef.current.setContent("");
+    }
+    setRoutineStatus("idle");
+    setRoutineError(null);
+    logRoutineStream("resetting UI state for task", taskId);
+  }, [stopRoutineStream, taskId]);
+
+  useEffect(() => {
+    if (!taskId) {
+      setPollingActive(false);
+      setIsTrackedTask(false);
+      return;
+    }
+    let cancelled = false;
+    setPollingActive(false);
+    setIsTrackedTask(false);
+    (async () => {
+      try {
+        const tracked = await isTaskPending(taskId);
+        if (cancelled) return;
+        setIsTrackedTask(tracked);
+        setPollingActive(tracked);
+      } catch {
+        if (!cancelled) {
+          setIsTrackedTask(false);
+          setPollingActive(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [taskId]);
 
   useEffect(() => {
@@ -173,11 +299,15 @@ export default function ResultScreen() {
           }
           setError(null);
           setPollingActive(false);
+          setIsTrackedTask(false);
+          await unmarkTaskPending(taskId).catch(() => null);
           return;
         }
         if (payload.status === "failed") {
           setError(payload.error ?? "Task failed. Try again.");
           setPollingActive(false);
+          setIsTrackedTask(false);
+          await unmarkTaskPending(taskId).catch(() => null);
           return;
         }
         timer = setTimeout(poll, 5000);
@@ -199,6 +329,18 @@ export default function ResultScreen() {
     };
   }, [pollingActive, taskId]);
 
+  const handleFailureRetry = useCallback(async () => {
+    if (!taskId) return;
+    setPollingActive(false);
+    try {
+      await deleteScan(taskId);
+    } catch (scanError) {
+      console.warn("Failed to delete scan after failure", scanError);
+    }
+    await unmarkTaskPending(taskId).catch(() => null);
+    router.replace("/(tabs)/home");
+  }, [router, taskId]);
+
   const stopRoutineStream = useCallback(() => {
     if (routineStreamCleanupRef.current) {
       try {
@@ -207,6 +349,7 @@ export default function ResultScreen() {
         // ignore cleanup errors
       }
       routineStreamCleanupRef.current = null;
+      logRoutineStream("routine stream cleanup invoked");
     }
   }, []);
 
@@ -215,6 +358,7 @@ export default function ResultScreen() {
     setRoutineStatus("done");
     setRoutineError(null);
     setRoutineMarkdown((prev) => prev ?? "");
+    logRoutineStream("handleRoutineStreamComplete");
     if (taskId) {
       unmarkRoutineStreaming(taskId).catch(() => null);
     }
@@ -222,8 +366,10 @@ export default function ResultScreen() {
 
   const beginRoutineStream = useCallback(async () => {
     if (!taskId || routineStreamCleanupRef.current) {
+      logRoutineStream("Skipping stream start", { taskId, hasCleanup: !!routineStreamCleanupRef.current });
       return;
     }
+    logRoutineStream("Starting routine stream", { taskId });
     setRoutineStatus("streaming");
     setRoutineError(null);
     setRoutineMarkdown(null);
@@ -231,29 +377,55 @@ export default function ResultScreen() {
     try {
       const cleanup = await subscribeToRoutineStream(taskId, {
         onChunk: (chunk) => {
-          setRoutineMarkdown((prev) => (prev ? `${prev}${chunk}` : chunk));
+          const controls = markdownStreamControlsRef.current;
+          logRoutineStream("chunk received", {
+            length: typeof chunk === "string" ? chunk.length : null,
+            preview: typeof chunk === "string" ? chunk.slice(0, 40) : chunk,
+            hasControls: !!controls,
+          });
+          if (!controls) {
+            logRoutineStream("chunk dropped - controls not ready");
+          } else {
+            controls.appendChunk(chunk);
+          }
+          setRoutineMarkdown((prev) => {
+            const nextValue = prev ? `${prev}${chunk}` : chunk;
+            logRoutineStream("accumulated markdown length", typeof nextValue === "string" ? nextValue.length : 0);
+            return nextValue;
+          });
         },
         onDone: () => {
+          logRoutineStream("stream completed");
           handleRoutineStreamComplete();
         },
         onError: (err) => {
+          logRoutineStream("stream error", err);
           stopRoutineStream();
           setRoutineStatus("error");
           setRoutineError(err.message);
+          const serverError = err as Error & { isRoutineStreamServerError?: boolean };
+          if (serverError.isRoutineStreamServerError) {
+            handleFailureRetry().catch(() => null);
+          }
         },
       });
+      logRoutineStream("subscription established");
       routineStreamCleanupRef.current = cleanup;
     } catch (err) {
+      logRoutineStream("failed to start stream", err);
       await unmarkRoutineStreaming(taskId).catch(() => null);
       setRoutineStatus("error");
       const message =
         err instanceof Error ? err.message : "Unable to start routine stream.";
       setRoutineError(message);
     }
-  }, [handleRoutineStreamComplete, stopRoutineStream, taskId]);
+  }, [handleFailureRetry, handleRoutineStreamComplete, stopRoutineStream, taskId]);
 
   useEffect(() => {
-    if (!taskId) return () => undefined;
+    if (!taskId || !isTrackedTask) {
+      stopRoutineStream();
+      return () => undefined;
+    }
     let cancelled = false;
 
     (async () => {
@@ -268,7 +440,7 @@ export default function ResultScreen() {
       cancelled = true;
       stopRoutineStream();
     };
-  }, [beginRoutineStream, stopRoutineStream, taskId]);
+  }, [beginRoutineStream, isTrackedTask, stopRoutineStream, taskId]);
 
   const startRoutineWithAnswers = useCallback(
     async (answers: RoutineIntakeAnswers) => {
@@ -372,6 +544,20 @@ export default function ResultScreen() {
     );
   }
 
+  if (status === "failed" && !!failureToken) {
+    return (
+      <View style={styles.safeArea}>
+        <View style={styles.centered}>
+          <Text style={styles.title}>We couldn't finish that scan</Text>
+          <Text style={styles.subtitle}>
+            Something glitched on our side. Please start over and we'll try again.
+          </Text>
+          <PrimaryButton label="Try again" onPress={handleFailureRetry} />
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.safeArea}>
       <Animated.ScrollView
@@ -436,8 +622,19 @@ export default function ResultScreen() {
           <View style={styles.section}>
             <View style={[styles.card, styles.cardCentered]}>
               <Text style={[styles.cardHeading, styles.cardHeadingCentered]}>Personalized Routine</Text>
-              {routineMarkdown ? (
-                <Text style={[styles.bodyText, styles.cardFullWidth]}>{routineMarkdown}</Text>
+              {routineStatus === "streaming" || !!routineMarkdown ? (
+                <View style={[styles.markdownContainer, styles.cardFullWidth]}>
+                  <MarkdownStream
+                    autoStart={false}
+                    initialValue=""
+                    revealMode="word"
+                    revealDelay={24}
+                    onReady={handleMarkdownReady}
+                    theme={markdownTheme}
+                    enableImageLightbox
+                    enableCodeCopy
+                  />
+                </View>
               ) : (
                 <Text style={[styles.subtitle, styles.cardDescriptionCentered, styles.cardFullWidth]}>
                   {status === "completed"
@@ -456,7 +653,7 @@ export default function ResultScreen() {
               {routineStatus === "streaming" ? (
                 <View style={[styles.routineStreamingRow, styles.cardFullWidth]}>
                   <ActivityIndicator />
-                  <Text style={styles.subtitle}>Streaming your routine…</Text>
+                  {/* <Text style={styles.subtitle}>Streaming your routine…</Text> */}
                 </View>
               ) : null}
               {routineError ? (

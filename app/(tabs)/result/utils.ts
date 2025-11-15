@@ -8,13 +8,21 @@ export function toSingle(value?: string | string[] | null) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export function decodeMaybe(value: string | null) {
+export function decodeMaybe(value: string | null, maxAttempts = 2) {
   if (!value) return null;
-  try {
-    return decodeURIComponent(value);
-  } catch {
-    return value;
+  let decoded = value;
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) {
+        return next;
+      }
+      decoded = next;
+    } catch {
+      break;
+    }
   }
+  return decoded;
 }
 
 export function parseJsonParam(raw: string | string[] | undefined) {

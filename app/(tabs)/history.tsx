@@ -72,6 +72,9 @@ export default function HistoryScreen() {
     if (!task?.result && task?.error) {
       nextParams.initialText = encodeURIComponent(task.error);
     }
+    if (task?.routine_markdown) {
+      nextParams.initialRoutine = encodeURIComponent(task.routine_markdown);
+    }
     router.push({
       pathname: "/(tabs)/result",
       params: nextParams,

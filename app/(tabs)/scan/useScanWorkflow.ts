@@ -12,6 +12,7 @@ import {
 } from "@/features/scans/landmark-points";
 import { useScanPermissions } from "@/features/scans/permissions";
 import { saveScan, type ScanSource } from "@/features/scans/scan-store";
+import { markTaskPending } from "@/features/scans/pending-task-store";
 import { useSettings } from "@/features/settings/settings-store";
 
 export type FaceDetectionStatus = "no-face" | "off-target" | "ready" | "multi-face";
@@ -182,6 +183,11 @@ export function useScanWorkflow() {
 
       const ageValue = settings.ageBand ? Number(settings.ageBand) : undefined;
       const taskId = await startAnalysisTask(previewUri, controller.signal, ageValue);
+      try {
+        await markTaskPending(taskId);
+      } catch (markError) {
+        console.warn("Failed to persist active task", markError);
+      }
       try {
         await saveScan({
           taskId,

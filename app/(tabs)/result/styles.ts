@@ -154,6 +154,9 @@ export const resultStyles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
   },
+  markdownContainer: {
+    alignSelf: "stretch",
+  },
   routineCtaButton: {
     backgroundColor: "#F18A1B",
   },

@@ -312,6 +312,15 @@ function openEventStream(
         cleanup();
         return;
       }
+      if (payload.startsWith("[ERROR]")) {
+        const detail = payload.slice(7).trim() || "Routine stream reported an error.";
+        const error = new Error(detail) as Error & { isRoutineStreamServerError?: boolean };
+        error.name = "RoutineStreamServerError";
+        error.isRoutineStreamServerError = true;
+        callbacks.onError?.(error);
+        cleanup();
+        return;
+      }
       callbacks.onChunk(payload);
     }
   };
