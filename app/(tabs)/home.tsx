@@ -1,6 +1,5 @@
-import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 
 const ACCENT = "#F18A1B";
 const LOGO_SIZE = 220;
@@ -19,11 +18,9 @@ export default function Home() {
             style={styles.logoButton}
             onPress={() => router.push("/(tabs)/scan")}
           >
-            <Image
-              source={require("@/assets/images/fflogo.png")}
-              style={styles.logo}
-              contentFit="contain"
-            />
+            <View style={styles.logo}>
+              <Text style={styles.logoWordmark}>BETTERSKIN</Text>
+            </View>
           </Pressable>
         </View>
       </View>
@@ -66,7 +63,14 @@ const styles = StyleSheet.create({
     elevation: 18,
   },
   logo: {
-    width: "70%",
-    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  logoWordmark: {
+    fontSize: 26,
+    fontWeight: "700",
+    letterSpacing: 5,
+    textTransform: "uppercase",
+    color: "#0A0A0A",
   },
 });

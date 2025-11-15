@@ -5,12 +5,14 @@ import { Tabs } from "expo-router";
 import type { ComponentProps } from "react";
 import React from "react";
 import {
+  Dimensions,
   Pressable,
   StyleProp,
   StyleSheet,
   View,
   ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -19,10 +21,9 @@ const INACTIVE_COLOR = "rgba(255,255,255,0.8)";
 
 const BAR_BG = "#000000";
 const BAR_RADIUS = 28;
-const BAR_H = 64;           // overall pill height
+const BAR_H = 64; // overall pill height
 const ICON_SIZE = 24;
-const ITEM_W = 56;          // each tab footprint
-const ITEM_GAP = 10;        // space between items
+const MAX_BAR_WIDTH = 360;
 
 function TabIcon({
   name,
@@ -51,38 +52,35 @@ type FloatingTabBarProps = BottomTabBarProps & {
  * Fully custom compact black pill tab bar (3 tabs).
  * Uses Pressable to control navigation and avoid any default white containers.
  */
-function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
-  // Only include screens that are meant to be shown as tabs
-  const routes = state.routes.filter((r) => {
-    const o = descriptors[r.key]?.options;
-    return o?.tabBarButton !== null && o?.tabBarStyle !== null;
-  });
+const VISIBLE_TABS = new Set(["home", "history", "membership", "settings"]);
 
-  const count = routes.length;
-  const barWidth = ITEM_W * count + ITEM_GAP * (count - 1) + 24 * 2; // inner padding 24
+function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
+  const insets = useSafeAreaInsets();
+  // Only include screens that are meant to be shown as tabs
+  const routes = state.routes.filter((r) => VISIBLE_TABS.has(r.name));
+
+  const windowWidth = Dimensions.get("window").width;
+  const barWidth = Math.min(MAX_BAR_WIDTH, windowWidth - 32);
 
   return (
     <View
       pointerEvents="box-none"
-      style={[
-        styles.wrap,
-        { paddingBottom: 12 },
-      ]}
+      style={[styles.wrap, { paddingBottom: insets.bottom + 20 }]}
     >
-    <View
-      style={[
-        styles.pill,
-        {
-          width: barWidth,
-          height: BAR_H,
-          alignSelf: "center",
-          maxWidth: "60%",        // prevents full-width stretch
-        },
-      ]}
-    >
-        <View style={[styles.row, { gap: ITEM_GAP }]}>
-          {routes.map((route, index) => {
-            const isFocused = state.index === index;
+      <View
+        style={[
+          styles.pill,
+          {
+            width: barWidth,
+            height: BAR_H,
+            alignSelf: "center",
+          },
+        ]}
+      >
+        <View style={styles.row}>
+          {routes.map((route) => {
+            const originalIndex = state.routes.findIndex((r) => r.key === route.key);
+            const isFocused = state.index === originalIndex;
             const options = descriptors[route.key]?.options || {};
             const icon =
               options.tabBarIcon ??
@@ -113,7 +111,7 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
                 onLongPress={onLongPress}
                 accessibilityRole="button"
                 accessibilityState={isFocused ? { selected: true } : {}}
-                style={[styles.item, { width: ITEM_W }]}
+                style={styles.item}
                 hitSlop={8}
               >
                 {/* Render the icon via the screen's tabBarIcon for consistency */}
@@ -156,7 +154,7 @@ export default function TabsLayout() {
             <TabIcon name="home-outline" focused={focused} />
           ),
         }}
-      />
+      />      
       <Tabs.Screen
         name="history"
         options={{
@@ -183,7 +181,7 @@ export default function TabsLayout() {
             <TabIcon name="settings-outline" focused={focused} />
           ),
         }}
-      />
+      />      
       {/*
       // Example hidden screen (won't appear in the bar)
       <Tabs.Screen
@@ -209,7 +207,7 @@ const styles = StyleSheet.create({
   pill: {
     backgroundColor: BAR_BG,
     borderRadius: BAR_RADIUS,
-    paddingHorizontal: 24,
+    paddingHorizontal: 25,
     // subtle elevation / shadow
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
@@ -221,10 +219,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    flex: 1,
     height: "100%",
+    gap: 4,
   },
   item: {
+    flex: 1,
     height: "100%",
     alignItems: "center",
     justifyContent: "center",
