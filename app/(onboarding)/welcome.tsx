@@ -1,8 +1,6 @@
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import {
-  Image,
-  ImageBackground,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -20,6 +18,8 @@ import Animated, {
   SlideOutRight,
 } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Asset } from "expo-asset";
+import { Image as ExpoImage } from "expo-image";
 import { Feather } from "@expo/vector-icons";
 
 import { completeOnboarding, useOnboarding } from "@/features/onboarding/onboarding-store";
@@ -30,6 +30,8 @@ import { IntroSlideCard } from "./components/IntroSlideCard";
 import { ACCENT_COLOR, DEFAULT_AGE, INTRO_BG, INTRO_CARD_STYLE, SLIDES } from "./welcome.constants";
 
 const HERO_IMAGE = require("../../docs/ob1.png");
+const HERO_ASSET = Asset.fromModule(HERO_IMAGE);
+HERO_ASSET.downloadAsync().catch(() => {});
 const HERO_HEADLINE =
   "Let's Understand Your Skin.\nAdvanced AI analysis for routines that actually work.";
 
@@ -80,18 +82,15 @@ export default function Welcome() {
     goToSlide(Math.max(currentSlide - 1, 0));
   }
 
-  useEffect(() => {
-    const source = Image.resolveAssetSource(HERO_IMAGE);
-    Image.prefetch(source.uri).catch(() => {});
-  }, []);
-
-  const enteringAnimation =
-    animationDirection.current === "forward"
+  const enteringAnimation = isHeroSlide
+    ? SlideInRight.duration(220).easing(Easing.out(Easing.cubic))
+    : animationDirection.current === "forward"
       ? SlideInRight.duration(220).easing(Easing.out(Easing.cubic))
       : SlideInLeft.duration(220).easing(Easing.out(Easing.cubic));
 
-  const exitingAnimation =
-    animationDirection.current === "forward"
+  const exitingAnimation = isHeroSlide
+    ? SlideOutLeft.duration(200).easing(Easing.in(Easing.cubic))
+    : animationDirection.current === "forward"
       ? SlideOutLeft.duration(200).easing(Easing.in(Easing.cubic))
       : SlideOutRight.duration(200).easing(Easing.in(Easing.cubic));
 
@@ -141,7 +140,14 @@ export default function Welcome() {
         layout={LinearTransition.duration(200)}
       >
         {isHeroSlide ? (
-          <ImageBackground source={HERO_IMAGE} style={styles.heroBackground} resizeMode="cover">
+          <View style={styles.heroBackground}>
+            <ExpoImage
+              source={HERO_ASSET.localUri ? { uri: HERO_ASSET.localUri } : HERO_IMAGE}
+              style={StyleSheet.absoluteFillObject}
+              contentFit="cover"
+              transition={0}
+              cachePolicy="memory-disk"
+            />
             <View
               style={[
                 styles.heroOverlay,
@@ -164,7 +170,7 @@ export default function Welcome() {
                 />
               </View>
             </View>
-          </ImageBackground>
+          </View>
         ) : (
           <View
             style={[
@@ -220,6 +226,7 @@ const styles = StyleSheet.create({
   },
   heroBackground: {
     flex: 1,
+    backgroundColor: "#000000",
   },
   heroOverlay: {
     flex: 1,
