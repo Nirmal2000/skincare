@@ -23,11 +23,12 @@ import { Image as ExpoImage } from "expo-image";
 import { Feather } from "@expo/vector-icons";
 
 import { completeOnboarding, useOnboarding } from "@/features/onboarding/onboarding-store";
-import { Card } from "@/lib/ui/facefit-components";
+import { Card, Chip } from "@/lib/ui/facefit-components";
+import { saveRoutineIntake, type RoutineIntakeAnswers } from "@/features/scans/routine-intake-store";
 
 import { AgeScroller } from "./components/AgeScroller";
 import { IntroSlideCard } from "./components/IntroSlideCard";
-import { ACCENT_COLOR, DEFAULT_AGE, INTRO_BG, INTRO_CARD_STYLE, SLIDES } from "./welcome.constants";
+import { ACCENT_COLOR, DEFAULT_AGE, INTRO_BG, INTRO_CARD_STYLE, INTRO_TEXT, INTRO_SUBTEXT, ROUTINE_QUESTIONS, SLIDES } from "./welcome.constants";
 
 const HERO_IMAGE = require("../../docs/ob1.png");
 const HERO_ASSET = Asset.fromModule(HERO_IMAGE);
@@ -48,16 +49,32 @@ export default function Welcome() {
   const [ageValue, setAgeValue] = useState<number | null>(initialAge);
   const [saving, setSaving] = useState(false);
 
-  const totalSlides = SLIDES.length + 1;
+  const [routineAnswers, setRoutineAnswers] = useState<Partial<RoutineIntakeAnswers>>({
+    sensitivity: "medium",
+    pregnancy: "prefer_not_to_say",
+    rxTopical: "unsure",
+    allergies: ["none"],
+    fitzpatrick: "unsure",
+    currentActives: ["none"],
+  });
+
+  const totalSlides = SLIDES.length + 1 + ROUTINE_QUESTIONS.length;
   const relativeSlideIndex = currentSlide - 1;
   const slide = useMemo(
-    () => (relativeSlideIndex >= 0 ? SLIDES[relativeSlideIndex] : null),
+    () => (relativeSlideIndex >= 0 && relativeSlideIndex < SLIDES.length ? SLIDES[relativeSlideIndex] : null),
     [relativeSlideIndex],
   );
+
   const isHeroSlide = currentSlide === 0;
+  const ageSlideIndex = SLIDES.length;
+  const isAgeSlide = currentSlide === ageSlideIndex;
+  const routineQuestionsStartIndex = ageSlideIndex + 1;
+  const routineQuestionIndex = currentSlide - routineQuestionsStartIndex;
+  const isRoutineQuestionSlide = routineQuestionIndex >= 0 && routineQuestionIndex < ROUTINE_QUESTIONS.length;
   const isFinalSlide = currentSlide === totalSlides - 1;
-  const isIntroSlide = !isHeroSlide && !isFinalSlide;
-  const canContinue = isFinalSlide ? Boolean(ageValue) : true;
+  const isIntroSlide = !isHeroSlide && !isAgeSlide && !isRoutineQuestionSlide;
+
+  const canContinue = isAgeSlide ? Boolean(ageValue) : true;
 
   function goToSlide(nextIndex: number) {
     animationDirection.current = nextIndex > currentSlide ? "forward" : "back";
@@ -74,6 +91,9 @@ export default function Welcome() {
 
     setSaving(true);
     await completeOnboarding({ ageBand: String(ageValue), consentGranted: true });
+
+    await saveRoutineIntake(routineAnswers as RoutineIntakeAnswers);
+
     setSaving(false);
     router.replace("/(tabs)/home");
   }
@@ -121,6 +141,73 @@ export default function Welcome() {
       ) : null}
     </ScrollView>
   );
+
+  const routineQuestionContent = useMemo(() => {
+    if (!isRoutineQuestionSlide || routineQuestionIndex < 0) return null;
+    const question = ROUTINE_QUESTIONS[routineQuestionIndex];
+    if (!question) return null;
+
+    const handleSingleSelect = (value: string) => {
+      setRoutineAnswers((prev) => ({ ...prev, [question.id]: value }));
+    };
+
+    const handleMultiToggle = (value: string) => {
+      const currentArray = (routineAnswers[question.id as keyof RoutineIntakeAnswers] as string[]) || [];
+      const exclusive = value === "none" || value === "unsure";
+      let next: string[];
+
+      if (currentArray.includes(value)) {
+        next = currentArray.filter((v) => v !== value);
+      } else {
+        next = exclusive
+          ? [value]
+          : currentArray.filter((v) => v !== "none" && v !== "unsure");
+        next = [...next, value];
+      }
+
+      if (!next.length) {
+        next = ["none"];
+      }
+
+      setRoutineAnswers((prev) => ({ ...prev, [question.id]: Array.from(new Set(next)) }));
+    };
+
+    const currentValue = routineAnswers[question.id as keyof RoutineIntakeAnswers];
+    const selectedValues = Array.isArray(currentValue) ? currentValue : [];
+    const selectedSingleValue = typeof currentValue === "string" ? currentValue : null;
+
+    return (
+      <View style={styles.questionContainer}>
+        <View style={styles.questionHeader}>
+          <Text style={styles.questionTitle}>{question.title}</Text>
+          {question.description ? (
+            <Text style={styles.questionDescription}>{question.description}</Text>
+          ) : null}
+        </View>
+        <View style={styles.questionOptions}>
+          {question.options.map((option) => {
+            const isSelected =
+              question.type === "single"
+                ? selectedSingleValue === option.value
+                : selectedValues.includes(option.value);
+
+            return (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={isSelected}
+                onPress={() =>
+                  question.type === "single"
+                    ? handleSingleSelect(option.value)
+                    : handleMultiToggle(option.value)
+                }
+              />
+            );
+          })}
+        </View>
+      </View>
+    );
+  }, [isRoutineQuestionSlide, routineQuestionIndex, routineAnswers]);
 
   const containerBg = isHeroSlide ? "#000000" : INTRO_BG;
   const showBack = currentSlide > 0;
@@ -181,7 +268,9 @@ export default function Welcome() {
             <View style={styles.topRow}>
               <BackButton visible={showBack} onPress={handleBack} theme={backButtonTheme} />
             </View>
-            <View style={styles.slideBody}>{isIntroSlide ? introContent : ageContent}</View>
+            <View style={styles.slideBody}>
+              {isIntroSlide ? introContent : isAgeSlide ? ageContent : routineQuestionContent}
+            </View>
             <View style={styles.slideFooter}>
               <AdvanceButton
                 label={advanceLabel}
@@ -307,9 +396,36 @@ const styles = StyleSheet.create({
   backButtonPressed: {
     opacity: 0.8,
   },
-  backButtonLabel: {
-    fontSize: 20,
-    fontWeight: "600",
+  questionContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 24,
+    gap: 32,
+  },
+  questionHeader: {
+    width: "100%",
+    gap: 12,
+  },
+  questionTitle: {
+    fontSize: 28,
+    fontWeight: "700",
+    color: INTRO_TEXT,
+    textAlign: "center",
+  },
+  questionDescription: {
+    fontSize: 14,
+    color: INTRO_SUBTEXT,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  questionOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    justifyContent: "center",
+    width: "100%",
+    maxWidth: 420,
   },
 });
 
@@ -325,18 +441,17 @@ function BackButton({ visible, onPress, theme = "dark" }: BackButtonProps) {
   }
 
   const isLight = theme === "light";
+  const iconColor = isLight ? "#FFFFFF" : "#1D1207";
+
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.backButton,
-        isLight ? styles.backButtonLight : styles.backButtonDark,
         pressed && styles.backButtonPressed,
       ]}
     >
-      <Text style={[styles.backButtonLabel, { color: isLight ? "#FFFFFF" : "#1D1207" }]}>
-        {"<"}
-      </Text>
+      <Feather name="chevron-left" size={24} color={iconColor} />
     </Pressable>
   );
 }

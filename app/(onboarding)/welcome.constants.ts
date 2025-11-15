@@ -49,3 +49,85 @@ export const SLIDES = [
 ] as const;
 
 export type SlideContent = (typeof SLIDES)[number];
+
+export const ROUTINE_QUESTIONS = [
+  {
+    id: "sensitivity",
+    title: "How does your skin react to new products?",
+    description: "Answering helps us pick the right strength for actives.",
+    type: "single",
+    options: [
+      { value: "low", label: "Low" },
+      { value: "medium", label: "Medium" },
+      { value: "high", label: "High" },
+      { value: "unsure", label: "Unsure" },
+    ],
+  },
+  {
+    id: "pregnancy",
+    title: "Are you pregnant, trying, or nursing?",
+    description: "We skip retinoids and hydroquinone when this is yes or unspecified.",
+    type: "single",
+    options: [
+      { value: "yes", label: "Yes" },
+      { value: "no", label: "No" },
+      { value: "prefer_not_to_say", label: "Prefer not to say" },
+    ],
+  },
+  {
+    id: "rxTopical",
+    title: "Prescription creams on your face?",
+    description: "Let us know if you already use tretinoin, adapalene, steroids, etc.",
+    type: "single",
+    options: [
+      { value: "yes", label: "Yes" },
+      { value: "no", label: "No" },
+      { value: "unsure", label: "Unsure" },
+    ],
+  },
+  {
+    id: "allergies",
+    title: "Avoid any of these?",
+    description: null,
+    type: "multi",
+    options: [
+      { value: "fragrance", label: "Fragrance" },
+      { value: "lanolin", label: "Lanolin" },
+      { value: "nut_oils", label: "Nut oils" },
+      { value: "chemical_sunscreen_filters", label: "Chemical SPF filters" },
+      { value: "parabens", label: "Parabens" },
+      { value: "none", label: "None" },
+      { value: "unsure", label: "Unsure" },
+    ],
+  },
+  {
+    id: "fitzpatrick",
+    title: "How does your bare skin react to sun?",
+    description: null,
+    type: "single",
+    options: [
+      { value: "I-II", label: "I–II (burns easily)" },
+      { value: "III-IV", label: "III–IV (sometimes burns)" },
+      { value: "V-VI", label: "V–VI (rarely burns)" },
+      { value: "unsure", label: "Unsure" },
+    ],
+  },
+  {
+    id: "currentActives",
+    title: "Already using any of these?",
+    description: null,
+    type: "multi",
+    options: [
+      { value: "retinoid_retinol", label: "Retinoid / retinol" },
+      { value: "benzoyl_peroxide", label: "Benzoyl peroxide" },
+      { value: "salicylic_acid", label: "Salicylic acid" },
+      { value: "vitamin_c", label: "Vitamin C" },
+      { value: "aha", label: "AHA" },
+      { value: "azelaic_acid", label: "Azelaic acid" },
+      { value: "none", label: "None" },
+      { value: "unsure", label: "Unsure" },
+    ],
+  },
+] as const;
+
+export type RoutineQuestion = (typeof ROUTINE_QUESTIONS)[number];
