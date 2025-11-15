@@ -9,7 +9,7 @@ import { handleSupabaseRedirect, supabase } from "@/features/auth/supabase-clien
 import { useSupabaseSession } from "@/features/auth/useSupabaseSession";
 import { PrimaryButton, SecondaryButton } from "@/lib/ui/facefit-components";
 
-const REDIRECT_URL = "facefit://auth";
+const REDIRECT_URL = "betterskin://auth";
 
 export default function SignInScreen() {
   const router = useRouter();

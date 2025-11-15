@@ -14,7 +14,7 @@ export default function Home() {
         <View style={styles.logoShell}>
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Start FaceFit scan"
+            accessibilityLabel="Start BetterSkin scan"
             hitSlop={16}
             style={styles.logoButton}
             onPress={() => router.push("/(tabs)/scan")}

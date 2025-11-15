@@ -72,7 +72,7 @@ export function BottomControls({
           fontSize: 13,
         }}
       >
-        By continuing you agree to FaceFit storing your age information locally.
+        By continuing you agree to BetterSkin storing your age information locally.
       </Text>
     </View>
   );

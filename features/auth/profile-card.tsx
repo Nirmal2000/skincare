@@ -27,7 +27,7 @@ export function ProfileCard({
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.name}>{profile.name ?? "FaceFit user"}</Text>
+          <Text style={styles.name}>{profile.name ?? "BetterSkin user"}</Text>
           <Text style={styles.meta}>{profile.email ?? "No email"}</Text>
         </View>
       </View>

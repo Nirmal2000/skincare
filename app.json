@@ -1,22 +1,24 @@
 {
   "expo": {
-    "name": "FaceFit",
-    "slug": "facefit",
+    "name": "BetterSkin",
+    "slug": "betterskin",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "facefit",
+    "scheme": "betterskin",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
+      "buildNumber": "3",
       "supportsTablet": true,
       "infoPlist": {
-        "NSCameraUsageDescription": "Allow FaceFit to access your camera for live face detection.",
+        "NSCameraUsageDescription": "Allow BetterSkin to access your camera for live face detection.",
         "NSMicrophoneUsageDescription": "Microphone access is required only when recording video with audio during capture.",
-        "NSPhotoLibraryUsageDescription": "FaceFit imports photos from your library so you can scan existing images.",
-        "NSPhotoLibraryAddUsageDescription": "FaceFit saves your scan photos locally within the photo library."
+        "NSPhotoLibraryUsageDescription": "BetterSkin imports photos from your library so you can scan existing images.",
+        "NSPhotoLibraryAddUsageDescription": "BetterSkin saves your scan photos locally within the photo library.",
+        "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.anonymous.facefit"
+      "bundleIdentifier": "com.thebetterskin.betterskin"
     },
     "android": {
       "adaptiveIcon": {
@@ -33,7 +35,7 @@
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.READ_EXTERNAL_STORAGE"
       ],
-      "package": "com.anonymous.facefit"
+      "package": "com.thebetterskin.betterskin"
     },
     "web": {
       "output": "static",
@@ -56,22 +58,22 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Allow FaceFit to access your camera for skin scans.",
-          "microphonePermission": "Allow FaceFit to access your microphone when recording scan videos.",
+          "cameraPermission": "Allow BetterSkin to access your camera for skin scans.",
+          "microphonePermission": "Allow BetterSkin to access your microphone when recording scan videos.",
           "recordAudioAndroid": false
         }
       ],
       [
         "expo-image-picker",
         {
-          "photosPermission": "FaceFit needs access to your photos so you can upload pictures for analysis.",
-          "cameraPermission": "FaceFit needs camera access to capture new photos for analysis."
+          "photosPermission": "BetterSkin needs access to your photos so you can upload pictures for analysis.",
+          "cameraPermission": "BetterSkin needs camera access to capture new photos for analysis."
         }
       ],
       [
         "react-native-face-detector-camera",
         {
-          "cameraPermission": "Allow FaceFit to access your camera for live face detection."
+          "cameraPermission": "Allow BetterSkin to access your camera for live face detection."
         }
       ]
     ],

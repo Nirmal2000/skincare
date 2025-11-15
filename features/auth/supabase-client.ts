@@ -25,7 +25,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 
 // Deep-link prefix
-const REDIRECT_PREFIX = "facefit://auth";
+const REDIRECT_PREFIX = "betterskin://auth";
 export const SUPABASE_REDIRECT_PREFIX = REDIRECT_PREFIX;
 
 // Handle redirect URLs

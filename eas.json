@@ -16,6 +16,14 @@
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "ascAppId": "6755253908",
+        "appleId": "justinsuji99@gmail.com",
+        "ascApiKeyPath": "./AuthKey_6M67YD2K2J.p8",
+        "ascApiKeyIssuerId": "48c21c6b-9bd1-4593-b821-907d004e21b5",
+        "ascApiKeyId": "6M67YD2K2J"
+      }
+    }
   }
 }

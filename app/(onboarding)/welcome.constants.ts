@@ -43,7 +43,7 @@ export const SLIDES = [
   },
   {
     title: "Age helps personalize.",
-    body: "Choose your precise age so FaceFit can tailor non-medical tips.",
+    body: "Choose your precise age so BetterSkin can tailor non-medical tips.",
     iconName: "calendar",
   },
 ] as const;

@@ -47,7 +47,7 @@ export default function EditAgeScreen() {
         <View style={{ gap: 12 }}>
           <Text style={styles.title}>Update your age</Text>
           <Text style={styles.subtitle}>
-            FaceFit uses your age to personalize care tips. Adjust anytime to keep
+            BetterSkin uses your age to personalize care tips. Adjust anytime to keep
             recommendations accurate.
           </Text>
         </View>

@@ -38,7 +38,7 @@ import {
 
 const PLAN_COPY = [
   {
-    title: "Unlimited FaceFit scans",
+    title: "Unlimited BetterSkin scans",
     body: "Keep every analysis result and revisit improvements anytime.",
     icon: "repeat",
   },
@@ -192,8 +192,8 @@ function LegacyMembershipScreen() {
   );
 
   const statusCopy = entitlementActive
-    ? "You’re on BetterSkin Pro. Enjoy all premium FaceFit perks."
-    : "Upgrade to BetterSkin Pro to unlock the full FaceFit experience.";
+    ? "You’re on BetterSkin Pro. Enjoy all premium BetterSkin perks."
+    : "Upgrade to BetterSkin Pro to unlock the full BetterSkin experience.";
 
   const handleManualPurchase = useCallback(async () => {
     if (!selectedPackage) return;
