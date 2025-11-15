@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useAuthGate } from "@/features/auth/useAuthGate";
 import { getExpiryBadge, type ScanRecord } from "@/features/scans/scan-store";
@@ -27,6 +28,7 @@ export default function HistoryScreen() {
   const { profile, loading: authLoading, requireAuth } = useAuthGate();
   const { records, loading, refreshing, refresh, remove } = useScanHistory();
   const scrollHandler = useTabBarAutoHideScrollHandler();
+  const insets = useSafeAreaInsets();
 
   useFocusEffect(
     useCallback(() => {
@@ -37,7 +39,7 @@ export default function HistoryScreen() {
   if (!profile) {
     return (
       <View style={styles.safeArea}>
-        <View style={[styles.container, { justifyContent: "center", gap: 16 }]}>
+        <View style={[styles.container, { paddingTop: insets.top + 16, justifyContent: "center", gap: 16 }]}>
           <Card style={{ gap: 12 }}>
             <Text style={styles.title}>Sign in to view history</Text>
             <Text style={styles.subtitle}>
@@ -93,7 +95,7 @@ export default function HistoryScreen() {
 
   return (
     <View style={styles.safeArea}>
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
         <View style={{ gap: 8 }}>
           <Text style={styles.title}>History</Text>
           <Text style={styles.subtitle}>

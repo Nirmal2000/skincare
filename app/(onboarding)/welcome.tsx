@@ -1,5 +1,5 @@
-import { useRouter } from "expo-router";
-import { useMemo, useRef, useState } from "react";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   Pressable,
   ScrollView,
@@ -38,6 +38,7 @@ const HERO_HEADLINE =
 
 export default function Welcome() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ returnTo?: string; taskId?: string }>();
   const { onboarding } = useOnboarding();
   const insets = useSafeAreaInsets();
 
@@ -58,6 +59,16 @@ export default function Welcome() {
     currentActives: ["none"],
   });
 
+  const destination = useMemo(() => {
+    if (params.returnTo === "result" && params.taskId) {
+      return `/(tabs)/result?taskId=${encodeURIComponent(params.taskId)}`;
+    }
+    if (params.returnTo === "settings") {
+      return "/(tabs)/settings";
+    }
+    return "/(tabs)/home";
+  }, [params.returnTo, params.taskId]);
+
   const totalSlides = SLIDES.length + 1 + ROUTINE_QUESTIONS.length;
   const relativeSlideIndex = currentSlide - 1;
   const slide = useMemo(
@@ -75,11 +86,36 @@ export default function Welcome() {
   const isIntroSlide = !isHeroSlide && !isAgeSlide && !isRoutineQuestionSlide;
 
   const canContinue = isAgeSlide ? Boolean(ageValue) : true;
+  const canShowSkip = isAgeSlide || isRoutineQuestionSlide;
 
   function goToSlide(nextIndex: number) {
     animationDirection.current = nextIndex > currentSlide ? "forward" : "back";
     setCurrentSlide(Math.min(Math.max(nextIndex, 0), totalSlides - 1));
   }
+
+  const completeFlow = useCallback(
+    async ({ saveAnswers, requireAge }: { saveAnswers: boolean; requireAge: boolean }) => {
+      const resolvedAge =
+        ageValue ??
+        (requireAge ? null : onboarding.ageBand ? Number(onboarding.ageBand) : DEFAULT_AGE);
+      if (!resolvedAge) {
+        return;
+      }
+      setSaving(true);
+      await completeOnboarding({ ageBand: String(resolvedAge), consentGranted: true });
+      if (saveAnswers) {
+        await saveRoutineIntake(routineAnswers as RoutineIntakeAnswers);
+      }
+      setSaving(false);
+      router.replace(destination);
+    },
+    [ageValue, destination, onboarding.ageBand, router, routineAnswers],
+  );
+
+  const handleSkip = useCallback(() => {
+    if (saving) return;
+    void completeFlow({ saveAnswers: false, requireAge: false });
+  }, [completeFlow, saving]);
 
   async function handleContinue() {
     if (!isFinalSlide) {
@@ -89,13 +125,7 @@ export default function Welcome() {
 
     if (!ageValue) return;
 
-    setSaving(true);
-    await completeOnboarding({ ageBand: String(ageValue), consentGranted: true });
-
-    await saveRoutineIntake(routineAnswers as RoutineIntakeAnswers);
-
-    setSaving(false);
-    router.replace("/(tabs)/home");
+    await completeFlow({ saveAnswers: true, requireAge: true });
   }
 
   function handleBack() {
@@ -243,6 +273,11 @@ export default function Welcome() {
             >
               <View style={styles.topRow}>
                 <BackButton visible={showBack} onPress={handleBack} theme="light" />
+                {canShowSkip ? (
+                  <SkipButton onPress={handleSkip} disabled={saving} />
+                ) : (
+                  <View style={{ width: 48, height: 48 }} />
+                )}
               </View>
               <View style={styles.heroCopy}>
                 <Text style={styles.heroLogo}>BETTERSKIN</Text>
@@ -267,6 +302,11 @@ export default function Welcome() {
           >
             <View style={styles.topRow}>
               <BackButton visible={showBack} onPress={handleBack} theme={backButtonTheme} />
+              {canShowSkip ? (
+                <SkipButton onPress={handleSkip} disabled={saving} />
+              ) : (
+                <View style={{ width: 48, height: 48 }} />
+              )}
             </View>
             <View style={styles.slideBody}>
               {isIntroSlide ? introContent : isAgeSlide ? ageContent : routineQuestionContent}
@@ -323,7 +363,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   topRow: {
-    alignItems: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   heroCopy: {
     marginTop: "15%",
@@ -427,6 +469,21 @@ const styles = StyleSheet.create({
     width: "100%",
     maxWidth: 420,
   },
+  skipButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  skipButtonPressed: {
+    opacity: 0.7,
+  },
+  skipButtonDisabled: {
+    opacity: 0.4,
+  },
+  skipButtonLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: ACCENT_COLOR,
+  },
 });
 
 type BackButtonProps = {
@@ -452,6 +509,27 @@ function BackButton({ visible, onPress, theme = "dark" }: BackButtonProps) {
       ]}
     >
       <Feather name="chevron-left" size={24} color={iconColor} />
+    </Pressable>
+  );
+}
+
+type SkipButtonProps = {
+  onPress: () => void;
+  disabled?: boolean;
+};
+
+function SkipButton({ onPress, disabled }: SkipButtonProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      style={({ pressed }) => [
+        styles.skipButton,
+        pressed && !disabled && styles.skipButtonPressed,
+        disabled && styles.skipButtonDisabled,
+      ]}
+    >
+      <Text style={styles.skipButtonLabel}>Skip for now</Text>
     </Pressable>
   );
 }

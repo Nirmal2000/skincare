@@ -8,28 +8,29 @@ import {
   Pressable,
   StyleSheet,
   Text,
-  View
+  View,
 } from "react-native";
-import Animated from "react-native-reanimated";
 import Purchases, {
   type CustomerInfo,
   type PurchasesOffering,
   type PurchasesPackage,
 } from "react-native-purchases";
 import RevenueCatUI from "react-native-purchases-ui";
+import Animated from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 // 1. Make sure this file has your REAL 'appl_...' key
 import {
   BETTERSKIN_PRO_ENTITLEMENT,
   ensureRevenueCatConfigured,
 } from "@/features/membership/revenuecat";
+import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
 import {
   Card,
   Chip,
   PrimaryButton,
   SecondaryButton,
 } from "@/lib/ui/facefit-components";
-import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
 import {
   ACCENT_COLOR,
   INTRO_BG,
@@ -83,6 +84,7 @@ export default function MembershipScreen() {
 function HostedPaywallScreen() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     ensureRevenueCatConfigured();
@@ -90,7 +92,7 @@ function HostedPaywallScreen() {
 
   return (
     <View style={styles.paywallSafeArea}>
-      <View style={styles.paywallHeader}>
+      <View style={[styles.paywallHeader, { paddingTop: insets.top + 24 }]}>
         <Text style={styles.paywallTitle}>BetterSkin Pro</Text>
         <Text style={styles.paywallSubtitle}>Manage or upgrade below</Text>
       </View>
@@ -145,6 +147,7 @@ function HostedPaywallScreen() {
 //
 function LegacyMembershipScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -272,19 +275,11 @@ function LegacyMembershipScreen() {
   return (
     <View style={styles.safeArea}>
       <Animated.ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 16 }]}
         bounces={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
-        <View style={styles.headerRow}>
-          <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
-            <Feather name="chevron-left" size={24} color={INTRO_TEXT} />
-            <Text style={styles.backLabel}>Back</Text>
-          </Pressable>
-          <Text style={styles.screenTitle}>Membership</Text>
-        </View>
-
         <Card style={[styles.card, styles.heroCard]}>
           <Text style={styles.eyebrow}>BetterSkin Pro</Text>
           <Text style={styles.heroTitle}>Natural progress, on your terms.</Text>

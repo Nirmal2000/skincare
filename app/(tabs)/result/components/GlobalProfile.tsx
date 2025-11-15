@@ -12,13 +12,13 @@ type Props = {
 };
 
 export function GlobalProfile({ profile }: Props) {
-  const entries: Array<{ label: string; value: string }> = [];
+  const entries: { label: string; value: string }[] = [];
   if (profile.skin_type?.label) {
     entries.push({ label: "Skin type", value: capitalize(profile.skin_type.label) });
   }
   if (profile.skin_tone?.lightness || profile.skin_tone?.undertone) {
     const toneParts = [profile.skin_tone.lightness, profile.skin_tone.undertone].filter(Boolean);
-    entries.push({ label: "Skin tone", value: toneParts.join(" · ") });
+    entries.push({ label: "Skin tone", value: toneParts[0] });
   }
   if (profile.skin_age?.estimated_age) {
     const relative = profile.skin_age.relative_to_real_age ? ` (${profile.skin_age.relative_to_real_age})` : "";
@@ -27,6 +27,7 @@ export function GlobalProfile({ profile }: Props) {
 
   return (
     <View style={styles.card}>
+      <Text style={styles.cardHeading}>Global Overview</Text>
       {profile.summary_description ? (
         <Text style={[styles.bodyText, { marginBottom: 16 }]}>{profile.summary_description}</Text>
       ) : null}

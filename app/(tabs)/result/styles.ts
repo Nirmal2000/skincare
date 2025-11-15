@@ -8,7 +8,7 @@ export const resultStyles = StyleSheet.create({
   scrollContent: {
     padding: 16,
     gap: 20,
-    paddingBottom: 32,
+    paddingBottom: 120,
   },
   centered: {
     flex: 1,
@@ -19,6 +19,9 @@ export const resultStyles = StyleSheet.create({
   },
   section: {
     gap: 12,
+  },
+  heroSection: {
+    paddingTop: 16,
   },
   sectionHeading: {
     fontSize: 18,
@@ -34,6 +37,25 @@ export const resultStyles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 12 },
+  },
+  cardCentered: {
+    alignItems: "center",
+  },
+  cardHeading: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0A0A0A",
+    marginBottom: 4,
+  },
+  cardHeadingCentered: {
+    textAlign: "center",
+    alignSelf: "stretch",
+  },
+  cardDescriptionCentered: {
+    textAlign: "center",
+  },
+  cardFullWidth: {
+    alignSelf: "stretch",
   },
   title: {
     fontSize: 24,
@@ -71,11 +93,6 @@ export const resultStyles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#F9F1E7",
     padding: 12,
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: "500",
-    color: "#0A0A0A",
   },
   error: {
     color: "#C03515",
@@ -136,6 +153,9 @@ export const resultStyles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+  },
+  routineCtaButton: {
+    backgroundColor: "#F18A1B",
   },
   intakeSection: {
     gap: 10,
@@ -205,10 +225,6 @@ export const resultStyles = StyleSheet.create({
     fontWeight: "600",
     color: "#0A0A0A",
   },
-  issueIntensity: {
-    fontSize: 14,
-    color: "#6B6B6B",
-  },
   issueEntry: {
     marginTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -220,10 +236,6 @@ export const resultStyles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
     color: "#0A0A0A",
-  },
-  entryMeta: {
-    fontSize: 13,
-    color: "#6B6B6B",
   },
   entryDescription: {
     fontSize: 14,

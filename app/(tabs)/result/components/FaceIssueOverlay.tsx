@@ -1,8 +1,11 @@
 import { Image } from "expo-image";
-import { memo } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
-const DOT_SIZE = 12;
+const DOT_SIZE = 24;
+const FADE_OUT_DURATION = 220;
+const FADE_IN_DURATION = 260;
 
 export type IssueMarker = {
   id: string;
@@ -18,13 +21,57 @@ type FaceIssueOverlayProps = {
   imageUri: string | null;
   height: number;
   markers: IssueMarker[];
+  activeIssueKey?: string | null;
 };
 
 export const FaceIssueOverlay = memo(function FaceIssueOverlay({
   imageUri,
   height,
   markers,
+  activeIssueKey = null,
 }: FaceIssueOverlayProps) {
+  const [renderedMarkers, setRenderedMarkers] = useState(markers);
+  const dotsOpacity = useSharedValue(1);
+  const previousIssueRef = useRef<string | null>(activeIssueKey);
+
+  useEffect(() => {
+    const prevKey = previousIssueRef.current;
+    const keyChanged = Boolean(prevKey && activeIssueKey && prevKey !== activeIssueKey);
+    if (!keyChanged) {
+      previousIssueRef.current = activeIssueKey;
+      setRenderedMarkers(markers);
+      dotsOpacity.value = withTiming(1, { duration: FADE_IN_DURATION });
+      return;
+    }
+
+    previousIssueRef.current = activeIssueKey;
+    dotsOpacity.value = withTiming(0, { duration: FADE_OUT_DURATION });
+    let timeout: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      setRenderedMarkers(markers);
+      dotsOpacity.value = withTiming(1, { duration: FADE_IN_DURATION });
+    }, FADE_OUT_DURATION);
+    return () => {
+      if (timeout) {
+        clearTimeout(timeout);
+        timeout = null;
+      }
+    };
+  }, [activeIssueKey, markers, dotsOpacity]);
+
+  const overlayStyle = useAnimatedStyle(() => ({
+    opacity: dotsOpacity.value,
+  }));
+
+  const clampedMarkers = useMemo(
+    () =>
+      renderedMarkers.map((marker) => ({
+        ...marker,
+        x: Math.min(Math.max(marker.x, 0), 1),
+        y: Math.min(Math.max(marker.y, 0), 1),
+      })),
+    [renderedMarkers],
+  );
+
   return (
     <View style={[styles.container, { height }] }>
       {imageUri ? (
@@ -32,23 +79,23 @@ export const FaceIssueOverlay = memo(function FaceIssueOverlay({
       ) : (
         <View style={[styles.image, styles.placeholder]} />
       )}
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-        {markers.map((marker) => (
+      <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, overlayStyle]}>
+        {clampedMarkers.map((marker) => (
           <View
             key={marker.id}
             style={[
               styles.dot,
               {
                 backgroundColor: marker.color,
-                left: `${Math.min(Math.max(marker.x, 0), 1) * 100}%`,
-                top: `${Math.min(Math.max(marker.y, 0), 1) * 100}%`,
+                left: `${marker.x * 100}%`,
+                top: `${marker.y * 100}%`,
                 marginLeft: -DOT_SIZE / 2,
                 marginTop: -DOT_SIZE / 2,
               },
             ]}
           />
         ))}
-      </View>
+      </Animated.View>
     </View>
   );
 });

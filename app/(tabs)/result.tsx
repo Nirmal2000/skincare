@@ -10,7 +10,9 @@ import {
   useWindowDimensions,
 } from "react-native";
 import Animated from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
 import {
   fetchTaskStatus,
   requestRoutineRecommendation,
@@ -18,23 +20,15 @@ import {
   type FaceAnalysisResult,
   type FaceAnalysisTaskStatus,
 } from "@/features/scans/face-analysis-api";
-import { type ScanSource } from "@/features/scans/scan-store";
+import { useRoutineIntake, type RoutineIntakeAnswers } from "@/features/scans/routine-intake-store";
 import {
   isRoutineStreaming,
   markRoutineStreaming,
   unmarkRoutineStreaming,
 } from "@/features/scans/routine-stream-store";
+import { type ScanSource } from "@/features/scans/scan-store";
 import { useSettings } from "@/features/settings/settings-store";
-import {
-  PrimaryButton,
-  SecondaryButton,
-} from "@/lib/ui/facefit-components";
-import {
-  saveRoutineIntake,
-  useRoutineIntake,
-  type RoutineIntakeAnswers,
-} from "@/features/scans/routine-intake-store";
-import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
+import { PrimaryButton } from "@/lib/ui/facefit-components";
 
 import {
   FaceIssueOverlay,
@@ -42,13 +36,8 @@ import {
 } from "./result/components/FaceIssueOverlay";
 import { GlobalProfile } from "./result/components/GlobalProfile";
 import { IssueDetailCard } from "./result/components/IssueDetailCard";
-import {
-  RoutineIntakeForm,
-  RoutineIntakeSummary,
-  convertAnswersToPayload,
-} from "./result/components/RoutineIntakeForm";
+import { convertAnswersToPayload } from "./result/components/RoutineIntakeForm";
 import { resultStyles as styles } from "./result/styles";
-import type { IssueSummary } from "./result/types";
 import {
   buildIssueSummaries,
   clamp,
@@ -76,6 +65,7 @@ export default function ResultScreen() {
   const { settings } = useSettings();
   const { height: screenHeight } = useWindowDimensions();
   const scrollHandler = useTabBarAutoHideScrollHandler();
+  const insets = useSafeAreaInsets();
 
   const taskId = toSingle(params.taskId);
   const encodedImageUri = toSingle(params.imageUri);
@@ -106,8 +96,6 @@ export default function ResultScreen() {
     completed: intakeCompleted,
     ready: intakeReady,
   } = useRoutineIntake();
-  const [showIntakeForm, setShowIntakeForm] = useState(false);
-  const [intakeDraft, setIntakeDraft] = useState<RoutineIntakeAnswers | null>(null);
 
   const hasLoggedRef = useRef(false);
   const routineStreamCleanupRef = useRef<null | (() => void)>(null);
@@ -149,18 +137,6 @@ export default function ResultScreen() {
       () => setImageSize(null),
     );
   }, [decodedImageUri]);
-
-  useEffect(() => {
-    if (!intakeReady) return;
-    setIntakeDraft((prev) => prev ?? storedIntake);
-  }, [intakeReady, storedIntake]);
-
-  useEffect(() => {
-    if (!intakeReady) return;
-    if (!intakeCompleted) {
-      setShowIntakeForm(true);
-    }
-  }, [intakeCompleted, intakeReady]);
 
   useEffect(() => {
     setPollingActive(true);
@@ -303,7 +279,6 @@ export default function ResultScreen() {
       setRoutineStatus("requesting");
       setRoutineError(null);
       try {
-        await saveRoutineIntake(answers);
         const payload = convertAnswersToPayload(answers);
         await requestRoutineRecommendation(taskId, payload);
         await beginRoutineStream();
@@ -321,21 +296,15 @@ export default function ResultScreen() {
 
   const handleRequestRoutine = useCallback(async () => {
     if (!taskId || status !== "completed") return;
-    if (!intakeReady) return;
-    if (!intakeCompleted) {
-      setShowIntakeForm(true);
-      return;
-    }
+    if (!intakeReady || !intakeCompleted) return;
     await startRoutineWithAnswers(storedIntake);
   }, [intakeCompleted, intakeReady, startRoutineWithAnswers, status, storedIntake, taskId]);
 
-  const handleSubmitIntake = useCallback(async () => {
-    if (!intakeDraft) return;
-    const success = await startRoutineWithAnswers(intakeDraft);
-    if (success) {
-      setShowIntakeForm(false);
-    }
-  }, [intakeDraft, startRoutineWithAnswers]);
+  const handleFillPreferences = useCallback(() => {
+    const base = "/welcome?returnTo=result";
+    const path = taskId ? `${base}&taskId=${encodeURIComponent(taskId)}` : base;
+    router.push(path);
+  }, [router, taskId]);
 
   const heroHeight = Math.max(screenHeight * 0.75, 480);
   const markers: IssueMarker[] = useMemo(() => {
@@ -363,15 +332,16 @@ export default function ResultScreen() {
   const routineButtonDisabled =
     !taskId ||
     status !== "completed" ||
+    !intakeCompleted ||
+    !intakeReady ||
     routineStatus === "requesting" ||
     routineStatus === "streaming";
 
   const routineButtonLabel = (() => {
-    if (routineStatus === "requesting") return "Requesting routine...";
-    if (routineStatus === "streaming") return "Generating routine...";
-    if (!intakeCompleted) return "Fill routine form";
-    if (routineMarkdown) return "Regenerate routine";
-    return "Get my routine";
+    if (routineStatus === "requesting") return "Summoning your glow ritual...";
+    if (routineStatus === "streaming") return "Streaming your glow ritual...";
+    if (routineMarkdown) return "Refresh my glow ritual";
+    return "Unveil my glow ritual";
   })();
 
   useEffect(() => {
@@ -405,144 +375,120 @@ export default function ResultScreen() {
   return (
     <View style={styles.safeArea}>
       <Animated.ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }]}
         showsVerticalScrollIndicator={false}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Analysis Status</Text>
-          <View style={styles.card}>
-            <Text style={styles.statusText}>{`Status: ${status ?? "pending"}`}</Text>
-            {error ? <Text style={styles.error}>{error}</Text> : null}
+        <View style={[styles.section, styles.heroSection, { paddingBottom: 8 }]}>
+          <FaceIssueOverlay
+            imageUri={decodedImageUri}
+            height={heroHeight * 0.8}
+            markers={markers}
+            activeIssueKey={selectedIssue?.key ?? null}
+          />
+          <View style={[styles.issueCarousel, { minHeight: heroHeight * 0.2 }] }>
+            {issuesSummary.length ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.issueCarouselContent}>
+                {issuesSummary.map((issue) => (
+                  <TouchableOpacity
+                    key={issue.key}
+                    style={[styles.issueCircle, issue.key === selectedIssue?.key ? styles.issueCircleActive : null]}
+                    onPress={() => setSelectedIssueKey(issue.key)}
+                  >
+                    <View style={[styles.issueCircleInner, { backgroundColor: intensityToColor(issue.averageIntensity) }] }>
+                      <Text
+                        style={[
+                          styles.issueCircleValue,
+                          issue.averageIntensity > 0.6 ? styles.issueCircleValueOnDark : null,
+                        ]}
+                      >
+                        {Math.round(clamp(issue.averageIntensity, 0, 1) * 100)}
+                      </Text>
+                    </View>
+                    <Text style={styles.issueCircleLabel}>{issue.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            ) : (
+              <View style={styles.emptyIssues}>
+                <Text style={styles.subtitle}>Gathering issue data…</Text>
+              </View>
+            )}
           </View>
         </View>
-
-        <View style={[styles.section, { paddingBottom: 8 }]}>
-          <Text style={styles.sectionHeading}>Snapshot</Text>
-          <View style={{ width: "100%" }}>
-            <FaceIssueOverlay imageUri={decodedImageUri} height={heroHeight * 0.8} markers={markers} />
-            <View style={[styles.issueCarousel, { minHeight: heroHeight * 0.2 }] }>
-              {issuesSummary.length ? (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.issueCarouselContent}>
-                  {issuesSummary.map((issue) => (
-                    <TouchableOpacity
-                      key={issue.key}
-                      style={[styles.issueCircle, issue.key === selectedIssue?.key ? styles.issueCircleActive : null]}
-                      onPress={() => setSelectedIssueKey(issue.key)}
-                    >
-                      <View style={[styles.issueCircleInner, { backgroundColor: intensityToColor(issue.averageIntensity) }] }>
-                        <Text
-                          style={[
-                            styles.issueCircleValue,
-                            issue.averageIntensity > 0.6 ? styles.issueCircleValueOnDark : null,
-                          ]}
-                        >
-                          {Math.round(clamp(issue.averageIntensity, 0, 1) * 100)}
-                        </Text>
-                      </View>
-                      <Text style={styles.issueCircleLabel}>{issue.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              ) : (
-                <View style={styles.emptyIssues}>
-                  <Text style={styles.subtitle}>Gathering issue data…</Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </View>
-
-        {textResult ? (
-          <View style={styles.section}>
-            <Text style={styles.sectionHeading}>Summary</Text>
-            <View style={styles.card}>
-              <Text style={styles.bodyText}>{textResult}</Text>
-            </View>
-          </View>
-        ) : null}
 
         {result?.global_profile ? (
           <View style={styles.section}>
-            <Text style={styles.sectionHeading}>Global Overview</Text>
             <GlobalProfile profile={result.global_profile} />
           </View>
         ) : null}
 
         {issuesSummary.length ? (
           <View style={styles.section}>
-            <Text style={styles.sectionHeading}>Issue Details</Text>
             {issuesSummary.map((issue) => (
               <IssueDetailCard key={issue.key} issue={issue} isActive={issue.key === selectedIssue?.key} />
             ))}
           </View>
         ) : null}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionHeading}>Personalized Routine</Text>
-          <View style={styles.card}>
-            {showIntakeForm ? (
-              intakeDraft ? (
-                <RoutineIntakeForm
-                  value={intakeDraft}
-                  onChange={setIntakeDraft}
-                  onSubmit={handleSubmitIntake}
-                  submitting={routineStatus === "requesting"}
-                  canCancel={intakeCompleted}
-                  onCancel={() => {
-                    if (intakeCompleted) {
-                      setShowIntakeForm(false);
-                      setIntakeDraft(storedIntake);
-                    }
-                  }}
-                />
+        {status === "completed" ? (
+          <View style={styles.section}>
+            <View style={[styles.card, styles.cardCentered]}>
+              <Text style={[styles.cardHeading, styles.cardHeadingCentered]}>Personalized Routine</Text>
+              {routineMarkdown ? (
+                <Text style={[styles.bodyText, styles.cardFullWidth]}>{routineMarkdown}</Text>
               ) : (
-                <ActivityIndicator />
-              )
-            ) : (
-              <>
-                {routineMarkdown ? (
-                  <Text style={styles.bodyText}>{routineMarkdown}</Text>
-                ) : (
-                  <Text style={styles.subtitle}>
-                    {status === "completed"
+                <Text style={[styles.subtitle, styles.cardDescriptionCentered, styles.cardFullWidth]}>
+                  {status === "completed"
+                    ? intakeCompleted
                       ? "Ask BetterSkin to craft your next skincare steps."
-                      : "Complete an analysis to request a personalized routine."}
-                  </Text>
-                )}
-                <RoutineIntakeSummary
-                  ready={intakeReady}
-                  completed={intakeCompleted}
-                  answers={storedIntake}
-                />
-                {routineStatus === "streaming" ? (
-                  <View style={styles.routineStreamingRow}>
-                    <ActivityIndicator />
-                    <Text style={styles.subtitle}>Streaming your routine…</Text>
-                  </View>
-                ) : null}
-                {routineError ? <Text style={styles.error}>{routineError}</Text> : null}
+                      : "Fill your routine preferences to unlock tailored recommendations."
+                    : "Complete an analysis to request a personalized routine."}
+                </Text>
+              )}
+              {!intakeReady ? (
+                <View style={[styles.routineStreamingRow, styles.cardFullWidth]}>
+                  <ActivityIndicator />
+                  <Text style={styles.subtitle}>Loading your preferences…</Text>
+                </View>
+              ) : null}
+              {routineStatus === "streaming" ? (
+                <View style={[styles.routineStreamingRow, styles.cardFullWidth]}>
+                  <ActivityIndicator />
+                  <Text style={styles.subtitle}>Streaming your routine…</Text>
+                </View>
+              ) : null}
+              {routineError ? (
+                <Text style={[styles.error, styles.cardDescriptionCentered, styles.cardFullWidth]}>
+                  {routineError}
+                </Text>
+              ) : null}
+              <PrimaryButton
+                label={routineButtonLabel}
+                onPress={handleRequestRoutine}
+                disabled={routineButtonDisabled}
+                style={[styles.routineCtaButton, styles.cardFullWidth, { marginTop: 12 }]}
+              />
+              {!intakeCompleted ? (
                 <PrimaryButton
-                  label={routineButtonLabel}
-                  onPress={handleRequestRoutine}
-                  disabled={routineButtonDisabled}
-                  style={{ marginTop: 12 }}
+                  label="Fill routine preferences"
+                  onPress={handleFillPreferences}
+                  style={[styles.cardFullWidth, { marginTop: 12 }]}
                 />
-                <SecondaryButton
-                  label={intakeCompleted ? "Edit answers" : "Fill answers"}
-                  onPress={() => {
-                    setShowIntakeForm(true);
-                    setIntakeDraft(storedIntake);
-                  }}
-                  disabled={!intakeReady}
-                />
-              </>
-            )}
+              ) : null}
+            </View>
           </View>
-        </View>
+        ) : null}
 
-        <PrimaryButton label="Back to Scan" onPress={() => router.replace("/(tabs)/scan")} />
+        {pollingActive ? (
+          <View style={{ alignItems: "center", paddingVertical: 16 }}>
+            <ActivityIndicator />
+            <Text style={[styles.subtitle, { marginTop: 8 }]}>Analyzing scan…</Text>
+          </View>
+        ) : null}
+
+        {/* <PrimaryButton label="Back to Scan" onPress={() => router.replace("/(tabs)/scan")} /> */}
       </Animated.ScrollView>
     </View>
   );

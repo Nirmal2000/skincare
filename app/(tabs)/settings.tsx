@@ -9,6 +9,7 @@ import {
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ProfileCard } from "@/features/auth/profile-card";
 import { useSupabaseSession } from "@/features/auth/useSupabaseSession";
@@ -36,6 +37,7 @@ export default function SettingsScreen() {
   const { settings, ready } = useSettings();
   const [deleting, setDeleting] = useState(false);
   const scrollHandler = useTabBarAutoHideScrollHandler();
+  const insets = useSafeAreaInsets();
 
   const navigateToAgeEdit = () => {
     router.push("/edit-age");
@@ -93,7 +95,7 @@ export default function SettingsScreen() {
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: 48 },
+          { paddingBottom: 48, paddingTop: insets.top + 16 },
         ]}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
@@ -123,6 +125,16 @@ export default function SettingsScreen() {
             Manage BetterSkin Pro, change plans, or restore purchases anytime.
           </Text>
           <PrimaryButton label="Manage membership" onPress={handleMembershipPress} />
+        </Card>
+
+        <Card title="Routine Preferences" style={[styles.cardSurface, { gap: 12 }]}>
+          <Text style={styles.subtitle}>
+            Update your skin profile, sensitivities, and product preferences to get better recommendations.
+          </Text>
+          <PrimaryButton
+            label="Update routine preferences"
+            onPress={() => router.push("/welcome?returnTo=settings")}
+          />
         </Card>
 
         <Card title="Auto-delete window" style={[styles.cardSurface, { gap: 16 }]}>
