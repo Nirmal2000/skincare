@@ -3,7 +3,8 @@
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useMemo, useState } from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, Platform, StyleSheet, Text, View } from "react-native";
+import * as AppleAuthentication from "expo-apple-authentication";
 
 import { handleSupabaseRedirect, supabase } from "@/features/auth/supabase-client";
 import { useSupabaseSession } from "@/features/auth/useSupabaseSession";
@@ -22,17 +23,20 @@ export default function SignInScreen() {
     }
   }, [profile, router]);
 
-  const buttons = useMemo(() => [
-    { label: "Continue with Google", provider: "google" as const },
-    { label: "Continue with Apple", provider: "apple" as const },
-  ], []);
+  const buttons = useMemo(() => {
+    const authButtons = [{ label: "Continue with Google", provider: "google" as const }];
+    if (Platform.OS === "ios") {
+      authButtons.push({ label: "Continue with Apple", provider: "apple" as const });
+    }
+    return authButtons;
+  }, []);
 
-  const handleSignIn = async (provider: "google" | "apple") => {
+  const handleGoogleSignIn = async () => {
     try {
-      setPendingProvider(provider);
+      setPendingProvider("google");
 
       const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
+        provider: "google",
         options: { redirectTo: REDIRECT_URL },
       });
       if (error) throw error;
@@ -46,12 +50,45 @@ export default function SignInScreen() {
       if (result.type === "success" && result.url) {
         const ok = await handleSupabaseRedirect(result.url);
         if (!ok) throw new Error("Unable to finish sign in");
-      } else {
+      } else if (result.type !== "cancel" && result.type !== "dismiss") {
         throw new Error("Authentication was canceled or failed");
       }
     } catch (err) {
       console.error(err);
       Alert.alert("Sign in failed", (err as Error).message);
+    } finally {
+      setPendingProvider(null);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      setPendingProvider("apple");
+
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!credential.identityToken) {
+        throw new Error("No identity token received from Apple");
+      }
+
+      const { error } = await supabase.auth.signInWithIdToken({
+        provider: "apple",
+        token: credential.identityToken,
+      });
+
+      if (error) throw error;
+    } catch (err: any) {
+      if (err?.code === "ERR_CANCELED" || err?.code === "CANCELED") {
+        console.log("Apple Sign In cancelled by user");
+      } else {
+        console.error(err);
+        Alert.alert("Sign in failed", (err as Error).message);
+      }
     } finally {
       setPendingProvider(null);
     }
@@ -65,7 +102,13 @@ export default function SignInScreen() {
         <PrimaryButton
           key={provider}
           label={label}
-          onPress={() => handleSignIn(provider)}
+          onPress={() => {
+            if (provider === "google") {
+              handleGoogleSignIn();
+            } else {
+              handleAppleSignIn();
+            }
+          }}
           disabled={pendingProvider !== null}
         />
       ))}

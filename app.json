@@ -18,7 +18,8 @@
         "NSPhotoLibraryAddUsageDescription": "BetterSkin saves your scan photos locally within the photo library.",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "bundleIdentifier": "com.thebetterskin.betterskin"
+      "bundleIdentifier": "com.thebetterskin.betterskin",
+      "appleTeamId": "FQVD6NGK4X"
     },
     "android": {
       "adaptiveIcon": {

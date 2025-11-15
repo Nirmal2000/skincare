@@ -1,16 +1,17 @@
+import { Feather } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
-  View,
+  View
 } from "react-native";
-import { Feather } from "@expo/vector-icons";
 import Purchases, {
   type CustomerInfo,
   type PurchasesOffering,
@@ -18,6 +19,7 @@ import Purchases, {
 } from "react-native-purchases";
 import RevenueCatUI from "react-native-purchases-ui";
 
+// 1. Make sure this file has your REAL 'appl_...' key
 import {
   BETTERSKIN_PRO_ENTITLEMENT,
   ensureRevenueCatConfigured,
@@ -36,6 +38,7 @@ import {
   INTRO_TEXT,
 } from "../(onboarding)/welcome.constants";
 
+// 2. This is the original feature list from your code
 const PLAN_COPY = [
   {
     title: "Unlimited BetterSkin scans",
@@ -54,14 +57,20 @@ const PLAN_COPY = [
   },
 ] as const;
 
+// 3. This will map the identifiers from RevenueCat
 const PLAN_LABELS: Record<string, string> = {
   weekly: "Weekly",
   monthly: "Monthly",
   annual: "Yearly",
   yearly: "Yearly",
+  // Add your real product IDs if they are different
+  "src_weekly": "Weekly",
+  "src_monthly": "Monthly",
+  "src_annual": "Yearly",
 };
 
-const SHOW_LEGACY_MEMBERSHIP_SCREEN = false;
+// 4. Set this to true to use your custom UI
+const SHOW_LEGACY_MEMBERSHIP_SCREEN = true;
 
 export default function MembershipScreen() {
   if (SHOW_LEGACY_MEMBERSHIP_SCREEN) {
@@ -70,6 +79,7 @@ export default function MembershipScreen() {
   return <HostedPaywallScreen />;
 }
 
+// This is the hosted UI, leave it as-is
 function HostedPaywallScreen() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -130,6 +140,9 @@ function HostedPaywallScreen() {
   );
 }
 
+//
+// 5. THIS IS YOUR REAL, DYNAMIC LEGACY SCREEN
+//
 function LegacyMembershipScreen() {
   const router = useRouter();
   const [offering, setOffering] = useState<PurchasesOffering | null>(null);
@@ -141,7 +154,9 @@ function LegacyMembershipScreen() {
   const [customerCenterPending, setCustomerCenterPending] = useState(false);
 
   const isWeb = Platform.OS === "web";
-  const canEmbedPaywall = !isWeb;
+  
+  // This is no longer needed, we will always show the manual flow
+  // const canEmbedPaywall = !isWeb; 
 
   useEffect(() => {
     ensureRevenueCatConfigured();
@@ -161,7 +176,9 @@ function LegacyMembershipScreen() {
 
   useEffect(() => {
     if (!offering || !offering.availablePackages.length) return;
-    setSelectedPackageId((current) => current ?? offering.availablePackages[0]?.identifier ?? null);
+    // Default to monthly if available, otherwise the first one
+    const monthlyPkg = offering.availablePackages.find(pkg => pkg.identifier.includes("monthly"));
+    setSelectedPackageId(monthlyPkg?.identifier ?? offering.availablePackages[0]?.identifier ?? null);
   }, [offering]);
 
   const loadOffering = useCallback(async () => {
@@ -169,7 +186,11 @@ function LegacyMembershipScreen() {
     setError(null);
     try {
       const offerings = await Purchases.getOfferings();
-      setOffering(offerings.current ?? null);
+      if (offerings.current) {
+         setOffering(offerings.current);
+      } else {
+        setError("No subscription plans are currently available.");
+      }
     } catch (err) {
       console.warn("Failed to load RevenueCat offerings", err);
       setError(
@@ -202,7 +223,8 @@ function LegacyMembershipScreen() {
       await Purchases.purchasePackage(selectedPackage);
       setError(null);
     } catch (err: unknown) {
-      const maybeCancelled = typeof err === "object" && err !== null && "userCancelled" in err;
+      // Check if the user cancelled
+      const maybeCancelled = typeof err === "object" && err !== null && "userCancelled" in err && err.userCancelled;
       if (!maybeCancelled) {
         const message = err instanceof Error ? err.message : "Purchase failed. Try again.";
         setError(message);
@@ -215,7 +237,13 @@ function LegacyMembershipScreen() {
   const handleRestore = useCallback(async () => {
     setManualPurchasePending(true);
     try {
-      await Purchases.restorePurchases();
+      const restoredInfo = await Purchases.restorePurchases();
+      // Check if they got the entitlement
+      if (restoredInfo.entitlements.active[BETTERSKIN_PRO_ENTITLEMENT]) {
+         Alert.alert("Success", "Your purchase has been restored.");
+      } else {
+         Alert.alert("No Purchases Found", "We couldn't find any active subscriptions to restore.");
+      }
       setError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Restore failed. Try again.";
@@ -239,7 +267,6 @@ function LegacyMembershipScreen() {
   }, []);
 
   const planPackages = offering?.availablePackages ?? [];
-  const showManualFlow = !canEmbedPaywall || !planPackages.length;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -272,15 +299,21 @@ function LegacyMembershipScreen() {
           ))}
         </Card>
 
-        <Card style={[styles.card, { gap: 16 }]}>
+        {/* This is the new, cleaner "Plans" card */}
+        <Card style={[styles.card, { gap: 20 }]}>
           <Text style={styles.sectionTitle}>Plans</Text>
-          {planPackages.length ? (
+          {loading ? (
+             <View style={styles.loader}>
+              <ActivityIndicator color={ACCENT_COLOR} />
+              <Text style={styles.subtitle}>Loading latest plans…</Text>
+            </View>
+          ) : (
             <>
               <View style={styles.chipRow}>
                 {planPackages.map((pkg) => (
                   <Chip
                     key={pkg.identifier}
-                    label={PLAN_LABELS[pkg.identifier] ?? pkg.packageType ?? pkg.identifier}
+                    label={PLAN_LABELS[pkg.product.identifier] ?? pkg.product.identifier}
                     selected={selectedPackageId === pkg.identifier}
                     onPress={() => setSelectedPackageId(pkg.identifier)}
                   />
@@ -290,18 +323,35 @@ function LegacyMembershipScreen() {
                 <View style={styles.packageSummary}>
                   <Text style={styles.packagePrice}>
                     {selectedPackage.product.priceString}
-                    <Text style={styles.packageInterval}> / {PLAN_LABELS[selectedPackage.identifier] ?? selectedPackage.packageType}</Text>
+                    <Text style={styles.packageInterval}> / {PLAN_LABELS[selectedPackage.product.identifier] ?? selectedPackage.packageType}</Text>
                   </Text>
                   <Text style={styles.packageDescription}>{selectedPackage.product.description}</Text>
                 </View>
               ) : null}
+              <PrimaryButton
+                label={
+                  manualPurchasePending
+                    ? "Working..."
+                    : selectedPackage
+                      ? `Upgrade for ${selectedPackage.product.priceString}`
+                      : "Upgrade"
+                }
+                onPress={handleManualPurchase}
+                disabled={!selectedPackage || manualPurchasePending}
+              />
             </>
-          ) : (
-            <Text style={styles.subtitle}>
-              Pricing will appear as soon as we load your RevenueCat offering.
-            </Text>
           )}
         </Card>
+
+        {/* Restore button is now outside the card */}
+        <Pressable 
+          onPress={handleRestore} 
+          style={styles.restoreButton}
+          disabled={manualPurchasePending}
+        >
+          <Text style={styles.restoreButtonText}>Restore purchases</Text>
+        </Pressable>
+
 
         {error ? (
           <View style={[styles.card, styles.errorCard]}>
@@ -310,63 +360,6 @@ function LegacyMembershipScreen() {
             <SecondaryButton label="Retry" onPress={loadOffering} />
           </View>
         ) : null}
-
-        {loading ? (
-          <View style={[styles.card, styles.loader]}>
-            <ActivityIndicator color={ACCENT_COLOR} />
-            <Text style={styles.subtitle}>Loading latest plans…</Text>
-          </View>
-        ) : canEmbedPaywall && offering ? (
-          <View style={styles.paywallSurface}>
-            <RevenueCatUI.Paywall
-              options={{ offering, displayCloseButton: false }}
-              onPurchaseStarted={() => setManualPurchasePending(true)}
-              onPurchaseCompleted={({ customerInfo: nextInfo }) => {
-                setManualPurchasePending(false);
-                setCustomerInfo(nextInfo);
-              }}
-              onPurchaseError={({ error: purchaseError }) => {
-                setManualPurchasePending(false);
-                setError(purchaseError.message);
-              }}
-              onPurchaseCancelled={() => setManualPurchasePending(false)}
-              onRestoreStarted={() => setManualPurchasePending(true)}
-              onRestoreCompleted={({ customerInfo: restoredInfo }) => {
-                setManualPurchasePending(false);
-                setCustomerInfo(restoredInfo);
-              }}
-              onRestoreError={({ error: restoreError }) => {
-                setManualPurchasePending(false);
-                setError(restoreError.message);
-              }}
-            />
-          </View>
-        ) : (
-          <Card style={[styles.card, { gap: 12 }]}>
-            <Text style={styles.sectionTitle}>Upgrade</Text>
-            <Text style={styles.subtitle}>
-              {isWeb
-                ? "RevenueCat purchases aren’t supported on the web preview. Use a device build to subscribe."
-                : "Use the buttons below to manage your plan while the native paywall is unavailable."}
-            </Text>
-            <PrimaryButton
-              label={
-                manualPurchasePending
-                  ? "Working..."
-                  : selectedPackage
-                    ? `Upgrade for ${selectedPackage.product.priceString}`
-                    : "Upgrade"
-              }
-              onPress={handleManualPurchase}
-              disabled={!selectedPackage || manualPurchasePending}
-            />
-            <SecondaryButton
-              label="Restore purchases"
-              onPress={handleRestore}
-              disabled={manualPurchasePending}
-            />
-          </Card>
-        )}
 
         <Card style={[styles.card, { gap: 12 }]}>
           <Text style={styles.sectionTitle}>Need help?</Text>
@@ -383,6 +376,10 @@ function LegacyMembershipScreen() {
     </SafeAreaView>
   );
 }
+
+// ---------------------------------------------------------------
+// All your original styles + NEW STYLES
+// ---------------------------------------------------------------
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -532,6 +529,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.04)",
     borderRadius: 16,
     padding: 16,
+    gap: 4, 
   },
   packagePrice: {
     fontSize: 22,
@@ -564,11 +562,25 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 12,
     alignItems: "center",
+    padding: 24,
+    justifyContent: "center",
   },
   paywallSurface: {
     minHeight: 520,
     borderRadius: 32,
     overflow: "hidden",
     backgroundColor: "#000",
+  },
+  // STYLES FOR THE RESTORE BUTTON
+  restoreButton: {
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  restoreButtonText: {
+    color: INTRO_SUBTEXT,
+    fontSize: 15,
+    fontWeight: "500",
+    textDecorationLine: "underline",
   },
 });

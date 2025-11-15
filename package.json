@@ -21,6 +21,7 @@
     "@sphereon/isomorphic-webcrypto": "^2.5.0-rn-crypto.2",
     "@supabase/supabase-js": "^2.80.0",
     "expo": "~54.0.23",
+    "expo-apple-authentication": "~8.0.7",
     "expo-camera": "^17.0.9",
     "expo-constants": "~18.0.10",
     "expo-crypto": "~15.0.7",
