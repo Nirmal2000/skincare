@@ -1,5 +1,7 @@
 import { Platform } from "react-native";
 
+import { supabase } from "@/features/auth/supabase-client";
+
 export type FaceAnalysisTaskStatus =
   | "queued"
   | "global_profile_complete"
@@ -49,6 +51,7 @@ export interface FaceAnalysisTaskResponse {
   status: FaceAnalysisTaskStatus;
   result: FaceAnalysisResult | null;
   error: string | null;
+  routine_markdown?: string | null;
 }
 
 const API_BASE_URL =
@@ -57,15 +60,45 @@ const API_BASE_URL =
 const BASE = API_BASE_URL.replace(/\/$/, "");
 const START_TASK_ENDPOINT = `${BASE}/start-task`;
 const TASKS_ENDPOINT = `${BASE}/tasks`;
+const RECOMMEND_ENDPOINT = `${BASE}/recommend`;
+const RECOMMEND_STREAM_ENDPOINT = `${BASE}/recommend/stream`;
+
+export type RoutineIntake = {
+  sensitivity?: "low" | "medium" | "high" | "unsure";
+  pregnancy?: "yes" | "no" | "unsure";
+  rx_topical?: "yes" | "no" | "unsure";
+  allergies?: string[];
+  current_actives?: string[];
+  fitzpatrick?: string;
+};
+
+export type RoutineResponse = {
+  task_id: string;
+  stream_path: string;
+};
+
+export type RoutineStreamCallbacks = {
+  onChunk: (markdown: string) => void;
+  onDone: () => void;
+  onError?: (error: Error) => void;
+};
 
 export async function startAnalysisTask(
   imageUri: string,
   signal?: AbortSignal,
+  realAge?: number,
 ): Promise<string> {
   const body = await buildFormData(imageUri, signal);
+  if (typeof realAge === "number" && Number.isFinite(realAge)) {
+    body.append("real_age", String(Math.round(realAge)));
+  }
+  const token = await requireAccessToken();
   const response = await fetch(START_TASK_ENDPOINT, {
     method: "POST",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body,
     signal,
   });
@@ -87,9 +120,13 @@ export async function fetchTaskStatus(
   taskId: string,
   signal?: AbortSignal,
 ): Promise<FaceAnalysisTaskResponse> {
+  const token = await requireAccessToken();
   const response = await fetch(`${TASKS_ENDPOINT}/${taskId}`, {
     method: "GET",
-    headers: { Accept: "application/json" },
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     signal,
   });
 
@@ -100,6 +137,58 @@ export async function fetchTaskStatus(
   }
 
   return (await response.json()) as FaceAnalysisTaskResponse;
+}
+
+export async function listRecentTasks(limit = 10) {
+  const token = await requireAccessToken();
+  const url = `${TASKS_ENDPOINT}?limit=${encodeURIComponent(String(limit))}`;
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!response.ok) {
+    const payload = await safeJson(response);
+    const detail = payload?.detail ?? "Unable to fetch tasks";
+    throw new Error(detail);
+  }
+
+  return (await response.json()) as FaceAnalysisTaskResponse[];
+}
+
+export async function requestRoutineRecommendation(
+  taskId: string,
+  intake: RoutineIntake,
+): Promise<RoutineResponse> {
+  const token = await requireAccessToken();
+  const response = await fetch(RECOMMEND_ENDPOINT, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ task_id: taskId, intake }),
+  });
+
+  if (response.status !== 202 && !response.ok) {
+    const payload = await safeJson(response);
+    const detail = payload?.detail ?? "Unable to request routine";
+    throw new Error(detail);
+  }
+
+  return (await response.json()) as RoutineResponse;
+}
+
+export async function subscribeToRoutineStream(
+  taskId: string,
+  callbacks: RoutineStreamCallbacks,
+): Promise<() => void> {
+  const token = await requireAccessToken();
+  const url = `${RECOMMEND_STREAM_ENDPOINT}/${encodeURIComponent(taskId)}`;
+  return openEventStream(url, token, callbacks);
 }
 
 async function safeJson(response: Response) {
@@ -157,4 +246,100 @@ function inferMimeType(fileName: string) {
     default:
       return "image/jpeg";
   }
+}
+
+async function requireAccessToken() {
+  const { data, error } = await supabase.auth.getSession();
+  if (error) {
+    console.warn("Failed to read Supabase session", error);
+  }
+  const token = data.session?.access_token;
+  if (!token) {
+    throw new Error("You need to sign in again before scanning.");
+  }
+  return token;
+}
+
+function openEventStream(
+  url: string,
+  token: string,
+  callbacks: RoutineStreamCallbacks,
+) {
+  const xhr = new XMLHttpRequest();
+  let buffer = "";
+  let closed = false;
+  let processedLength = 0;
+
+  const cleanup = () => {
+    if (closed) return;
+    closed = true;
+    try {
+      xhr.abort();
+    } catch {
+      // Ignore abort errors
+    }
+  };
+
+  const emitError = (message: string) => {
+    callbacks.onError?.(new Error(message));
+  };
+
+  const handleChunk = (chunk: string) => {
+    buffer += chunk.replace(/\r\n/g, "\n");
+    let delimiterIndex;
+    while ((delimiterIndex = buffer.indexOf("\n\n")) >= 0) {
+      const rawEvent = buffer.slice(0, delimiterIndex);
+      buffer = buffer.slice(delimiterIndex + 2);
+      if (!rawEvent.trim()) {
+        continue;
+      }
+      const dataLines = rawEvent
+        .split("\n")
+        .filter((line) => line.startsWith("data:"));
+      if (!dataLines.length) {
+        continue;
+      }
+      const payload = dataLines
+        .map((line) => line.slice(5).trimStart())
+        .join("\n");
+      if (!payload) {
+        continue;
+      }
+      if (payload === "[DONE]") {
+        callbacks.onDone();
+        cleanup();
+        return;
+      }
+      callbacks.onChunk(payload);
+    }
+  };
+
+  xhr.onreadystatechange = () => {
+    if (closed) return;
+    if (xhr.readyState >= 3) {
+      const text = xhr.responseText ?? "";
+      if (text.length > processedLength) {
+        const chunk = text.slice(processedLength);
+        processedLength = text.length;
+        handleChunk(chunk);
+      }
+    }
+    if (xhr.readyState === 4 && xhr.status >= 400) {
+      emitError(`Stream failed with status ${xhr.status}`);
+      cleanup();
+    }
+  };
+
+  xhr.onerror = () => {
+    if (closed) return;
+    emitError("Stream connection error");
+    cleanup();
+  };
+
+  xhr.open("GET", url, true);
+  xhr.setRequestHeader("Accept", "text/event-stream");
+  xhr.setRequestHeader("Authorization", `Bearer ${token}`);
+  xhr.send();
+
+  return cleanup;
 }

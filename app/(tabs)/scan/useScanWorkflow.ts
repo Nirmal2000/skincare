@@ -12,6 +12,7 @@ import {
 } from "@/features/scans/landmark-points";
 import { useScanPermissions } from "@/features/scans/permissions";
 import type { ScanSource } from "@/features/scans/scan-store";
+import { useSettings } from "@/features/settings/settings-store";
 
 export type FaceDetectionStatus = "no-face" | "off-target" | "ready" | "multi-face";
 
@@ -30,6 +31,7 @@ function useMountedRef() {
 export function useScanWorkflow() {
   const router = useRouter();
   const { profile, loading, requireAuth } = useAuthGate();
+  const { settings } = useSettings();
   const permissions = useScanPermissions();
   const isFocused = useIsFocused();
   const cameraRef = useRef<CameraView | null>(null);
@@ -178,7 +180,8 @@ export function useScanWorkflow() {
         }
       }
 
-      const taskId = await startAnalysisTask(previewUri, controller.signal);
+      const ageValue = settings.ageBand ? Number(settings.ageBand) : undefined;
+      const taskId = await startAnalysisTask(previewUri, controller.signal, ageValue);
       if (!mountedRef.current) return;
       router.push({
         pathname: "/(tabs)/result",
@@ -201,7 +204,7 @@ export function useScanWorkflow() {
       analysisController.current = null;
       if (mountedRef.current) setScanning(false);
     }
-  }, [ensureSignedIn, previewSource, previewUri, router, mountedRef]);
+  }, [ensureSignedIn, previewSource, previewUri, router, mountedRef, settings.ageBand]);
 
   const handleReset = useCallback(() => {
     setPreviewUri(null);

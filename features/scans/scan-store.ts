@@ -1,40 +1,23 @@
 import * as FileSystem from "expo-file-system/legacy";
 
 import { storage } from "@/features/storage/async-storage";
-import type { FaceAnalysisResult } from "@/features/scans/face-analysis-api";
-import type { FaceLandmarkMap } from "@/features/scans/landmark-points";
 
 const STORAGE_KEY = "facefit:scans";
 const SCAN_DIRECTORY = `${FileSystem.documentDirectory ?? ""}facefit/scans`;
 
 export type ScanSource = "camera" | "gallery";
 
-export type StructuredStoredAnalysis = {
-  kind: "structured";
-  data: FaceAnalysisResult;
-  landmarks?: FaceLandmarkMap | null;
-};
-
-export type TextStoredAnalysis = { kind: "text"; data: string };
-
-export type StoredFaceAnalysis =
-  | StructuredStoredAnalysis
-  | TextStoredAnalysis
-  | FaceAnalysisResult
-  | string;
-
 export type ScanRecord = {
-  id: string;
+  id: string; // Matches backend task_id
   imageUri: string;
   capturedAt: string;
-  faceAnalysis: StoredFaceAnalysis;
   expiresAt: string;
   source: ScanSource;
 };
 
 export type ScanInput = {
+  taskId: string;
   tempImageUri: string;
-  faceAnalysis: StoredFaceAnalysis;
   retentionDays: number;
   source: ScanSource;
 };
@@ -48,26 +31,27 @@ export type ExpiryBadge = {
 export async function saveScan(input: ScanInput) {
   await ensureDirectory();
 
-  const id = generateId();
   const extension = input.tempImageUri.split(".").pop() ?? "jpg";
-  const destination = `${SCAN_DIRECTORY}/${id}.${extension}`;
+  const destination = `${SCAN_DIRECTORY}/${input.taskId}.${extension}`;
 
-  await FileSystem.copyAsync({
-    from: input.tempImageUri,
-    to: destination,
-  });
+  const info = await FileSystem.getInfoAsync(destination);
+  if (!info.exists) {
+    await FileSystem.copyAsync({
+      from: input.tempImageUri,
+      to: destination,
+    });
+  }
 
   const record: ScanRecord = {
-    id,
+    id: input.taskId,
     imageUri: destination,
     capturedAt: new Date().toISOString(),
-    faceAnalysis: input.faceAnalysis,
     expiresAt: computeExpiry(input.retentionDays),
     source: input.source,
   };
 
   const all = await listScans();
-  const next = [record, ...all];
+  const next = [record, ...all.filter((existing) => existing.id !== record.id)];
   await storage.setJSON(STORAGE_KEY, next);
   return record;
 }
@@ -149,49 +133,4 @@ async function removeFile(uri: string) {
   if (info.exists) {
     await FileSystem.deleteAsync(uri, { idempotent: true });
   }
-}
-
-function generateId() {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-export function normalizeStoredAnalysis(
-  input: StoredFaceAnalysis,
-): StructuredStoredAnalysis | TextStoredAnalysis {
-  if (typeof input === "string") {
-    return { kind: "text", data: input };
-  }
-  if (isStructuredStoredAnalysis(input)) {
-    return {
-      kind: "structured",
-      data: input.data,
-      landmarks: input.landmarks ?? null,
-    };
-  }
-  if (isTextStoredAnalysis(input)) {
-    return { kind: "text", data: input.data };
-  }
-  return { kind: "structured", data: input };
-}
-
-function isStructuredStoredAnalysis(
-  value: StoredFaceAnalysis,
-): value is StructuredStoredAnalysis {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "kind" in value &&
-    (value as any).kind === "structured"
-  );
-}
-
-function isTextStoredAnalysis(
-  value: StoredFaceAnalysis,
-): value is TextStoredAnalysis {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "kind" in value &&
-    (value as any).kind === "text"
-  );
 }

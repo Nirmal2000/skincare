@@ -14,12 +14,9 @@ import {
 } from "react-native";
 
 import { useAuthGate } from "@/features/auth/useAuthGate";
-import {
-  getExpiryBadge,
-  normalizeStoredAnalysis,
-  type ScanRecord,
-} from "@/features/scans/scan-store";
-import { useScanHistory } from "@/features/scans/use-scan-history";
+import { getExpiryBadge, type ScanRecord } from "@/features/scans/scan-store";
+import { useScanHistory, type HistoryEntry } from "@/features/scans/use-scan-history";
+import type { FaceAnalysisTaskResponse } from "@/features/scans/face-analysis-api";
 import {
   Card,
   PrimaryButton
@@ -57,21 +54,20 @@ export default function HistoryScreen() {
     );
   }
 
-  const handleOpen = (record: ScanRecord) => {
-    const normalized = normalizeStoredAnalysis(record.faceAnalysis);
-    console.log("[History] opening scan", {
-      id: record.id,
-      structured: normalized.kind === "structured",
-    });
+  const handleOpen = (entry: HistoryEntry) => {
+    const { record, task } = entry;
+    console.log("[History] opening scan", { id: record.id });
     const nextParams: Record<string, string> = {
       imageUri: encodeURIComponent(record.imageUri),
       source: record.source,
       readonly: "true",
+      taskId: record.id,
     };
-    if (normalized.kind === "structured") {
-      nextParams.initialResult = encodeURIComponent(JSON.stringify(normalized.data));
-    } else {
-      nextParams.initialText = encodeURIComponent(normalized.data);
+    if (task?.result) {
+      nextParams.initialResult = encodeURIComponent(JSON.stringify(task.result));
+    }
+    if (!task?.result && task?.error) {
+      nextParams.initialText = encodeURIComponent(task.error);
     }
     router.push({
       pathname: "/(tabs)/result",
@@ -112,7 +108,7 @@ export default function HistoryScreen() {
         ) : (
           <FlatList
             data={records}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.record.id}
             contentContainerStyle={
               records.length === 0
                 ? styles.emptyList
@@ -122,11 +118,11 @@ export default function HistoryScreen() {
             onRefresh={refresh}
             ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
             renderItem={({ item }) => (
-              <HistoryCard
-                record={item}
-                onOpen={() => handleOpen(item)}
-                onDelete={() => confirmDelete(item)}
-              />
+                <HistoryCard
+                  entry={item}
+                  onOpen={() => handleOpen(item)}
+                  onDelete={() => confirmDelete(item.record)}
+                />
             )}
             ListEmptyComponent={
               <Card style={{ gap: 12, alignItems: "flex-start" }}>
@@ -144,16 +140,18 @@ export default function HistoryScreen() {
 }
 
 function HistoryCard({
-  record,
+  entry,
   onOpen,
   onDelete,
 }: {
-  record: ScanRecord;
+  entry: HistoryEntry;
   onOpen: () => void;
   onDelete: () => void;
 }) {
+  const { record, task } = entry;
   const badge = getExpiryBadge(record);
   const timestamp = formatTimestamp(record.capturedAt);
+  const statusLabel = task?.status ? formatStatusLabel(task.status) : "Pending sync";
 
   return (
     <Card style={styles.card}>

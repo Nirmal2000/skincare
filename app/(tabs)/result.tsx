@@ -1,6 +1,7 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
+  ActivityIndicator,
   Image as RNImage,
   SafeAreaView,
   ScrollView,
@@ -13,21 +14,37 @@ import {
 
 import {
   fetchTaskStatus,
+  requestRoutineRecommendation,
+  subscribeToRoutineStream,
   type FaceAnalysisResult,
   type FaceAnalysisTaskStatus,
+  type RoutineIntake,
 } from "@/features/scans/face-analysis-api";
 import {
   saveScan,
   type ScanSource,
-  type StoredFaceAnalysis,
 } from "@/features/scans/scan-store";
+import {
+  isRoutineStreaming,
+  markRoutineStreaming,
+  unmarkRoutineStreaming,
+} from "@/features/scans/routine-stream-store";
 import { useSettings } from "@/features/settings/settings-store";
 import type {
   FaceLandmarkId,
   FaceLandmarkMap,
   FaceLandmarkPoint,
 } from "@/features/scans/landmark-points";
-import { PrimaryButton } from "@/lib/ui/facefit-components";
+import {
+  Chip,
+  PrimaryButton,
+  SecondaryButton,
+} from "@/lib/ui/facefit-components";
+import {
+  saveRoutineIntake,
+  useRoutineIntake,
+  type RoutineIntakeAnswers,
+} from "@/features/scans/routine-intake-store";
 
 import {
   FaceIssueOverlay,
@@ -58,6 +75,58 @@ type IssueSummary = {
   entries: IssueEntry[];
 };
 
+type OptionConfig<T extends string> = {
+  value: T;
+  label: string;
+};
+
+const SENSITIVITY_OPTIONS: OptionConfig<RoutineIntakeAnswers["sensitivity"]>[] = [
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+  { value: "unsure", label: "Unsure" },
+];
+
+const PREGNANCY_OPTIONS: OptionConfig<RoutineIntakeAnswers["pregnancy"]>[] = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+  { value: "prefer_not_to_say", label: "Prefer not to say" },
+];
+
+const RX_OPTIONS: OptionConfig<RoutineIntakeAnswers["rxTopical"]>[] = [
+  { value: "yes", label: "Yes" },
+  { value: "no", label: "No" },
+  { value: "unsure", label: "Unsure" },
+];
+
+const ALLERGY_OPTIONS: OptionConfig<string>[] = [
+  { value: "fragrance", label: "Fragrance" },
+  { value: "lanolin", label: "Lanolin" },
+  { value: "nut_oils", label: "Nut oils" },
+  { value: "chemical_sunscreen_filters", label: "Chemical SPF filters" },
+  { value: "parabens", label: "Parabens" },
+  { value: "none", label: "None" },
+  { value: "unsure", label: "Unsure" },
+];
+
+const FITZPATRICK_OPTIONS: OptionConfig<RoutineIntakeAnswers["fitzpatrick"]>[] = [
+  { value: "I-II", label: "I–II (burns easily)" },
+  { value: "III-IV", label: "III–IV (sometimes burns)" },
+  { value: "V-VI", label: "V–VI (rarely burns)" },
+  { value: "unsure", label: "Unsure" },
+];
+
+const ACTIVES_OPTIONS: OptionConfig<string>[] = [
+  { value: "retinoid_retinol", label: "Retinoid / retinol" },
+  { value: "benzoyl_peroxide", label: "Benzoyl peroxide" },
+  { value: "salicylic_acid", label: "Salicylic acid" },
+  { value: "vitamin_c", label: "Vitamin C" },
+  { value: "aha", label: "AHA" },
+  { value: "azelaic_acid", label: "Azelaic acid" },
+  { value: "none", label: "None" },
+  { value: "unsure", label: "Unsure" },
+];
+
 export default function ResultScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<Params>();
@@ -83,8 +152,22 @@ export default function ResultScreen() {
   const [autoSaveStatus, setAutoSaveStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [selectedIssueKey, setSelectedIssueKey] = useState<string | null>(null);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
+  const [routineMarkdown, setRoutineMarkdown] = useState<string | null>(null);
+  const [routineStatus, setRoutineStatus] = useState<
+    "idle" | "requesting" | "streaming" | "done" | "error"
+  >("idle");
+  const [routineError, setRoutineError] = useState<string | null>(null);
+  const [pollingActive, setPollingActive] = useState(true);
+  const {
+    intake: storedIntake,
+    completed: intakeCompleted,
+    ready: intakeReady,
+  } = useRoutineIntake();
+  const [showIntakeForm, setShowIntakeForm] = useState(false);
+  const [intakeDraft, setIntakeDraft] = useState<RoutineIntakeAnswers | null>(null);
 
   const hasLoggedRef = useRef(false);
+  const routineStreamCleanupRef = useRef<null | (() => void)>(null);
 
   const issuesSummary = useMemo(() => buildIssueSummaries(result?.issues), [result]);
   const selectedIssue = useMemo(() => {
@@ -125,7 +208,23 @@ export default function ResultScreen() {
   }, [decodedImageUri]);
 
   useEffect(() => {
-    if (!taskId) return;
+    if (!intakeReady) return;
+    setIntakeDraft((prev) => prev ?? storedIntake);
+  }, [intakeReady, storedIntake]);
+
+  useEffect(() => {
+    if (!intakeReady) return;
+    if (!intakeCompleted) {
+      setShowIntakeForm(true);
+    }
+  }, [intakeCompleted, intakeReady]);
+
+  useEffect(() => {
+    setPollingActive(true);
+  }, [taskId]);
+
+  useEffect(() => {
+    if (!taskId || !pollingActive) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -138,16 +237,28 @@ export default function ResultScreen() {
           setResult(payload.result);
           setTextResult(null);
         }
+        if (typeof payload.routine_markdown === "string" && payload.routine_markdown.length) {
+          setRoutineMarkdown((prev) => {
+            if (prev === payload.routine_markdown) {
+              return prev;
+            }
+            return payload.routine_markdown;
+          });
+          setRoutineStatus((prev) => (prev === "streaming" ? prev : "done"));
+          setRoutineError(null);
+        }
         if (payload.status === "completed") {
           if (!hasLoggedRef.current) {
             console.log("[FaceAnalysis] task completed", payload);
             hasLoggedRef.current = true;
           }
           setError(null);
+          setPollingActive(false);
           return;
         }
         if (payload.status === "failed") {
           setError(payload.error ?? "Task failed. Try again.");
+          setPollingActive(false);
           return;
         }
         timer = setTimeout(poll, 5000);
@@ -167,19 +278,18 @@ export default function ResultScreen() {
         clearTimeout(timer);
       }
     };
-  }, [taskId]);
+  }, [pollingActive, taskId]);
 
   useEffect(() => {
     if (readOnly) return;
-    if (!decodedImageUri || !source) return;
+    if (!decodedImageUri || !source || !taskId) return;
     if (!result || status !== "completed") return;
     if (autoSaveStatus !== "idle") return;
 
     setAutoSaveStatus("saving");
-    const faceAnalysis: StoredFaceAnalysis = { kind: "structured", data: result };
     saveScan({
+      taskId,
       tempImageUri: decodedImageUri,
-      faceAnalysis,
       retentionDays: settings.autoDeleteDays,
       source,
     })
@@ -189,7 +299,130 @@ export default function ResultScreen() {
       .catch(() => {
         setAutoSaveStatus("error");
       });
-  }, [autoSaveStatus, decodedImageUri, readOnly, result, settings.autoDeleteDays, source, status]);
+  }, [
+    autoSaveStatus,
+    decodedImageUri,
+    readOnly,
+    result,
+    settings.autoDeleteDays,
+    source,
+    status,
+    taskId,
+  ]);
+
+  const stopRoutineStream = useCallback(() => {
+    if (routineStreamCleanupRef.current) {
+      try {
+        routineStreamCleanupRef.current();
+      } catch {
+        // ignore cleanup errors
+      }
+      routineStreamCleanupRef.current = null;
+    }
+  }, []);
+
+  const handleRoutineStreamComplete = useCallback(() => {
+    stopRoutineStream();
+    setRoutineStatus("done");
+    setRoutineError(null);
+    setRoutineMarkdown((prev) => prev ?? "");
+    if (taskId) {
+      unmarkRoutineStreaming(taskId).catch(() => null);
+    }
+  }, [stopRoutineStream, taskId]);
+
+  const beginRoutineStream = useCallback(async () => {
+    if (!taskId || routineStreamCleanupRef.current) {
+      return;
+    }
+    setRoutineStatus("streaming");
+    setRoutineError(null);
+    setRoutineMarkdown(null);
+    await markRoutineStreaming(taskId);
+    try {
+      const cleanup = await subscribeToRoutineStream(taskId, {
+        onChunk: (chunk) => {
+          setRoutineMarkdown((prev) => (prev ? `${prev}${chunk}` : chunk));
+        },
+        onDone: () => {
+          handleRoutineStreamComplete();
+        },
+        onError: (err) => {
+          stopRoutineStream();
+          setRoutineStatus("error");
+          setRoutineError(err.message);
+        },
+      });
+      routineStreamCleanupRef.current = cleanup;
+    } catch (err) {
+      await unmarkRoutineStreaming(taskId).catch(() => null);
+      setRoutineStatus("error");
+      const message =
+        err instanceof Error ? err.message : "Unable to start routine stream.";
+      setRoutineError(message);
+    }
+  }, [handleRoutineStreamComplete, stopRoutineStream, taskId]);
+
+  useEffect(() => {
+    if (!taskId) return () => undefined;
+    let cancelled = false;
+
+    (async () => {
+      const tracked = await isRoutineStreaming(taskId);
+      if (cancelled || !tracked) {
+        return;
+      }
+      await beginRoutineStream();
+    })();
+
+    return () => {
+      cancelled = true;
+      stopRoutineStream();
+    };
+  }, [beginRoutineStream, stopRoutineStream, taskId]);
+
+  const startRoutineWithAnswers = useCallback(
+    async (answers: RoutineIntakeAnswers) => {
+      if (!taskId) return false;
+      if (routineStatus === "requesting" || routineStatus === "streaming") {
+        return false;
+      }
+      setRoutineStatus("requesting");
+      setRoutineError(null);
+      try {
+        await saveRoutineIntake(answers);
+        const payload = convertAnswersToPayload(answers);
+        await requestRoutineRecommendation(taskId, payload);
+        await beginRoutineStream();
+        return true;
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Unable to request routine.";
+        setRoutineStatus("error");
+        setRoutineError(message);
+        return false;
+      }
+    },
+    [beginRoutineStream, routineStatus, taskId],
+  );
+
+  const handleRequestRoutine = useCallback(async () => {
+    if (!taskId || status !== "completed") return;
+    if (!intakeReady) return;
+    if (!intakeCompleted) {
+      setShowIntakeForm(true);
+      return;
+    }
+    await startRoutineWithAnswers(storedIntake);
+  }, [intakeCompleted, intakeReady, startRoutineWithAnswers, status, storedIntake, taskId]);
+
+  const handleSubmitIntake = useCallback(async () => {
+    if (!intakeDraft) return;
+    const success = await startRoutineWithAnswers(intakeDraft);
+    if (success) {
+      setShowIntakeForm(false);
+    }
+  }, [intakeDraft, startRoutineWithAnswers]);
 
   const heroHeight = Math.max(screenHeight * 0.75, 480);
   const markers: IssueMarker[] = useMemo(() => {
@@ -213,6 +446,20 @@ export default function ResultScreen() {
       } satisfies IssueMarker;
     });
   }, [imageSize, landmarks, selectedIssue]);
+
+  const routineButtonDisabled =
+    !taskId ||
+    status !== "completed" ||
+    routineStatus === "requesting" ||
+    routineStatus === "streaming";
+
+  const routineButtonLabel = (() => {
+    if (routineStatus === "requesting") return "Requesting routine...";
+    if (routineStatus === "streaming") return "Generating routine...";
+    if (!intakeCompleted) return "Fill routine form";
+    if (routineMarkdown) return "Regenerate routine";
+    return "Get my routine";
+  })();
 
   useEffect(() => {
     if (!selectedIssue || !markers.length) return;
@@ -320,6 +567,69 @@ export default function ResultScreen() {
           </View>
         ) : null}
 
+        <View style={styles.section}>
+          <Text style={styles.sectionHeading}>Personalized Routine</Text>
+          <View style={styles.card}>
+            {showIntakeForm ? (
+              intakeDraft ? (
+                <RoutineIntakeForm
+                  value={intakeDraft}
+                  onChange={setIntakeDraft}
+                  onSubmit={handleSubmitIntake}
+                  submitting={routineStatus === "requesting"}
+                  canCancel={intakeCompleted}
+                  onCancel={() => {
+                    if (intakeCompleted) {
+                      setShowIntakeForm(false);
+                      setIntakeDraft(storedIntake);
+                    }
+                  }}
+                />
+              ) : (
+                <ActivityIndicator />
+              )
+            ) : (
+              <>
+                {routineMarkdown ? (
+                  <Text style={styles.bodyText}>{routineMarkdown}</Text>
+                ) : (
+                  <Text style={styles.subtitle}>
+                    {status === "completed"
+                      ? "Ask BetterSkin to craft your next skincare steps."
+                      : "Complete an analysis to request a personalized routine."}
+                  </Text>
+                )}
+                <RoutineIntakeSummary
+                  ready={intakeReady}
+                  completed={intakeCompleted}
+                  answers={storedIntake}
+                />
+                {routineStatus === "streaming" ? (
+                  <View style={styles.routineStreamingRow}>
+                    <ActivityIndicator />
+                    <Text style={styles.subtitle}>Streaming your routine…</Text>
+                  </View>
+                ) : null}
+                {routineError ? <Text style={styles.error}>{routineError}</Text> : null}
+                <PrimaryButton
+                  label={routineButtonLabel}
+                  onPress={handleRequestRoutine}
+                  disabled={routineButtonDisabled}
+                  style={{ marginTop: 12 }}
+                />
+                <SecondaryButton
+                  label={intakeCompleted ? "Edit answers" : "Fill answers"}
+                  onPress={() => {
+                    setShowIntakeForm(true);
+                    setIntakeDraft(storedIntake);
+                  }}
+                  disabled={!intakeReady}
+                />
+              </>
+            )}
+          </View>
+        </View>
+
         <PrimaryButton label="Back to Scan" onPress={() => router.replace("/(tabs)/scan")} />
       </ScrollView>
     </SafeAreaView>
@@ -396,6 +706,234 @@ function IssueDetailCard({
       ))}
     </View>
   );
+}
+
+type RoutineIntakeFormProps = {
+  value: RoutineIntakeAnswers;
+  onChange: (next: RoutineIntakeAnswers) => void;
+  onSubmit: () => void;
+  submitting: boolean;
+  canCancel: boolean;
+  onCancel: () => void;
+};
+
+function RoutineIntakeForm({ value, onChange, onSubmit, submitting, canCancel, onCancel }: RoutineIntakeFormProps) {
+  const handleSingleChange = <K extends keyof RoutineIntakeAnswers>(key: K, nextValue: RoutineIntakeAnswers[K]) => {
+    onChange({ ...value, [key]: nextValue });
+  };
+
+  const handleMultiToggle = (key: "allergies" | "currentActives", entry: string) => {
+    const current = value[key];
+    const exclusive = entry === "none" || entry === "unsure";
+    let next: string[];
+    if (current.includes(entry)) {
+      next = current.filter((option) => option !== entry);
+    } else {
+      next = exclusive ? [entry] : current.filter((option) => option !== "none" && option !== "unsure");
+      next = [...next, entry];
+    }
+    if (!next.length) {
+      next = ["none"];
+    }
+    onChange({ ...value, [key]: Array.from(new Set(next)) });
+  };
+
+  return (
+    <View style={{ gap: 20 }}>
+      <IntakeQuestion
+        title="How does your skin react to new products?"
+        description="Answering helps us pick the right strength for actives."
+      >
+        <View style={styles.intakeChipRow}>
+          {SENSITIVITY_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={value.sensitivity === option.value}
+              onPress={() => handleSingleChange("sensitivity", option.value)}
+            />
+          ))}
+        </View>
+      </IntakeQuestion>
+
+      <IntakeQuestion
+        title="Are you pregnant, trying, or nursing?"
+        description="We skip retinoids and hydroquinone when this is yes or unspecified."
+      >
+        <View style={styles.intakeChipRow}>
+          {PREGNANCY_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={value.pregnancy === option.value}
+              onPress={() => handleSingleChange("pregnancy", option.value)}
+            />
+          ))}
+        </View>
+      </IntakeQuestion>
+
+      <IntakeQuestion
+        title="Prescription creams on your face?"
+        description="Let us know if you already use tretinoin, adapalene, steroids, etc."
+      >
+        <View style={styles.intakeChipRow}>
+          {RX_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={value.rxTopical === option.value}
+              onPress={() => handleSingleChange("rxTopical", option.value)}
+            />
+          ))}
+        </View>
+      </IntakeQuestion>
+
+      <IntakeQuestion title="Avoid any of these?">
+        <View style={styles.intakeChipRow}>
+          {ALLERGY_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={value.allergies.includes(option.value)}
+              onPress={() => handleMultiToggle("allergies", option.value)}
+            />
+          ))}
+        </View>
+      </IntakeQuestion>
+
+      <IntakeQuestion title="How does your bare skin react to sun?">
+        <View style={styles.intakeChipRow}>
+          {FITZPATRICK_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={value.fitzpatrick === option.value}
+              onPress={() => handleSingleChange("fitzpatrick", option.value)}
+            />
+          ))}
+        </View>
+      </IntakeQuestion>
+
+      <IntakeQuestion title="Already using any of these?">
+        <View style={styles.intakeChipRow}>
+          {ACTIVES_OPTIONS.map((option) => (
+            <Chip
+              key={option.value}
+              label={option.label}
+              selected={value.currentActives.includes(option.value)}
+              onPress={() => handleMultiToggle("currentActives", option.value)}
+            />
+          ))}
+        </View>
+      </IntakeQuestion>
+
+      <View style={styles.intakeActions}>
+        <PrimaryButton
+          label={submitting ? "Saving..." : "Save & generate routine"}
+          onPress={onSubmit}
+          disabled={submitting}
+        />
+        {canCancel ? <SecondaryButton label="Cancel" onPress={onCancel} /> : null}
+      </View>
+    </View>
+  );
+}
+
+function RoutineIntakeSummary({
+  answers,
+  ready,
+  completed,
+}: {
+  answers: RoutineIntakeAnswers;
+  ready: boolean;
+  completed: boolean;
+}) {
+  if (!ready) {
+    return <Text style={styles.subtitle}>Loading your routine inputs…</Text>;
+  }
+  if (!completed) {
+    return (
+      <View style={styles.summaryCallout}>
+        <Text style={styles.subtitle}>Fill the quick form to personalize every recommendation.</Text>
+      </View>
+    );
+  }
+  const entries = [
+    { label: "Sensitivity", value: formatOptionLabel(SENSITIVITY_OPTIONS, answers.sensitivity) },
+    { label: "Pregnancy", value: formatOptionLabel(PREGNANCY_OPTIONS, answers.pregnancy) },
+    { label: "Rx topicals", value: formatOptionLabel(RX_OPTIONS, answers.rxTopical) },
+    {
+      label: "Allergies",
+      value: formatListSummary(answers.allergies, ALLERGY_OPTIONS),
+    },
+    { label: "Fitzpatrick", value: formatOptionLabel(FITZPATRICK_OPTIONS, answers.fitzpatrick) },
+    {
+      label: "Current actives",
+      value: formatListSummary(answers.currentActives, ACTIVES_OPTIONS),
+    },
+  ];
+  return (
+    <View style={styles.summaryGrid}>
+      {entries.map((entry) => (
+        <View key={entry.label} style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>{entry.label}</Text>
+          <Text style={styles.summaryValue}>{entry.value}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function IntakeQuestion({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: ReactNode;
+}) {
+  return (
+    <View style={styles.intakeSection}>
+      <Text style={styles.intakeTitle}>{title}</Text>
+      {description ? <Text style={styles.intakeDescription}>{description}</Text> : null}
+      {children}
+    </View>
+  );
+}
+
+function formatOptionLabel<T extends string>(options: OptionConfig<T>[], value: T) {
+  const match = options.find((option) => option.value === value);
+  return match?.label ?? value;
+}
+
+function formatListSummary(selected: string[], options: OptionConfig<string>[]) {
+  if (!selected.length || selected.includes("none")) {
+    return "None";
+  }
+  if (selected.includes("unsure")) {
+    return "Unsure";
+  }
+  return selected
+    .map((entry) => formatOptionLabel(options, entry))
+    .join(", ");
+}
+
+function convertAnswersToPayload(answers: RoutineIntakeAnswers): RoutineIntake {
+  return {
+    sensitivity: answers.sensitivity,
+    pregnancy: answers.pregnancy === "prefer_not_to_say" ? "unsure" : answers.pregnancy,
+    rx_topical: answers.rxTopical,
+    allergies: normalizeMultiForApi(answers.allergies),
+    current_actives: normalizeMultiForApi(answers.currentActives),
+    fitzpatrick: answers.fitzpatrick === "unsure" ? undefined : answers.fitzpatrick,
+  };
+}
+
+function normalizeMultiForApi(values: string[]) {
+  if (!values.length || values.includes("none")) return [];
+  if (values.includes("unsure")) return ["unsure"];
+  return values;
 }
 
 type MarkerComputationInput = {
@@ -684,6 +1222,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: "#6B6B6B",
   },
+  summaryGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  summaryItem: {
+    width: "48%",
+    borderRadius: 12,
+    backgroundColor: "#F7F7F7",
+    padding: 12,
+    gap: 4,
+  },
+  summaryLabel: {
+    fontSize: 12,
+    color: "#6B6B6B",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  summaryValue: {
+    fontSize: 14,
+    color: "#0A0A0A",
+    fontWeight: "500",
+  },
+  summaryCallout: {
+    borderRadius: 12,
+    backgroundColor: "#F9F1E7",
+    padding: 12,
+  },
   statusText: {
     fontSize: 16,
     fontWeight: "500",
@@ -743,6 +1309,31 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     color: "#2A2A2A",
+  },
+  routineStreamingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  intakeSection: {
+    gap: 10,
+  },
+  intakeTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#0A0A0A",
+  },
+  intakeDescription: {
+    fontSize: 13,
+    color: "#6B6B6B",
+  },
+  intakeChipRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  intakeActions: {
+    gap: 8,
   },
   profileGrid: {
     flexDirection: "row",

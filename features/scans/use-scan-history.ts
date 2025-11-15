@@ -7,9 +7,18 @@ import {
   pruneExpired,
   type ScanRecord,
 } from "@/features/scans/scan-store";
+import {
+  listRecentTasks,
+  type FaceAnalysisTaskResponse,
+} from "@/features/scans/face-analysis-api";
+
+export type HistoryEntry = {
+  record: ScanRecord;
+  task: FaceAnalysisTaskResponse | null;
+};
 
 type HistoryState = {
-  records: ScanRecord[];
+  records: HistoryEntry[];
   loading: boolean;
   refreshing: boolean;
 };
@@ -26,8 +35,16 @@ export function useScanHistory() {
   const load = useCallback(async () => {
     setState((prev) => ({ ...prev, refreshing: true }));
     await pruneExpired();
-    const next = await listScans();
-    setState({ records: next, loading: false, refreshing: false });
+    const [localRecords, remoteTasks] = await Promise.all([
+      listScans(),
+      listRecentTasks(50).catch(() => [] as FaceAnalysisTaskResponse[]),
+    ]);
+    const taskMap = new Map(remoteTasks.map((task) => [task.task_id, task]));
+    const merged: HistoryEntry[] = localRecords.map((record) => ({
+      record,
+      task: taskMap.get(record.id) ?? null,
+    }));
+    setState({ records: merged, loading: false, refreshing: false });
   }, []);
 
   useEffect(() => {
@@ -38,7 +55,7 @@ export function useScanHistory() {
     await deleteScan(id);
     setState((prev) => ({
       ...prev,
-      records: prev.records.filter((record) => record.id !== id),
+      records: prev.records.filter((entry) => entry.record.id !== id),
     }));
   }, []);
 
