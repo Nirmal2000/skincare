@@ -50,9 +50,11 @@ export async function saveScan(input: ScanInput) {
     source: input.source,
   };
 
+  console.log("[ScanStore] saving record", record);
   const all = await listScans();
   const next = [record, ...all.filter((existing) => existing.id !== record.id)];
   await storage.setJSON(STORAGE_KEY, next);
+  console.log("[ScanStore] total records", next.length);
   return record;
 }
 

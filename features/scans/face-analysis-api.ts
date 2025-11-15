@@ -37,12 +37,12 @@ export interface FaceAnalysisResult {
   };
   issues?: Record<
     string,
-    Array<{
+    {
       region: string;
       intensity?: number;
       area?: number;
       description?: string;
-    }>
+    }[]
   >;
 }
 
@@ -148,14 +148,16 @@ export async function listRecentTasks(limit = 10) {
       Authorization: `Bearer ${token}`,
     },
   });
-
+  
   if (!response.ok) {
     const payload = await safeJson(response);
+    console.log("Payload", payload);
     const detail = payload?.detail ?? "Unable to fetch tasks";
     throw new Error(detail);
   }
-
-  return (await response.json()) as FaceAnalysisTaskResponse[];
+  const result = await response.json();
+  console.log("List recent tasks response", result);
+  return result as FaceAnalysisTaskResponse[];
 }
 
 export async function requestRoutineRecommendation(

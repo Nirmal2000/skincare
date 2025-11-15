@@ -6,7 +6,6 @@ import {
   Alert,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -89,7 +88,7 @@ function HostedPaywallScreen() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.paywallSafeArea}>
+    <View style={styles.paywallSafeArea}>
       <View style={styles.paywallHeader}>
         <Text style={styles.paywallTitle}>BetterSkin Pro</Text>
         <Text style={styles.paywallSubtitle}>Manage or upgrade below</Text>
@@ -136,7 +135,7 @@ function HostedPaywallScreen() {
           <Text style={styles.paywallErrorText}>{error}</Text>
         </View>
       ) : null}
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -269,7 +268,7 @@ function LegacyMembershipScreen() {
   const planPackages = offering?.availablePackages ?? [];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.content} bounces={false}>
         <View style={styles.headerRow}>
           <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
@@ -373,7 +372,7 @@ function LegacyMembershipScreen() {
           />
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

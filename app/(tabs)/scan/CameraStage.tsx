@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { Animated, LayoutChangeEvent, Text, View } from "react-native";
 import { Image } from "expo-image";
 import {
@@ -45,6 +45,15 @@ export function CameraStage({
 }: CameraStageProps) {
   const maskLayoutRef = useRef({ width: OVAL_W, height: OVAL_H });
   const lastStatusRef = useRef<FaceDetectionStatus | null>(null);
+  const faceDetectorSettings = useMemo(
+    () => ({
+      mode: FaceDetectorMode.fast,
+      runClassifications: FaceDetectorClassifications.none,
+      minDetectionInterval: 250,
+      tracking: true,
+    }),
+    [],
+  );
 
   const emitFaceStatus = useCallback(
     (status: FaceDetectionStatus) => {
@@ -187,12 +196,7 @@ export function CameraStage({
           ref={cameraRef}
           style={styles.fill}
           facing="front"
-          faceDetectorSettings={{
-            mode: FaceDetectorMode.fast,
-            runClassifications: FaceDetectorClassifications.none,
-            minDetectionInterval: 250,
-            tracking: true,
-          }}
+          faceDetectorSettings={faceDetectorSettings}
           onFacesDetected={handleFacesDetected}
         />
         <Animated.View

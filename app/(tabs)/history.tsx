@@ -6,7 +6,6 @@ import {
   Alert,
   FlatList,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -35,7 +34,7 @@ export default function HistoryScreen() {
 
   if (!profile) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.safeArea}>
         <View style={[styles.container, { justifyContent: "center", gap: 16 }]}>
           <Card style={{ gap: 12 }}>
             <Text style={styles.title}>Sign in to view history</Text>
@@ -50,7 +49,7 @@ export default function HistoryScreen() {
             />
           </Card>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -91,7 +90,7 @@ export default function HistoryScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <View style={styles.container}>
         <View style={{ gap: 8 }}>
           <Text style={styles.title}>History</Text>
@@ -135,7 +134,7 @@ export default function HistoryScreen() {
         )}
         
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -194,6 +193,29 @@ function formatTimestamp(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function formatStatusLabel(status: FaceAnalysisTaskResponse["status"]) {
+  switch (status) {
+    case "queued":
+      return "Queued";
+    case "global_profile_complete":
+      return "Profile analyzed";
+    case "texture_complete":
+      return "Texture analyzed";
+    case "pigmentation_complete":
+      return "Pigmentation analyzed";
+    case "acne_complete":
+      return "Acne analyzed";
+    case "aging_complete":
+      return "Aging analyzed";
+    case "completed":
+      return "Completed";
+    case "failed":
+      return "Failed";
+    default:
+      return status ?? "Unknown";
+  }
 }
 
 const styles = StyleSheet.create({

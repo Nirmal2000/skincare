@@ -1,6 +1,6 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Pressable, SafeAreaView, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
 
 const ACCENT = "#F18A1B";
 const LOGO_SIZE = 220;
@@ -9,7 +9,7 @@ export default function Home() {
   const router = useRouter();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <View style={styles.center}>
         <View style={styles.logoShell}>
           <Pressable
@@ -27,7 +27,7 @@ export default function Home() {
           </Pressable>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

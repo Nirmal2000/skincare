@@ -39,11 +39,14 @@ export function useScanHistory() {
       listScans(),
       listRecentTasks(50).catch(() => [] as FaceAnalysisTaskResponse[]),
     ]);
+    console.log("[History] local records", localRecords);
+    console.log("[History] remote tasks", remoteTasks);
     const taskMap = new Map(remoteTasks.map((task) => [task.task_id, task]));
     const merged: HistoryEntry[] = localRecords.map((record) => ({
       record,
       task: taskMap.get(record.id) ?? null,
     }));
+    console.log("[History] merged entries", merged);
     setState({ records: merged, loading: false, refreshing: false });
   }, []);
 

@@ -72,14 +72,15 @@ export function AgeScroller({ value, onChange }: AgeScrollerProps) {
       <View
         style={{
           height: WHEEL_ITEM_HEIGHT * 5,
-          borderRadius: 24,
+          borderRadius: 32,
           backgroundColor: "#FFFFFF",
           borderWidth: 1,
-          borderColor: "rgba(0,0,0,0.08)",
-          shadowColor: "rgba(0,0,0,0.04)",
-          shadowOffset: { width: 0, height: 4 },
+          borderColor: "rgba(17, 10, 0, 0.08)",
+          shadowColor: "rgba(17, 10, 0, 0.08)",
           shadowOpacity: 1,
-          shadowRadius: 8,
+          shadowRadius: 20,
+          shadowOffset: { width: 0, height: 12 },
+          elevation: 4,
           overflow: "hidden",
         }}
       >
@@ -95,10 +96,6 @@ export function AgeScroller({ value, onChange }: AgeScrollerProps) {
             backgroundColor: WHEEL_WINDOW_BG,
             borderWidth: 1,
             borderColor: WHEEL_WINDOW_BORDER,
-            shadowColor: "rgba(0,0,0,0.05)",
-            shadowOffset: { width: 0, height: 6 },
-            shadowOpacity: 1,
-            shadowRadius: 12,
           }}
         />
 

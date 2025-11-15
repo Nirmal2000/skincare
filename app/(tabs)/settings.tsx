@@ -4,13 +4,11 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ProfileCard } from "@/features/auth/profile-card";
 import { useSupabaseSession } from "@/features/auth/useSupabaseSession";
@@ -36,7 +34,6 @@ export default function SettingsScreen() {
   const { profile, signOut } = useSupabaseSession();
   const { settings, ready } = useSettings();
   const [deleting, setDeleting] = useState(false);
-  const insets = useSafeAreaInsets();
 
   const navigateToAgeEdit = () => {
     router.push("/edit-age");
@@ -80,21 +77,21 @@ export default function SettingsScreen() {
 
   if (!ready) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.safeArea}>
         <View style={styles.loader}>
           <ActivityIndicator />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: insets.bottom + 48 },
+          { paddingBottom: 48 },
         ]}
       >
         {profile ? (
@@ -161,7 +158,7 @@ export default function SettingsScreen() {
           />
         </Card>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

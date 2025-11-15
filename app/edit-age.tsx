@@ -1,6 +1,6 @@
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { SafeAreaView, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 
 import { updateAgeBand } from "@/features/onboarding/onboarding-store";
 import { useSettings } from "@/features/settings/settings-store";
@@ -42,7 +42,7 @@ export default function EditAgeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <View style={styles.container}>
         <View style={{ gap: 12 }}>
           <Text style={styles.title}>Update your age</Text>
@@ -65,7 +65,7 @@ export default function EditAgeScreen() {
           disabled={!hasChanges || saving || !ageValue}
         />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

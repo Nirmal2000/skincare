@@ -1,6 +1,5 @@
 // app/(tabs)/scan.tsx
-import { SafeAreaView, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Text, View } from "react-native";
 
 import {
   PrimaryButton,
@@ -14,7 +13,6 @@ import { useScanLineAnimation } from "./scan/useScanLineAnimation";
 import { useScanWorkflow } from "./scan/useScanWorkflow";
 
 export default function ScanScreen() {
-  const insets = useSafeAreaInsets();
   const {
     profile,
     loading,
@@ -64,11 +62,11 @@ export default function ScanScreen() {
   })();
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <View
         style={[
           styles.container,
-          { paddingBottom: TABBAR_CLEARANCE + insets.bottom },
+          { paddingBottom: TABBAR_CLEARANCE },
         ]}
       >
         <Text style={styles.heading}>Put your face in the oval</Text>
@@ -131,6 +129,6 @@ export default function ScanScreen() {
 
         {statusMessage ? <Text style={styles.status}>{statusMessage}</Text> : null}
       </View>
-    </SafeAreaView>
+    </View>
   );
 }

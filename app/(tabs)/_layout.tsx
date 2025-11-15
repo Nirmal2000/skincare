@@ -11,7 +11,6 @@ import {
   View,
   ViewStyle,
 } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -53,8 +52,6 @@ type FloatingTabBarProps = BottomTabBarProps & {
  * Uses Pressable to control navigation and avoid any default white containers.
  */
 function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
-  const insets = useSafeAreaInsets();
-
   // Only include screens that are meant to be shown as tabs
   const routes = state.routes.filter((r) => {
     const o = descriptors[r.key]?.options;
@@ -66,12 +63,12 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
 
   return (
     <View
-    pointerEvents="box-none"
-    style={[
-      styles.wrap,
-      { paddingBottom: Math.max(insets.bottom, 12) },
-    ]}
-  >
+      pointerEvents="box-none"
+      style={[
+        styles.wrap,
+        { paddingBottom: 12 },
+      ]}
+    >
     <View
       style={[
         styles.pill,

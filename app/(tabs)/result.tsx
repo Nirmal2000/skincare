@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import {
   ActivityIndicator,
   Image as RNImage,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -242,7 +241,7 @@ export default function ResultScreen() {
             if (prev === payload.routine_markdown) {
               return prev;
             }
-            return payload.routine_markdown;
+            return payload.routine_markdown ?? prev ?? null;
           });
           setRoutineStatus((prev) => (prev === "streaming" ? prev : "done"));
           setRoutineError(null);
@@ -479,18 +478,18 @@ export default function ResultScreen() {
 
   if (!taskId && !result && !textResult) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <View style={styles.safeArea}>
         <View style={styles.centered}>
           <Text style={styles.title}>No task in progress</Text>
           <Text style={styles.subtitle}>Start a new scan to see updates here.</Text>
           <PrimaryButton label="Back to Scan" onPress={() => router.replace("/(tabs)/scan")} />
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <View style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
@@ -632,7 +631,7 @@ export default function ResultScreen() {
 
         <PrimaryButton label="Back to Scan" onPress={() => router.replace("/(tabs)/scan")} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
