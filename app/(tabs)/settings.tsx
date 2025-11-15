@@ -4,11 +4,11 @@ import { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 import { ProfileCard } from "@/features/auth/profile-card";
 import { useSupabaseSession } from "@/features/auth/useSupabaseSession";
@@ -17,6 +17,7 @@ import {
   setAutoDeleteDays,
   useSettings,
 } from "@/features/settings/settings-store";
+import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
 import {
   Card,
   Chip,
@@ -34,6 +35,7 @@ export default function SettingsScreen() {
   const { profile, signOut } = useSupabaseSession();
   const { settings, ready } = useSettings();
   const [deleting, setDeleting] = useState(false);
+  const scrollHandler = useTabBarAutoHideScrollHandler();
 
   const navigateToAgeEdit = () => {
     router.push("/edit-age");
@@ -87,12 +89,14 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.safeArea}>
-      <ScrollView
+      <Animated.ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={[
           styles.content,
           { paddingBottom: 48 },
         ]}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
       >
         {profile ? (
           <ProfileCard
@@ -157,7 +161,7 @@ export default function SettingsScreen() {
             style={{ backgroundColor: "#C03515" }}
           />
         </Card>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }

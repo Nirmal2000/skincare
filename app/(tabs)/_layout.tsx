@@ -3,7 +3,7 @@ import { Ionicons } from "@expo/vector-icons";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { Tabs } from "expo-router";
 import type { ComponentProps } from "react";
-import React from "react";
+import React, { useEffect } from "react";
 import {
   Dimensions,
   Pressable,
@@ -12,7 +12,15 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useTabBarVisibility } from "@/features/navigation/tab-bar-visibility";
 
 type IoniconName = ComponentProps<typeof Ionicons>["name"];
 
@@ -56,6 +64,24 @@ const VISIBLE_TABS = new Set(["home", "history", "membership", "settings"]);
 
 function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps) {
   const insets = useSafeAreaInsets();
+  const hidden = useTabBarVisibility((s) => s.hidden);
+  const setHidden = useTabBarVisibility((s) => s.setHidden);
+  const translateY = useSharedValue(0);
+  const fade = useSharedValue(1);
+  const hideDistance = BAR_H + 64;
+
+  useEffect(() => {
+    translateY.value = withTiming(hidden ? hideDistance : 0, {
+      duration: 220,
+      easing: Easing.out(Easing.cubic),
+    });
+    fade.value = withTiming(hidden ? 0 : 1, { duration: 180 });
+  }, [hidden, fade, translateY, hideDistance]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+    opacity: fade.value,
+  }));
   // Only include screens that are meant to be shown as tabs
   const routes = state.routes.filter((r) => VISIBLE_TABS.has(r.name));
 
@@ -63,9 +89,9 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
   const barWidth = Math.min(MAX_BAR_WIDTH, windowWidth - 32);
 
   return (
-    <View
+    <Animated.View
       pointerEvents="box-none"
-      style={[styles.wrap, { paddingBottom: insets.bottom + 20 }]}
+      style={[styles.wrap, { paddingBottom: insets.bottom + 20 }, animatedStyle]}
     >
       <View
         style={[
@@ -87,6 +113,7 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
               ((_props: { color: string; focused: boolean }) => null);
 
             const onPress = () => {
+              setHidden(false);
               const event = navigation.emit({
                 type: "tabPress",
                 target: route.key,
@@ -132,7 +159,7 @@ function FloatingTabBar({ state, descriptors, navigation }: FloatingTabBarProps)
           })}
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 

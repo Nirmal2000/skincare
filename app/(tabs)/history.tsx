@@ -4,13 +4,13 @@ import { useCallback } from "react";
 import {
   ActivityIndicator,
   Alert,
-  FlatList,
   Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 import { useAuthGate } from "@/features/auth/useAuthGate";
 import { getExpiryBadge, type ScanRecord } from "@/features/scans/scan-store";
@@ -20,11 +20,13 @@ import {
   Card,
   PrimaryButton
 } from "@/lib/ui/facefit-components";
+import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
 
 export default function HistoryScreen() {
   const router = useRouter();
   const { profile, loading: authLoading, requireAuth } = useAuthGate();
   const { records, loading, refreshing, refresh, remove } = useScanHistory();
+  const scrollHandler = useTabBarAutoHideScrollHandler();
 
   useFocusEffect(
     useCallback(() => {
@@ -105,7 +107,7 @@ export default function HistoryScreen() {
             <ActivityIndicator />
           </View>
         ) : (
-          <FlatList
+          <Animated.FlatList
             data={records}
             keyExtractor={(item) => item.record.id}
             contentContainerStyle={
@@ -116,6 +118,8 @@ export default function HistoryScreen() {
             refreshing={refreshing}
             onRefresh={refresh}
             ItemSeparatorComponent={() => <View style={{ height: 16 }} />}
+            onScroll={scrollHandler}
+            scrollEventThrottle={16}
             renderItem={({ item }) => (
                 <HistoryCard
                   entry={item}

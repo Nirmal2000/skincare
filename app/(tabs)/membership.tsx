@@ -6,11 +6,11 @@ import {
   Alert,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   View
 } from "react-native";
+import Animated from "react-native-reanimated";
 import Purchases, {
   type CustomerInfo,
   type PurchasesOffering,
@@ -29,6 +29,7 @@ import {
   PrimaryButton,
   SecondaryButton,
 } from "@/lib/ui/facefit-components";
+import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
 import {
   ACCENT_COLOR,
   INTRO_BG,
@@ -151,6 +152,7 @@ function LegacyMembershipScreen() {
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [manualPurchasePending, setManualPurchasePending] = useState(false);
   const [customerCenterPending, setCustomerCenterPending] = useState(false);
+  const scrollHandler = useTabBarAutoHideScrollHandler();
 
   const isWeb = Platform.OS === "web";
   
@@ -269,7 +271,12 @@ function LegacyMembershipScreen() {
 
   return (
     <View style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} bounces={false}>
+      <Animated.ScrollView
+        contentContainerStyle={styles.content}
+        bounces={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
         <View style={styles.headerRow}>
           <Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.backButton}>
             <Feather name="chevron-left" size={24} color={INTRO_TEXT} />
@@ -371,7 +378,7 @@ function LegacyMembershipScreen() {
             disabled={customerCenterPending}
           />
         </Card>
-      </ScrollView>
+      </Animated.ScrollView>
     </View>
   );
 }
