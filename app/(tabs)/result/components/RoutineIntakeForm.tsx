@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { View, Text } from "react-native";
+import { Text, View } from "react-native";
 
 import type { RoutineIntake } from "@/features/scans/face-analysis-api";
 import { type RoutineIntakeAnswers } from "@/features/scans/routine-intake-store";
@@ -280,7 +280,7 @@ function formatListSummary(selected: string[], options: OptionConfig<string>[]) 
 export function convertAnswersToPayload(answers: RoutineIntakeAnswers): RoutineIntake {
   return {
     sensitivity: answers.sensitivity,
-    pregnancy: answers.pregnancy === "prefer_not_to_say" ? "unsure" : answers.pregnancy,
+    pregnancy: answers.pregnancy,
     rx_topical: answers.rxTopical,
     allergies: normalizeMultiForApi(answers.allergies),
     current_actives: normalizeMultiForApi(answers.currentActives),

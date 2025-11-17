@@ -63,18 +63,8 @@ export default function HistoryScreen() {
     const nextParams: Record<string, string> = {
       imageUri: encodeURIComponent(record.imageUri),
       source: record.source,
-      readonly: "true",
       taskId: record.id,
     };
-    if (task?.result) {
-      nextParams.initialResult = encodeURIComponent(JSON.stringify(task.result));
-    }
-    if (!task?.result && task?.error) {
-      nextParams.initialText = encodeURIComponent(task.error);
-    }
-    if (task?.routine_markdown) {
-      nextParams.initialRoutine = encodeURIComponent(task.routine_markdown);
-    }
     router.push({
       pathname: "/(tabs)/result",
       params: nextParams,

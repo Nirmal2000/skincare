@@ -51,7 +51,7 @@ export interface FaceAnalysisTaskResponse {
   status: FaceAnalysisTaskStatus;
   result: FaceAnalysisResult | null;
   error: string | null;
-  routine_markdown?: string | null;
+  routine_json?: Record<string, unknown> | null;
 }
 
 const API_BASE_URL =
@@ -61,27 +61,100 @@ const BASE = API_BASE_URL.replace(/\/$/, "");
 const START_TASK_ENDPOINT = `${BASE}/start-task`;
 const TASKS_ENDPOINT = `${BASE}/tasks`;
 const RECOMMEND_ENDPOINT = `${BASE}/recommend`;
-const RECOMMEND_STREAM_ENDPOINT = `${BASE}/recommend/stream`;
 
 export type RoutineIntake = {
   sensitivity?: "low" | "medium" | "high" | "unsure";
-  pregnancy?: "yes" | "no" | "unsure";
+  pregnancy?: "yes" | "no" | "prefer_not_to_say";
   rx_topical?: "yes" | "no" | "unsure";
   allergies?: string[];
   current_actives?: string[];
   fitzpatrick?: string;
+  country?: string;
+  budget_preference?: string;
 };
 
-export type RoutineResponse = {
+export interface RoutineInstruction {
+  how: string;
+  frequency: string;
+  timing: string;
+}
+
+export type RoutineStepType =
+  | "cleanser"
+  | "active"
+  | "moisturizer"
+  | "sunscreen"
+  | "refresh"
+  | "other";
+
+export interface RoutineProduct {
+  id: string | null;
+  brand: string;
+  name: string;
+  tier: "budget" | "mid" | "premium";
+  url: string;
+  why: string;
+}
+
+export interface RoutineStep {
+  type: RoutineStepType | string;
+  instructions: RoutineInstruction;
+  products: RoutineProduct[];
+}
+
+export interface RoutineSection {
+  am?: RoutineStep[];
+  midday?: RoutineStep[];
+  pm?: RoutineStep[];
+  [key: string]: RoutineStep[] | undefined;
+}
+
+export interface RoutineConcern {
+  key: string;
+  severity: "mild" | "moderate" | "severe";
+  why: string;
+}
+
+export interface RoutineReasons {
+  prioritized_concerns: RoutineConcern[];
+  notes?: string;
+}
+
+export interface RoutineLifestyle {
+  sleep?: string;
+  stress?: string;
+  sun?: string;
+  habits?: string;
+  routine_hygiene?: string;
+  diet?: {
+    increase?: string[];
+    limit?: string[];
+    supplements?: string[];
+  };
+}
+
+export interface RoutineRichText {
+  id: string;
+  text: string;
+  spans?: { start: number; end: number; ref_product_id: string }[];
+}
+
+export interface RoutineRecommendationResponse {
   task_id: string;
-  stream_path: string;
-};
+  poll_path: string;
+}
 
-export type RoutineStreamCallbacks = {
-  onChunk: (markdown: string) => void;
-  onDone: () => void;
-  onError?: (error: Error) => void;
-};
+export interface RoutineRecommendationResult {
+  task_id: string;
+  ready: boolean;
+  intake?: RoutineIntake;
+  routine?: RoutineSection | null;
+  reasons?: RoutineReasons | null;
+  warnings?: string[];
+  lifestyle?: RoutineLifestyle | null;
+  rich_text?: RoutineRichText[];
+  error?: string | null;
+}
 
 export async function startAnalysisTask(
   imageUri: string,
@@ -163,7 +236,7 @@ export async function listRecentTasks(limit = 10) {
 export async function requestRoutineRecommendation(
   taskId: string,
   intake: RoutineIntake,
-): Promise<RoutineResponse> {
+): Promise<RoutineRecommendationResponse> {
   const token = await requireAccessToken();
   const response = await fetch(RECOMMEND_ENDPOINT, {
     method: "POST",
@@ -181,16 +254,30 @@ export async function requestRoutineRecommendation(
     throw new Error(detail);
   }
 
-  return (await response.json()) as RoutineResponse;
+  return (await response.json()) as RoutineRecommendationResponse;
 }
 
-export async function subscribeToRoutineStream(
+export async function fetchRoutineRecommendationResult(
   taskId: string,
-  callbacks: RoutineStreamCallbacks,
-): Promise<() => void> {
+  signal?: AbortSignal,
+): Promise<RoutineRecommendationResult> {
   const token = await requireAccessToken();
-  const url = `${RECOMMEND_STREAM_ENDPOINT}/${encodeURIComponent(taskId)}`;
-  return openEventStream(url, token, callbacks);
+  const response = await fetch(`${RECOMMEND_ENDPOINT}/${encodeURIComponent(taskId)}`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    signal,
+  });
+
+  if (!response.ok) {
+    const payload = await safeJson(response);
+    const detail = payload?.detail ?? "Unable to fetch routine";
+    throw new Error(detail);
+  }
+
+  return (await response.json()) as RoutineRecommendationResult;
 }
 
 async function safeJson(response: Response) {
@@ -260,97 +347,4 @@ async function requireAccessToken() {
     throw new Error("You need to sign in again before scanning.");
   }
   return token;
-}
-
-function openEventStream(
-  url: string,
-  token: string,
-  callbacks: RoutineStreamCallbacks,
-) {
-  const xhr = new XMLHttpRequest();
-  let buffer = "";
-  let closed = false;
-  let processedLength = 0;
-
-  const cleanup = () => {
-    if (closed) return;
-    closed = true;
-    try {
-      xhr.abort();
-    } catch {
-      // Ignore abort errors
-    }
-  };
-
-  const emitError = (message: string) => {
-    callbacks.onError?.(new Error(message));
-  };
-
-  const handleChunk = (chunk: string) => {
-    buffer += chunk.replace(/\r\n/g, "\n");
-    let delimiterIndex;
-    while ((delimiterIndex = buffer.indexOf("\n\n")) >= 0) {
-      const rawEvent = buffer.slice(0, delimiterIndex);
-      buffer = buffer.slice(delimiterIndex + 2);
-      if (!rawEvent.trim()) {
-        continue;
-      }
-      const dataLines = rawEvent
-        .split("\n")
-        .filter((line) => line.startsWith("data:"));
-      if (!dataLines.length) {
-        continue;
-      }
-      const payload = dataLines
-        .map((line) => line.slice(5).trimStart())
-        .join("\n");
-      if (!payload) {
-        continue;
-      }
-      if (payload === "[DONE]") {
-        callbacks.onDone();
-        cleanup();
-        return;
-      }
-      if (payload.startsWith("[ERROR]")) {
-        const detail = payload.slice(7).trim() || "Routine stream reported an error.";
-        const error = new Error(detail) as Error & { isRoutineStreamServerError?: boolean };
-        error.name = "RoutineStreamServerError";
-        error.isRoutineStreamServerError = true;
-        callbacks.onError?.(error);
-        cleanup();
-        return;
-      }
-      callbacks.onChunk(payload);
-    }
-  };
-
-  xhr.onreadystatechange = () => {
-    if (closed) return;
-    if (xhr.readyState >= 3) {
-      const text = xhr.responseText ?? "";
-      if (text.length > processedLength) {
-        const chunk = text.slice(processedLength);
-        processedLength = text.length;
-        handleChunk(chunk);
-      }
-    }
-    if (xhr.readyState === 4 && xhr.status >= 400) {
-      emitError(`Stream failed with status ${xhr.status}`);
-      cleanup();
-    }
-  };
-
-  xhr.onerror = () => {
-    if (closed) return;
-    emitError("Stream connection error");
-    cleanup();
-  };
-
-  xhr.open("GET", url, true);
-  xhr.setRequestHeader("Accept", "text/event-stream");
-  xhr.setRequestHeader("Authorization", `Bearer ${token}`);
-  xhr.send();
-
-  return cleanup;
 }

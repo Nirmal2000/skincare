@@ -1,4 +1,4 @@
-import { StyleSheet } from "react-native";
+import { Platform, StyleSheet } from "react-native";
 
 export const resultStyles = StyleSheet.create({
   safeArea: {
@@ -170,6 +170,18 @@ export const resultStyles = StyleSheet.create({
   },
   routineCtaButton: {
     backgroundColor: "#F18A1B",
+  },
+  routineJsonContainer: {
+    backgroundColor: "#F4F4F4",
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 12,
+  },
+  routineJson: {
+    fontFamily: Platform.OS === "android" ? "monospace" : "Menlo",
+    fontSize: 13,
+    color: "#0A0A0A",
+    lineHeight: 20,
   },
   intakeSection: {
     gap: 10,

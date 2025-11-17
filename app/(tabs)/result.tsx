@@ -16,20 +16,14 @@ import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-vi
 import {
   fetchTaskStatus,
   requestRoutineRecommendation,
-  subscribeToRoutineStream,
   type FaceAnalysisResult,
+  type FaceAnalysisTaskResponse,
   type FaceAnalysisTaskStatus,
 } from "@/features/scans/face-analysis-api";
-import { isTaskPending, unmarkTaskPending } from "@/features/scans/pending-task-store";
+import { unmarkTaskPending } from "@/features/scans/pending-task-store";
 import { useRoutineIntake, type RoutineIntakeAnswers } from "@/features/scans/routine-intake-store";
-import {
-  isRoutineStreaming,
-  markRoutineStreaming,
-  unmarkRoutineStreaming,
-} from "@/features/scans/routine-stream-store";
 import { deleteScan, type ScanSource } from "@/features/scans/scan-store";
 import { PrimaryButton } from "@/lib/ui/facefit-components";
-import { MarkdownStream } from "react-native-markdown-stream";
 
 import {
   FaceIssueOverlay,
@@ -45,7 +39,6 @@ import {
   computeMarkerCoords,
   decodeMaybe,
   intensityToColor,
-  parseJsonParam,
   parseLandmarksParam,
   toSingle,
 } from "./result/utils";
@@ -56,60 +49,11 @@ function extractFailureToken(message: string | null | undefined) {
   return match?.[1] ?? null;
 }
 
-function logRoutineStream(...args: unknown[]) {
-  console.log("[RoutineStream]", ...args);
-}
-
-function buildRoutineSections(markdown: string | null): RoutineSection[] {
-  if (!markdown) return [];
-  const normalized = markdown.replace(/\r\n/g, "\n");
-  const lines = normalized.split("\n");
-  const sections: RoutineSection[] = [];
-  let current: RoutineSection | null = null;
-
-  lines.forEach((line) => {
-    const headingMatch = line.match(/^###\s+(.*)$/);
-    if (headingMatch) {
-      const title = headingMatch[1]?.trim() || "Routine";
-      const id = `${sections.length}-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "section"}`;
-      current = { id, title, content: "" };
-      sections.push(current);
-      return;
-    }
-    if (!current) {
-      current = {
-        id: "overview",
-        title: "Overview",
-        content: "",
-      };
-      sections.push(current);
-    }
-    current.content = current.content ? `${current.content}\n${line}` : line;
-  });
-
-  return sections
-    .map((section) => ({
-      ...section,
-      content: section.content.trim(),
-    }))
-    .filter((section) => section.content.length > 0);
-}
-
 type Params = {
   taskId?: string | string[];
   imageUri?: string | string[];
   source?: string | string[];
-  readonly?: string | string[];
-  initialResult?: string | string[];
-  initialText?: string | string[];
   landmarks?: string | string[];
-  initialRoutine?: string | string[];
-};
-
-type RoutineSection = {
-  id: string;
-  title: string;
-  content: string;
 };
 
 export default function ResultScreen() {
@@ -125,36 +69,21 @@ export default function ResultScreen() {
   const sourceParam = toSingle(params.source);
   const source: ScanSource | null =
     sourceParam === "camera" || sourceParam === "gallery" ? sourceParam : null;
-  const readOnly = toSingle(params.readonly) === "true";
-  const initialStructured = useMemo(() => parseJsonParam(params.initialResult), [params.initialResult]);
-  const initialText = useMemo(() => decodeMaybe(toSingle(params.initialText)), [params.initialText]);
-  const initialRoutine = useMemo(
-    () => decodeMaybe(toSingle(params.initialRoutine)),
-    [params.initialRoutine],
-  );
   const landmarksParam = toSingle(params.landmarks);
   const landmarks = useMemo(() => parseLandmarksParam(landmarksParam), [landmarksParam]);
 
-  const initialStatus = useMemo<FaceAnalysisTaskStatus | null>(() => {
-    if (initialStructured) return "completed";
-    if (initialText) return "failed";
-    return taskId ? "queued" : null;
-  }, [initialStructured, initialText, taskId]);
-  const [status, setStatus] = useState<FaceAnalysisTaskStatus | null>(() => initialStatus);
-  const [result, setResult] = useState<FaceAnalysisResult | null>(initialStructured);
-  const [textResult, setTextResult] = useState<string | null>(initialText ?? null);
+  const [status, setStatus] = useState<FaceAnalysisTaskStatus | null>(null);
+  const [result, setResult] = useState<FaceAnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [taskPayload, setTaskPayload] = useState<FaceAnalysisTaskResponse | null>(null);
   const [selectedIssueKey, setSelectedIssueKey] = useState<string | null>(null);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
-  const [routineMarkdown, setRoutineMarkdown] = useState<string | null>(null);
   const [routineStatus, setRoutineStatus] = useState<
-    "idle" | "requesting" | "streaming" | "done" | "error"
+    "idle" | "requesting" | "polling" | "done" | "error"
   >("idle");
   const [routineError, setRoutineError] = useState<string | null>(null);
-  const [pollingActive, setPollingActive] = useState(false);
-  const [isTrackedTask, setIsTrackedTask] = useState(false);
-  const failureMessage = error ?? textResult;
-  const failureToken = useMemo(() => extractFailureToken(failureMessage), [failureMessage]);
+
+  const failureToken = useMemo(() => extractFailureToken(error), [error]);
   const {
     intake: storedIntake,
     completed: intakeCompleted,
@@ -162,7 +91,7 @@ export default function ResultScreen() {
   } = useRoutineIntake();
 
   const hasLoggedRef = useRef(false);
-  const routineStreamCleanupRef = useRef<null | (() => void)>(null);
+  const routinePollControllerRef = useRef<AbortController | null>(null);
   const markdownTheme = useMemo(
     () => ({
       base: "light" as const,
@@ -176,14 +105,14 @@ export default function ResultScreen() {
     }),
     [],
   );
-  const routineSections = useMemo<RoutineSection[]>(() => buildRoutineSections(routineMarkdown), [routineMarkdown]);
-
   const issuesSummary = useMemo(() => buildIssueSummaries(result?.issues), [result]);
   const selectedIssue = useMemo(() => {
     if (!issuesSummary.length) return null;
     const match = issuesSummary.find((issue) => issue.key === selectedIssueKey);
     return match ?? issuesSummary[0] ?? null;
   }, [issuesSummary, selectedIssueKey]);
+
+  const routineJson = taskPayload?.routine_json ?? null;
 
   useEffect(() => {
     if (!landmarks) return;
@@ -217,60 +146,22 @@ export default function ResultScreen() {
   }, [decodedImageUri]);
 
   useEffect(() => {
-    setStatus(initialStatus);
-  }, [initialStatus]);
-
-  useEffect(() => {
-    setResult(initialStructured ?? null);
-    setTextResult(initialText ?? null);
-  }, [initialStructured, initialText]);
-
-  useEffect(() => {
-    if (initialRoutine == null) return;
-    setRoutineMarkdown(initialRoutine);
-    setRoutineStatus((prev) => (prev === "streaming" ? prev : "done"));
-    setRoutineError(null);
-  }, [initialRoutine]);
-
-  useEffect(() => {
-    stopRoutineStream();
+    routinePollControllerRef.current?.abort();
     setError(null);
     setSelectedIssueKey(null);
-    setRoutineMarkdown(null);
     setRoutineStatus("idle");
     setRoutineError(null);
-    logRoutineStream("resetting UI state for task", taskId);
-  }, [stopRoutineStream, taskId]);
-
-  useEffect(() => {
-    if (!taskId) {
-      setPollingActive(false);
-      setIsTrackedTask(false);
-      return;
-    }
-    let cancelled = false;
-    setPollingActive(false);
-    setIsTrackedTask(false);
-    (async () => {
-      try {
-        const tracked = await isTaskPending(taskId);
-        if (cancelled) return;
-        setIsTrackedTask(tracked);
-        setPollingActive(tracked);
-      } catch {
-        if (!cancelled) {
-          setIsTrackedTask(false);
-          setPollingActive(false);
-        }
-      }
-    })();
+    setStatus(null);
+    setResult(null);
+    setTaskPayload(null);
+    hasLoggedRef.current = false;
     return () => {
-      cancelled = true;
+      routinePollControllerRef.current?.abort();
     };
   }, [taskId]);
 
   useEffect(() => {
-    if (!taskId || !pollingActive) return;
+    if (!taskId) return;
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -278,40 +169,19 @@ export default function ResultScreen() {
       try {
         const payload = await fetchTaskStatus(taskId);
         if (cancelled) return;
+        setTaskPayload(payload);
         setStatus(payload.status);
-        if (payload.result) {
-          setResult(payload.result);
-          setTextResult(null);
-        }
-        if (typeof payload.routine_markdown === "string" && payload.routine_markdown.length) {
-          setRoutineMarkdown((prev) => {
-            if (prev === payload.routine_markdown) {
-              return prev;
-            }
-            return payload.routine_markdown ?? prev ?? null;
-          });
-          setRoutineStatus((prev) => (prev === "streaming" ? prev : "done"));
-          setRoutineError(null);
-        }
-        if (payload.status === "completed") {
-          if (!hasLoggedRef.current) {
+        setResult(payload.result ?? null);
+        setError(payload.error ?? null);
+        if (payload.status === "completed" || payload.status === "failed") {
+          if (payload.status === "completed" && !hasLoggedRef.current) {
             console.log("[FaceAnalysis] task completed", payload);
             hasLoggedRef.current = true;
           }
-          setError(null);
-          setPollingActive(false);
-          setIsTrackedTask(false);
           await unmarkTaskPending(taskId).catch(() => null);
           return;
         }
-        if (payload.status === "failed") {
-          setError(payload.error ?? "Task failed. Try again.");
-          setPollingActive(false);
-          setIsTrackedTask(false);
-          await unmarkTaskPending(taskId).catch(() => null);
-          return;
-        }
-        timer = setTimeout(poll, 5000);
+        timer = setTimeout(poll, 1500);
       } catch (err) {
         if (cancelled) return;
         const message = err instanceof Error ? err.message : "Unable to fetch task.";
@@ -328,11 +198,10 @@ export default function ResultScreen() {
         clearTimeout(timer);
       }
     };
-  }, [pollingActive, taskId]);
+  }, [taskId]);
 
   const handleFailureRetry = useCallback(async () => {
     if (!taskId) return;
-    setPollingActive(false);
     try {
       await deleteScan(taskId);
     } catch (scanError) {
@@ -342,104 +211,53 @@ export default function ResultScreen() {
     router.replace("/(tabs)/home");
   }, [router, taskId]);
 
-  const stopRoutineStream = useCallback(() => {
-    if (routineStreamCleanupRef.current) {
-      try {
-        routineStreamCleanupRef.current();
-      } catch {
-        // ignore cleanup errors
-      }
-      routineStreamCleanupRef.current = null;
-      logRoutineStream("routine stream cleanup invoked");
-    }
-  }, []);
-
-  const handleRoutineStreamComplete = useCallback(() => {
-    stopRoutineStream();
-    setRoutineStatus("done");
+  const pollRoutineJson = useCallback(async () => {
+    if (!taskId) return;
+    routinePollControllerRef.current?.abort();
+    const controller = new AbortController();
+    routinePollControllerRef.current = controller;
+    setRoutineStatus("polling");
     setRoutineError(null);
-    setRoutineMarkdown((prev) => prev ?? "");
-    logRoutineStream("handleRoutineStreamComplete");
-    if (taskId) {
-      unmarkRoutineStreaming(taskId).catch(() => null);
-    }
-  }, [stopRoutineStream, taskId]);
-
-  const beginRoutineStream = useCallback(async () => {
-    if (!taskId || routineStreamCleanupRef.current) {
-      logRoutineStream("Skipping stream start", { taskId, hasCleanup: !!routineStreamCleanupRef.current });
-      return;
-    }
-    logRoutineStream("Starting routine stream", { taskId });
-    setRoutineStatus("streaming");
-    setRoutineError(null);
-    setRoutineMarkdown(null);
-    await markRoutineStreaming(taskId);
     try {
-      const cleanup = await subscribeToRoutineStream(taskId, {
-        onChunk: (chunk) => {
-          logRoutineStream("chunk received", {
-            length: typeof chunk === "string" ? chunk.length : null,
-            preview: typeof chunk === "string" ? chunk.slice(0, 40) : chunk,
-          });
-          setRoutineMarkdown((prev) => {
-            const nextValue = prev ? `${prev}${chunk}` : chunk;
-            logRoutineStream("accumulated markdown length", typeof nextValue === "string" ? nextValue.length : 0);
-            return nextValue;
-          });
-        },
-        onDone: () => {
-          logRoutineStream("stream completed");
-          handleRoutineStreamComplete();
-        },
-        onError: (err) => {
-          logRoutineStream("stream error", err);
-          stopRoutineStream();
+      while (true) {
+        const payload = await fetchTaskStatus(taskId, controller.signal);
+        if (controller.signal.aborted) {
+          return;
+        }
+        setTaskPayload(payload);
+        setStatus(payload.status);
+        setResult(payload.result ?? null);
+        setError(payload.error ?? null);
+        if (payload.error) {
           setRoutineStatus("error");
-          setRoutineError(err.message);
-          const serverError = err as Error & { isRoutineStreamServerError?: boolean };
-          if (serverError.isRoutineStreamServerError) {
-            handleFailureRetry().catch(() => null);
-          }
-        },
-      });
-      logRoutineStream("subscription established");
-      routineStreamCleanupRef.current = cleanup;
+          setRoutineError(payload.error);
+          return;
+        }
+        if (payload.routine_json) {
+          setRoutineStatus("done");
+          setRoutineError(null);
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+      }
     } catch (err) {
-      logRoutineStream("failed to start stream", err);
-      await unmarkRoutineStreaming(taskId).catch(() => null);
-      setRoutineStatus("error");
-      const message =
-        err instanceof Error ? err.message : "Unable to start routine stream.";
-      setRoutineError(message);
-    }
-  }, [handleFailureRetry, handleRoutineStreamComplete, stopRoutineStream, taskId]);
-
-  useEffect(() => {
-    if (!taskId || !isTrackedTask) {
-      stopRoutineStream();
-      return () => undefined;
-    }
-    let cancelled = false;
-
-    (async () => {
-      const tracked = await isRoutineStreaming(taskId);
-      if (cancelled || !tracked) {
+      if (controller.signal.aborted) {
         return;
       }
-      await beginRoutineStream();
-    })();
-
-    return () => {
-      cancelled = true;
-      stopRoutineStream();
-    };
-  }, [beginRoutineStream, isTrackedTask, stopRoutineStream, taskId]);
+      const message = err instanceof Error ? err.message : "Unable to fetch routine.";
+      setRoutineStatus("error");
+      setRoutineError(message);
+    } finally {
+      if (routinePollControllerRef.current === controller) {
+        routinePollControllerRef.current = null;
+      }
+    }
+  }, [taskId]);
 
   const startRoutineWithAnswers = useCallback(
     async (answers: RoutineIntakeAnswers) => {
       if (!taskId) return false;
-      if (routineStatus === "requesting" || routineStatus === "streaming") {
+      if (routineStatus === "requesting" || routineStatus === "polling") {
         return false;
       }
       setRoutineStatus("requesting");
@@ -447,7 +265,7 @@ export default function ResultScreen() {
       try {
         const payload = convertAnswersToPayload(answers);
         await requestRoutineRecommendation(taskId, payload);
-        await beginRoutineStream();
+        void pollRoutineJson();
         return true;
       } catch (err) {
         const message =
@@ -457,14 +275,34 @@ export default function ResultScreen() {
         return false;
       }
     },
-    [beginRoutineStream, routineStatus, taskId],
+    [pollRoutineJson, routineStatus, taskId],
   );
-
-  const handleRequestRoutine = useCallback(async () => {
+  const handleOpenRoutine = useCallback(async () => {
     if (!taskId || status !== "completed") return;
-    if (!intakeReady || !intakeCompleted) return;
-    await startRoutineWithAnswers(storedIntake);
-  }, [intakeCompleted, intakeReady, startRoutineWithAnswers, status, storedIntake, taskId]);
+    const needsIntake = !routineJson;
+    if (needsIntake && (!intakeReady || !intakeCompleted)) return;
+    if (needsIntake) {
+      const started = await startRoutineWithAnswers(storedIntake);
+      if (!started) return;
+    }
+    const params: Record<string, string> = { taskId };
+    if (!routineJson) {
+      params.routineRequested = "true";
+    }
+    router.push({
+      pathname: "/(tabs)/result/routine",
+      params,
+    });
+  }, [
+    intakeCompleted,
+    intakeReady,
+    router,
+    routineJson,
+    startRoutineWithAnswers,
+    status,
+    storedIntake,
+    taskId,
+  ]);
 
   const handleFillPreferences = useCallback(() => {
     const base = "/welcome?returnTo=result";
@@ -495,20 +333,24 @@ export default function ResultScreen() {
     });
   }, [imageSize, landmarks, selectedIssue]);
 
+  const needsIntake = !routineJson;
   const routineButtonDisabled =
     !taskId ||
     status !== "completed" ||
-    !intakeCompleted ||
-    !intakeReady ||
     routineStatus === "requesting" ||
-    routineStatus === "streaming";
+    routineStatus === "polling" ||
+    (needsIntake && (!intakeCompleted || !intakeReady));
 
   const routineButtonLabel = (() => {
-    if (routineStatus === "requesting") return "Summoning your glow ritual...";
-    if (routineStatus === "streaming") return "Streaming your glow ritual...";
-    if (routineMarkdown) return "Refresh my glow ritual";
-    return "Unveil my glow ritual";
+    if (!routineJson) {
+      if (routineStatus === "requesting") return "Summoning your glow ritual...";
+      if (routineStatus === "polling") return "Fetching your routine...";
+      return "Get routine";
+    }
+    return "See routine";
   })();
+
+  const isAnalyzing = !status || (status !== "completed" && status !== "failed");
 
   useEffect(() => {
     if (!selectedIssue || !markers.length) return;
@@ -526,7 +368,7 @@ export default function ResultScreen() {
     });
   }, [markers, selectedIssue?.key]);
 
-  if (!taskId && !result && !textResult) {
+  if (!taskId) {
     return (
       <View style={styles.safeArea}>
         <View style={styles.centered}>
@@ -614,45 +456,6 @@ export default function ResultScreen() {
 
         {status === "completed" ? (
           <View style={styles.section}>
-            <Text style={styles.routineTitle}>Personalized Routine</Text>
-            {!intakeReady ? (
-              <View style={styles.routineStreamingRow}>
-                <ActivityIndicator />
-                <Text style={styles.subtitle}>Loading your preferences…</Text>
-              </View>
-            ) : null}
-            {routineStatus === "streaming" ? (
-              <View style={styles.routineStreamingRow}>
-                <ActivityIndicator />
-                <Text style={styles.subtitle}>Streaming your routine…</Text>
-              </View>
-            ) : null}
-            {routineSections.length ? (
-              routineSections.map((section) => (
-                <View key={section.id} style={[styles.card, styles.cardCentered, styles.routineSectionCard]}>
-                  <Text style={[styles.cardHeading, styles.cardHeadingCentered]}>{section.title}</Text>
-                  <View style={[styles.markdownContainer, styles.cardFullWidth]}>
-                    <MarkdownStream
-                      autoStart={false}
-                      content={section.content}
-                      theme={markdownTheme}
-                      enableImageLightbox
-                      enableCodeCopy
-                    />
-                  </View>
-                </View>
-              ))
-            ) : (<></>
-              // <View style={[styles.card, styles.cardCentered]}>
-              //   {/* <Text style={[styles.subtitle, styles.cardDescriptionCentered, styles.cardFullWidth]}>
-              //     {status === "completed"
-              //       ? intakeCompleted
-              //         ? "Ask BetterSkin to craft your next skincare steps."
-              //         : "Fill your routine preferences to unlock tailored recommendations."
-              //       : "Complete an analysis to request a personalized routine."}
-              //   </Text> */}
-              // </View>
-            )}
             {routineError ? (
               <Text style={[styles.error, styles.cardDescriptionCentered, styles.cardFullWidth]}>
                 {routineError}
@@ -660,11 +463,11 @@ export default function ResultScreen() {
             ) : null}
             <PrimaryButton
               label={routineButtonLabel}
-              onPress={handleRequestRoutine}
+              onPress={handleOpenRoutine}
               disabled={routineButtonDisabled}
-              style={[styles.routineCtaButton, styles.cardFullWidth, { marginTop: 12 }]}
+              style={[styles.routineCtaButton, styles.cardFullWidth]}
             />
-            {!intakeCompleted ? (
+            {!intakeCompleted && !routineJson ? (
               <PrimaryButton
                 label="Fill routine preferences"
                 onPress={handleFillPreferences}
@@ -674,7 +477,7 @@ export default function ResultScreen() {
           </View>
         ) : null}
 
-        {pollingActive ? (
+        {isAnalyzing ? (
           <View style={{ alignItems: "center", paddingVertical: 16 }}>
             <ActivityIndicator />
             <Text style={[styles.subtitle, { marginTop: 8 }]}>Analyzing scan…</Text>
