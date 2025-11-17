@@ -149,13 +149,24 @@ export const resultStyles = StyleSheet.create({
     lineHeight: 22,
     color: "#2A2A2A",
   },
+  routineTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    color: "#0A0A0A",
+    marginBottom: 8,
+  },
   routineStreamingRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
+    marginBottom: 8,
   },
   markdownContainer: {
     alignSelf: "stretch",
+  },
+  routineSectionCard: {
+    alignItems: "stretch",
   },
   routineCtaButton: {
     backgroundColor: "#F18A1B",

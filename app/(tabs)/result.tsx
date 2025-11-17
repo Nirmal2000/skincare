@@ -29,7 +29,7 @@ import {
 } from "@/features/scans/routine-stream-store";
 import { deleteScan, type ScanSource } from "@/features/scans/scan-store";
 import { PrimaryButton } from "@/lib/ui/facefit-components";
-import { MarkdownStream, type UseMarkdownStreamResult } from "react-native-markdown-stream";
+import { MarkdownStream } from "react-native-markdown-stream";
 
 import {
   FaceIssueOverlay,
@@ -60,6 +60,41 @@ function logRoutineStream(...args: unknown[]) {
   console.log("[RoutineStream]", ...args);
 }
 
+function buildRoutineSections(markdown: string | null): RoutineSection[] {
+  if (!markdown) return [];
+  const normalized = markdown.replace(/\r\n/g, "\n");
+  const lines = normalized.split("\n");
+  const sections: RoutineSection[] = [];
+  let current: RoutineSection | null = null;
+
+  lines.forEach((line) => {
+    const headingMatch = line.match(/^###\s+(.*)$/);
+    if (headingMatch) {
+      const title = headingMatch[1]?.trim() || "Routine";
+      const id = `${sections.length}-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-") || "section"}`;
+      current = { id, title, content: "" };
+      sections.push(current);
+      return;
+    }
+    if (!current) {
+      current = {
+        id: "overview",
+        title: "Overview",
+        content: "",
+      };
+      sections.push(current);
+    }
+    current.content = current.content ? `${current.content}\n${line}` : line;
+  });
+
+  return sections
+    .map((section) => ({
+      ...section,
+      content: section.content.trim(),
+    }))
+    .filter((section) => section.content.length > 0);
+}
+
 type Params = {
   taskId?: string | string[];
   imageUri?: string | string[];
@@ -69,6 +104,12 @@ type Params = {
   initialText?: string | string[];
   landmarks?: string | string[];
   initialRoutine?: string | string[];
+};
+
+type RoutineSection = {
+  id: string;
+  title: string;
+  content: string;
 };
 
 export default function ResultScreen() {
@@ -122,9 +163,6 @@ export default function ResultScreen() {
 
   const hasLoggedRef = useRef(false);
   const routineStreamCleanupRef = useRef<null | (() => void)>(null);
-  const routineMarkdownRef = useRef("");
-  const markdownStreamControlsRef = useRef<UseMarkdownStreamResult | null>(null);
-  const previousRoutineStatusRef = useRef<typeof routineStatus | null>(routineStatus);
   const markdownTheme = useMemo(
     () => ({
       base: "light" as const,
@@ -138,40 +176,7 @@ export default function ResultScreen() {
     }),
     [],
   );
-  const handleMarkdownReady = useCallback((controls: UseMarkdownStreamResult) => {
-    logRoutineStream("MarkdownStream ready");
-    markdownStreamControlsRef.current = controls;
-    controls.setContent(routineMarkdownRef.current);
-  }, []);
-
-  useEffect(() => {
-    routineMarkdownRef.current = routineMarkdown ?? "";
-    logRoutineStream("routineMarkdown updated", routineMarkdownRef.current.length);
-  }, [routineMarkdown]);
-
-  useEffect(() => {
-    return () => {
-      markdownStreamControlsRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    const previousStatus = previousRoutineStatusRef.current;
-    if (previousStatus === routineStatus) return;
-    previousRoutineStatusRef.current = routineStatus;
-    logRoutineStream("status changed", previousStatus, "→", routineStatus);
-    if (routineStatus === "streaming") {
-      markdownStreamControlsRef.current?.reset();
-    }
-  }, [routineStatus]);
-
-  useEffect(() => {
-    if (routineStatus === "streaming") return;
-    const controls = markdownStreamControlsRef.current;
-    if (!controls) return;
-    logRoutineStream("syncing content to MarkdownStream", routineMarkdown?.length ?? 0);
-    controls.setContent(routineMarkdown ?? "");
-  }, [routineMarkdown, routineStatus]);
+  const routineSections = useMemo<RoutineSection[]>(() => buildRoutineSections(routineMarkdown), [routineMarkdown]);
 
   const issuesSummary = useMemo(() => buildIssueSummaries(result?.issues), [result]);
   const selectedIssue = useMemo(() => {
@@ -232,10 +237,6 @@ export default function ResultScreen() {
     setError(null);
     setSelectedIssueKey(null);
     setRoutineMarkdown(null);
-    routineMarkdownRef.current = "";
-    if (markdownStreamControlsRef.current) {
-      markdownStreamControlsRef.current.setContent("");
-    }
     setRoutineStatus("idle");
     setRoutineError(null);
     logRoutineStream("resetting UI state for task", taskId);
@@ -377,17 +378,10 @@ export default function ResultScreen() {
     try {
       const cleanup = await subscribeToRoutineStream(taskId, {
         onChunk: (chunk) => {
-          const controls = markdownStreamControlsRef.current;
           logRoutineStream("chunk received", {
             length: typeof chunk === "string" ? chunk.length : null,
             preview: typeof chunk === "string" ? chunk.slice(0, 40) : chunk,
-            hasControls: !!controls,
           });
-          if (!controls) {
-            logRoutineStream("chunk dropped - controls not ready");
-          } else {
-            controls.appendChunk(chunk);
-          }
           setRoutineMarkdown((prev) => {
             const nextValue = prev ? `${prev}${chunk}` : chunk;
             logRoutineStream("accumulated markdown length", typeof nextValue === "string" ? nextValue.length : 0);
@@ -620,61 +614,63 @@ export default function ResultScreen() {
 
         {status === "completed" ? (
           <View style={styles.section}>
-            <View style={[styles.card, styles.cardCentered]}>
-              <Text style={[styles.cardHeading, styles.cardHeadingCentered]}>Personalized Routine</Text>
-              {routineStatus === "streaming" || !!routineMarkdown ? (
-                <View style={[styles.markdownContainer, styles.cardFullWidth]}>
-                  <MarkdownStream
-                    autoStart={false}
-                    initialValue=""
-                    revealMode="word"
-                    revealDelay={24}
-                    onReady={handleMarkdownReady}
-                    theme={markdownTheme}
-                    enableImageLightbox
-                    enableCodeCopy
-                  />
+            <Text style={styles.routineTitle}>Personalized Routine</Text>
+            {!intakeReady ? (
+              <View style={styles.routineStreamingRow}>
+                <ActivityIndicator />
+                <Text style={styles.subtitle}>Loading your preferences…</Text>
+              </View>
+            ) : null}
+            {routineStatus === "streaming" ? (
+              <View style={styles.routineStreamingRow}>
+                <ActivityIndicator />
+                <Text style={styles.subtitle}>Streaming your routine…</Text>
+              </View>
+            ) : null}
+            {routineSections.length ? (
+              routineSections.map((section) => (
+                <View key={section.id} style={[styles.card, styles.cardCentered, styles.routineSectionCard]}>
+                  <Text style={[styles.cardHeading, styles.cardHeadingCentered]}>{section.title}</Text>
+                  <View style={[styles.markdownContainer, styles.cardFullWidth]}>
+                    <MarkdownStream
+                      autoStart={false}
+                      content={section.content}
+                      theme={markdownTheme}
+                      enableImageLightbox
+                      enableCodeCopy
+                    />
+                  </View>
                 </View>
-              ) : (
-                <Text style={[styles.subtitle, styles.cardDescriptionCentered, styles.cardFullWidth]}>
-                  {status === "completed"
-                    ? intakeCompleted
-                      ? "Ask BetterSkin to craft your next skincare steps."
-                      : "Fill your routine preferences to unlock tailored recommendations."
-                    : "Complete an analysis to request a personalized routine."}
-                </Text>
-              )}
-              {!intakeReady ? (
-                <View style={[styles.routineStreamingRow, styles.cardFullWidth]}>
-                  <ActivityIndicator />
-                  <Text style={styles.subtitle}>Loading your preferences…</Text>
-                </View>
-              ) : null}
-              {routineStatus === "streaming" ? (
-                <View style={[styles.routineStreamingRow, styles.cardFullWidth]}>
-                  <ActivityIndicator />
-                  {/* <Text style={styles.subtitle}>Streaming your routine…</Text> */}
-                </View>
-              ) : null}
-              {routineError ? (
-                <Text style={[styles.error, styles.cardDescriptionCentered, styles.cardFullWidth]}>
-                  {routineError}
-                </Text>
-              ) : null}
+              ))
+            ) : (<></>
+              // <View style={[styles.card, styles.cardCentered]}>
+              //   {/* <Text style={[styles.subtitle, styles.cardDescriptionCentered, styles.cardFullWidth]}>
+              //     {status === "completed"
+              //       ? intakeCompleted
+              //         ? "Ask BetterSkin to craft your next skincare steps."
+              //         : "Fill your routine preferences to unlock tailored recommendations."
+              //       : "Complete an analysis to request a personalized routine."}
+              //   </Text> */}
+              // </View>
+            )}
+            {routineError ? (
+              <Text style={[styles.error, styles.cardDescriptionCentered, styles.cardFullWidth]}>
+                {routineError}
+              </Text>
+            ) : null}
+            <PrimaryButton
+              label={routineButtonLabel}
+              onPress={handleRequestRoutine}
+              disabled={routineButtonDisabled}
+              style={[styles.routineCtaButton, styles.cardFullWidth, { marginTop: 12 }]}
+            />
+            {!intakeCompleted ? (
               <PrimaryButton
-                label={routineButtonLabel}
-                onPress={handleRequestRoutine}
-                disabled={routineButtonDisabled}
-                style={[styles.routineCtaButton, styles.cardFullWidth, { marginTop: 12 }]}
+                label="Fill routine preferences"
+                onPress={handleFillPreferences}
+                style={[styles.cardFullWidth, { marginTop: 12 }]}
               />
-              {!intakeCompleted ? (
-                <PrimaryButton
-                  label="Fill routine preferences"
-                  onPress={handleFillPreferences}
-                  style={[styles.cardFullWidth, { marginTop: 12 }]}
-                />
-              ) : null}
-            </View>
+            ) : null}
           </View>
         ) : null}
 
