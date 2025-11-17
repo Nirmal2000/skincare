@@ -98,8 +98,8 @@ export function CameraStage({
         return;
       }
 
-      const minWidth = width * 0.6;
-      const minHeight = height * 0.6;
+      const minWidth = width * 0.5
+      const minHeight = height * 0.5;
       if (
         primaryFace.bounds.size.width < minWidth ||
         primaryFace.bounds.size.height < minHeight
