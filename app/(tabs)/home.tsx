@@ -1,7 +1,7 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Linking, Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -22,44 +22,72 @@ export default function Home() {
   const permissions = useScanPermissions();
   const pressProgress = useSharedValue(0);
   const [requestingAccess, setRequestingAccess] = useState(false);
+  const [permissionModalVisible, setPermissionModalVisible] = useState(false);
+  const [permissionError, setPermissionError] = useState<string | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState(false);
 
-  const promptForCameraAccess = useCallback(async () => {
-    if (!permissions.cameraSupported) {
-      Alert.alert(
-        "Camera not supported",
-        "Live scanning is unavailable on this device. Try uploading a photo from another device.",
-      );
-      return false;
-    }
-    if (permissions.camera.granted) {
-      return true;
-    }
-    const response = await permissions.requestCameraPermission();
-    if (!response?.granted) {
-      Alert.alert(
-        "Camera access needed",
-        "Please allow camera permission to scan your skin.",
-      );
-      return false;
-    }
-    return true;
+  const closePermissionModal = useCallback(() => {
+    if (requestingAccess) return;
+    setPermissionModalVisible(false);
+    setPendingNavigation(false);
+    setPermissionError(null);
+  }, [requestingAccess]);
+
+  const handleRequestPermission = useCallback(() => {
+    setPermissionError(null);
+    setRequestingAccess(true);
+    void permissions
+      .requestCameraPermission()
+      .then((response) => {
+        if (!response?.granted && response?.canAskAgain === false) {
+          setPermissionError("Camera access is blocked. Open Settings to enable it.");
+        } else if (!response?.granted) {
+          setPermissionError("We need camera access to start your scan.");
+        }
+      })
+      .catch(() => {
+        setPermissionError("Unable to open the camera prompt. Try again in a moment.");
+      })
+      .finally(() => setRequestingAccess(false));
   }, [permissions]);
+
+  const handleOpenSettings = useCallback(() => {
+    setPermissionError(null);
+    Linking.openSettings().catch(() => {
+      Alert.alert(
+        "Open Settings",
+        "Please open your device settings manually and enable the camera for BetterSkin.",
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    if (pendingNavigation && permissions.camera.granted) {
+      setPermissionModalVisible(false);
+      setPendingNavigation(false);
+      setPermissionError(null);
+      router.push("/(tabs)/scan");
+    }
+  }, [pendingNavigation, permissions.camera.granted, router]);
 
   const handleStartScan = useCallback(() => {
     requireAuth(() => {
-      if (requestingAccess) {
+      if (!permissions.cameraSupported) {
+        Alert.alert(
+          "Camera not supported",
+          "Live scanning is unavailable on this device. Try uploading a photo from another device.",
+        );
         return;
       }
-      setRequestingAccess(true);
-      void promptForCameraAccess()
-        .then((granted) => {
-          if (granted) {
-            router.push("/(tabs)/scan");
-          }
-        })
-        .finally(() => setRequestingAccess(false));
+      if (permissions.camera.granted) {
+        router.push("/(tabs)/scan");
+        return;
+      }
+      setPermissionError(null);
+      setPendingNavigation(true);
+      setPermissionModalVisible(true);
     });
-  }, [promptForCameraAccess, requireAuth, requestingAccess, router]);
+  }, [permissions.cameraSupported, permissions.camera.granted, requireAuth, router]);
 
   const logoAnimatedStyle = useAnimatedStyle(() => ({
     transform: [
@@ -77,7 +105,6 @@ export default function Home() {
             accessibilityLabel="Scan your skin"
             hitSlop={16}
             style={[styles.logoButton, logoAnimatedStyle]}
-            disabled={requestingAccess}
             onPressIn={() => {
               pressProgress.value = withTiming(1, { duration: 90 });
             }}
@@ -101,6 +128,58 @@ export default function Home() {
           <Text style={styles.tagline}>Scan. Understand. Improve.</Text>
           <Text style={styles.hint}>Tap the circle to start</Text>
         </View>
+
+        <Modal
+          visible={permissionModalVisible}
+          transparent
+          animationType="fade"
+          onRequestClose={closePermissionModal}
+        >
+          <View style={styles.modalBackdrop}>
+            <Pressable style={StyleSheet.absoluteFillObject} onPress={closePermissionModal} />
+            <View style={styles.modalCard}>
+              <Text style={styles.modalTitle}>Allow camera access</Text>
+              <Text style={styles.modalMessage}>
+                {permissions.camera.canAskAgain === false && !permissions.camera.granted
+                  ? "Camera access is currently blocked. Open your device settings to enable it and continue."
+                  : "We’ll need access to your camera to capture a close-up of your skin before scanning."}
+              </Text>
+              {permissionError ? (
+                <Text style={styles.modalError}>{permissionError}</Text>
+              ) : null}
+              <View style={styles.modalButtons}>
+                <Pressable
+                  style={[styles.modalButton, styles.modalSecondary]}
+                  onPress={closePermissionModal}
+                >
+                  <Text style={styles.modalSecondaryLabel}>Not now</Text>
+                </Pressable>
+                {permissions.camera.canAskAgain === false && !permissions.camera.granted ? (
+                  <Pressable
+                    style={[styles.modalButton, styles.modalPrimary]}
+                    onPress={handleOpenSettings}
+                  >
+                    <Text style={styles.modalPrimaryLabel}>Open settings</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    style={[
+                      styles.modalButton,
+                      styles.modalPrimary,
+                      requestingAccess ? styles.modalPrimaryDisabled : null,
+                    ]}
+                    onPress={handleRequestPermission}
+                    disabled={requestingAccess}
+                  >
+                    <Text style={styles.modalPrimaryLabel}>
+                      {requestingAccess ? "Requesting..." : "Allow camera"}
+                    </Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </View>
+        </Modal>
       </View>
     </View>
   );
@@ -166,5 +245,65 @@ const styles = StyleSheet.create({
     color: "#8A7F74",
     opacity: 0.9,
     textAlign: "center",
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalCard: {
+    width: "100%",
+    maxWidth: 380,
+    borderRadius: 24,
+    backgroundColor: "#FFFFFF",
+    padding: 24,
+    gap: 16,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#22170D",
+  },
+  modalMessage: {
+    fontSize: 15,
+    color: "#4E4338",
+    lineHeight: 20,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 12,
+  },
+  modalButton: {
+    minWidth: 120,
+    borderRadius: 999,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    alignItems: "center",
+  },
+  modalSecondary: {
+    backgroundColor: "rgba(13, 7, 2, 0.08)",
+  },
+  modalSecondaryLabel: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#4E4338",
+  },
+  modalPrimary: {
+    backgroundColor: ACCENT,
+  },
+  modalPrimaryDisabled: {
+    opacity: 0.6,
+  },
+  modalPrimaryLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+  modalError: {
+    color: "#B42318",
+    fontSize: 13,
   },
 });
