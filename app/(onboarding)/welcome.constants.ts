@@ -31,16 +31,16 @@ export const WHEEL_WINDOW_BG = "rgba(241, 138, 27, 0.12)";
 export const WHEEL_WINDOW_BORDER = "rgba(241, 138, 27, 0.4)";
 
 export const SLIDES = [
-  {
-    title: "Natural You. Real Results.",
-    body: "Makeup-free, one face, good light. We only need one photo per scan.",
-    iconName: "camera",
-  },
-  {
-    title: "Private & Local.",
-    body: "Photos stay on this device for 30 days. Delete anytime from Settings.",
-    iconName: "lock",
-  },
+  // {
+  //   title: "Natural You. Real Results.",
+  //   body: "Makeup-free, one face, good light. We only need one photo per scan.",
+  //   iconName: "camera",
+  // },
+  // {
+  //   title: "Private & Local.",
+  //   body: "Photos stay on this device for 30 days. Delete anytime from Settings.",
+  //   iconName: "lock",
+  // },
   {
     title: "Age helps personalize.",
     body: "Choose your precise age so BetterSkin can tailor non-medical tips.",

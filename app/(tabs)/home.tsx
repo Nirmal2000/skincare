@@ -1,27 +1,42 @@
 import { useRouter } from "expo-router";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 
 const ACCENT = "#F18A1B";
 const LOGO_SIZE = 220;
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export default function Home() {
   const router = useRouter();
+  const pressProgress = useSharedValue(0);
+  const logoAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: 1 - pressProgress.value * 0.04 },
+      { translateY: pressProgress.value * 6 },
+    ],
+  }));
 
   return (
     <View style={styles.safeArea}>
       <View style={styles.center}>
         <View style={styles.logoShell}>
-          <Pressable
+          <AnimatedPressable
             accessibilityRole="button"
-            accessibilityLabel="Start BetterSkin scan"
+            accessibilityLabel="Scan your skin"
             hitSlop={16}
-            style={styles.logoButton}
+            style={[styles.logoButton, logoAnimatedStyle]}
+            onPressIn={() => {
+              pressProgress.value = withTiming(1, { duration: 90 });
+            }}
+            onPressOut={() => {
+              pressProgress.value = withTiming(0, { duration: 140 });
+            }}
             onPress={() => router.push("/(tabs)/scan")}
           >
             <View style={styles.logo}>
-              <Text style={styles.logoWordmark}>BETTERSKIN</Text>
+              <Text style={styles.logoWordmark}>SCAN</Text>
             </View>
-          </Pressable>
+          </AnimatedPressable>
         </View>
       </View>
     </View>
@@ -68,9 +83,9 @@ const styles = StyleSheet.create({
   },
   logoWordmark: {
     fontSize: 26,
-    fontWeight: "700",
-    letterSpacing: 5,
-    textTransform: "uppercase",
+    fontWeight: "500",
+    letterSpacing: 1,
+    textAlign: "center",
     color: "#0A0A0A",
   },
 });
