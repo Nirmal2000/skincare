@@ -1,10 +1,10 @@
 // app/(auth)/SignInScreen.tsx
 
+import * as AppleAuthentication from "expo-apple-authentication";
 import { useRouter } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Platform, StyleSheet, Text, View } from "react-native";
-import * as AppleAuthentication from "expo-apple-authentication";
 
 import { handleSupabaseRedirect, supabase } from "@/features/auth/supabase-client";
 import { useSupabaseSession } from "@/features/auth/useSupabaseSession";
@@ -112,8 +112,7 @@ export default function SignInScreen() {
           disabled={pendingProvider !== null}
         />
       ))}
-      <SecondaryButton label="Cancel" onPress={() => router.back()} />
-      <Text style={styles.footer}>Redirect URL configured: {REDIRECT_URL}</Text>
+      <SecondaryButton label="Cancel" onPress={() => router.back()} />      
     </View>
   );
 }

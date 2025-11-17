@@ -1,6 +1,6 @@
+import { Image } from "expo-image";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { LayoutChangeEvent, Text, View } from "react-native";
-import { Image } from "expo-image";
 import {
   CameraView,
   FaceDetectorClassifications,
@@ -9,7 +9,7 @@ import {
 } from "react-native-face-detector-camera";
 
 import type { UserProfile } from "@/features/auth/useSupabaseSession";
-import { Card, PrimaryButton } from "@/lib/ui/facefit-components";
+import { Card } from "@/lib/ui/facefit-components";
 
 import { scanStyles as styles } from "./styles";
 import type { FaceDetectionStatus } from "./useScanWorkflow";
@@ -23,8 +23,6 @@ type CameraStageProps = {
   cameraGranted: boolean;
   cameraRef: React.RefObject<CameraView | null>;
   facing: "front" | "back";
-  onRequireAuth: () => void;
-  onRequestCameraPermission: () => void;
   onFaceDetectionChange: (status: FaceDetectionStatus) => void;
 };
 
@@ -37,8 +35,6 @@ export function CameraStage({
   cameraGranted,
   cameraRef,
   facing,
-  onRequireAuth,
-  onRequestCameraPermission,
   onFaceDetectionChange,
 }: CameraStageProps) {
   const maskLayoutRef = useRef({ width: 0, height: 0 });
@@ -122,24 +118,7 @@ export function CameraStage({
     },
     [emitFaceStatus],
   );
-
-  if (!profile) {
-    return (
-      <Card style={{ gap: 8 }}>
-        <Text style={styles.cardTitle}>Sign in to capture</Text>
-        <Text style={styles.cardCopy}>
-          We need a signed-in account before enabling camera or gallery access. Your
-          scans stay on this device.
-        </Text>
-        <PrimaryButton
-          label={loading ? "Checking account..." : "Sign in"}
-          onPress={onRequireAuth}
-          disabled={loading}
-        />
-      </Card>
-    );
-  }
-
+  
   if (previewUri) {
     return (
       <View style={styles.cameraLayer} onLayout={handleMaskLayout}>
@@ -164,12 +143,8 @@ export function CameraStage({
       <Card style={{ gap: 8 }}>
         <Text style={styles.cardTitle}>Enable camera</Text>
         <Text style={styles.cardCopy}>
-          Grant camera permission so we can show a live preview.
+          Go back to the home screen to allow camera access, then return to scan.
         </Text>
-        <PrimaryButton
-          label="Allow camera access"
-          onPress={onRequestCameraPermission}
-        />
       </Card>
     );
   }

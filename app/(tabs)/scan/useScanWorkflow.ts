@@ -74,14 +74,11 @@ export function useScanWorkflow() {
       return false;
     }
     if (!permissions.camera.granted) {
-      const response = await permissions.requestCameraPermission();
-      if (!response?.granted) {
-        setStatusMessage("Camera access is required before you can capture a photo.");
-        return false;
-      }
+      setStatusMessage("Enable camera access from the home screen before scanning.");
+      return false;
     }
     return true;
-  }, [permissions]);
+  }, [permissions.camera.granted, permissions.cameraSupported]);
 
   const ensureMediaPermission = useCallback(async () => {
     if (!permissions.media.granted) {
@@ -238,7 +235,6 @@ export function useScanWorkflow() {
   return {
     profile,
     loading,
-    requireAuth,
     permissions,
     isFocused,
     cameraRef,
@@ -254,6 +250,5 @@ export function useScanWorkflow() {
     handlePickImage,
     handleScan,
     handleReset,
-    requestCameraPermission: ensureCameraPermission,
   };
 }

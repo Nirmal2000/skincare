@@ -30,7 +30,6 @@ export default function ScanScreen() {
   const {
     profile,
     loading,
-    requireAuth,
     permissions,
     isFocused,
     cameraRef,
@@ -46,7 +45,6 @@ export default function ScanScreen() {
     handlePickImage,
     handleScan,
     handleReset,
-    requestCameraPermission,
   } = useScanWorkflow();
 
   const captureLabel = (() => {
@@ -96,10 +94,6 @@ export default function ScanScreen() {
           cameraGranted={permissions.camera.granted}
           cameraRef={cameraRef}
           facing={cameraFacing}
-          onRequireAuth={requireAuth}
-          onRequestCameraPermission={() => {
-            void requestCameraPermission();
-          }}
           onFaceDetectionChange={handleFaceDetectionStatus}
         />
       </View>
