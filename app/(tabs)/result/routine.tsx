@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -29,6 +29,76 @@ type Params = {
   routineRequested?: string | string[];
 };
 
+type RoutineProduct = {
+  id?: string;
+  brand?: string;
+  name?: string;
+  tier?: string;
+  url?: string;
+  why?: string;
+};
+
+type RoutineInstruction = {
+  how?: string;
+  timing?: string;
+  frequency?: string;
+};
+
+type RoutineStep = {
+  type?: string;
+  instructions?: RoutineInstruction;
+  products?: RoutineProduct[];
+};
+
+type RoutinePlan = {
+  reasons?: {
+    notes?: string;
+    prioritized_concerns?: {
+      key?: string;
+      why?: string;
+      severity?: "mild" | "moderate" | "severe" | string;
+    }[];
+  };
+  routine?: {
+    am?: RoutineStep[] | null;
+    midday?: RoutineStep[] | null;
+    pm?: RoutineStep[] | null;
+    [key: string]: RoutineStep[] | null | undefined;
+  };
+  lifestyle?: {
+    sun?: string;
+    sleep?: string;
+    habits?: string;
+    routine_hygiene?: string;
+    stress?: string;
+    diet?: {
+      limit?: string[];
+      increase?: string[];
+      supplements?: string[];
+    };
+  };
+};
+
+const SEVERITY_COLORS: Record<string, string> = {
+  mild: "#48A14D",
+  moderate: "#ED8A1F",
+  severe: "#E85454",
+};
+
+const SECTION_LABELS: Record<string, string> = {
+  am: "AM Routine",
+  midday: "Midday",
+  pm: "PM Routine",
+};
+
+const formatStepType = (type?: string) => {
+  if (!type) return "Step";
+  return type
+    .split(/[\s_-]+/)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+};
+
 export default function RoutineScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<Params>();
@@ -53,6 +123,39 @@ export default function RoutineScreen() {
   } = useRoutineIntake();
 
   const routineJson = taskPayload?.routine_json ?? null;
+  const routinePlan = useMemo(() => (routineJson as RoutinePlan | null), [routineJson]);
+
+  const routineSections = useMemo(() => {
+    if (!routinePlan?.routine) return [];
+    const entries: Array<{
+      key: "am" | "midday" | "pm";
+      label: string;
+      steps?: RoutineStep[] | null;
+    }> = ["am", "midday", "pm"].map((key) => ({
+      key: key as "am" | "midday" | "pm",
+      label: SECTION_LABELS[key] ?? key.toUpperCase(),
+      steps: routinePlan.routine?.[key],
+    }));
+    return entries.filter((entry) => entry.steps && entry.steps.length);
+  }, [routinePlan]);
+
+  const lifestyleEntries = useMemo(() => {
+    if (!routinePlan?.lifestyle) return [];
+    const { lifestyle } = routinePlan;
+    const list: Array<{ label: string; value: string | string[] | undefined }> = [];
+    if (lifestyle.sun) list.push({ label: "Sun", value: lifestyle.sun });
+    if (lifestyle.sleep) list.push({ label: "Sleep", value: lifestyle.sleep });
+    if (lifestyle.habits) list.push({ label: "Habits", value: lifestyle.habits });
+    if (lifestyle.routine_hygiene) {
+      list.push({ label: "Routine hygiene", value: lifestyle.routine_hygiene });
+    }
+    if (lifestyle.stress) list.push({ label: "Stress", value: lifestyle.stress });
+    const diet = lifestyle.diet;
+    if (diet?.increase?.length) list.push({ label: "Diet – Increase", value: diet.increase });
+    if (diet?.limit?.length) list.push({ label: "Diet – Limit", value: diet.limit });
+    if (diet?.supplements?.length) list.push({ label: "Supplements", value: diet.supplements });
+    return list;
+  }, [routinePlan]);
 
   useEffect(() => {
     if (!taskId) return;
@@ -148,14 +251,80 @@ export default function RoutineScreen() {
         <View style={[styles.section, { paddingBottom: 8, marginTop: 48 }]}>
           <Text style={styles.title}>Personalized Routine</Text>
           {routineJson ? (
-            <View style={[styles.card, styles.cardFullWidth]}>
-              <Text style={[styles.cardHeading, styles.cardHeadingCentered]}>Routine JSON</Text>
-              <View style={[styles.routineJsonContainer, styles.cardFullWidth]}>
-                <ScrollView style={{ maxHeight: 260 }} nestedScrollEnabled>
-                  <Text style={styles.routineJson}>{JSON.stringify(routineJson, null, 2)}</Text>
-                </ScrollView>
-              </View>
-            </View>
+            <>
+              {routinePlan?.reasons ? (
+                <View style={[styles.card, styles.cardFullWidth]}>
+                  <Text style={styles.cardHeading}>Why this routine</Text>
+                  {routinePlan.reasons.notes ? (
+                    <Text style={styles.bodyText}>{routinePlan.reasons.notes}</Text>
+                  ) : null}
+                  {routinePlan.reasons.prioritized_concerns?.map((concern, index) => {
+                    const severity = concern.severity ?? "moderate";
+                    const color = SEVERITY_COLORS[severity] ?? "#F18A1B";
+                    return (
+                      <View key={`concern-${index}`} style={[styles.concernCard, { borderColor: color }]}>
+                        <View style={styles.concernHeader}>
+                          <Text style={styles.subheading}>{formatStepType(concern.key)}</Text>
+                          <View style={[styles.severityPill, { backgroundColor: `${color}22` }]}>
+                            <Text style={[styles.severityLabel, { color }]}>{severity}</Text>
+                          </View>
+                        </View>
+                        {concern.why ? (
+                          <Text style={[styles.bodyText, { marginTop: 4 }]}>{concern.why}</Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : null}
+              {routineSections.map((section) => (
+                <View key={section.key} style={[styles.card, styles.cardFullWidth, styles.cardSpacer]}>
+                  <Text style={styles.cardHeading}>{section.label}</Text>
+                  {section.steps?.map((step, index) => (
+                    <View key={`${section.key}-step-${index}`} style={styles.routineStepCard}>
+                      <Text style={styles.subheading}>{formatStepType(step.type)}</Text>
+                      {step.instructions?.how ? (
+                        <Text style={styles.bodyText}>{step.instructions.how}</Text>
+                      ) : null}
+                      {(step.instructions?.frequency || step.instructions?.timing) ? (
+                        <Text style={styles.instructionsMeta}>
+                          {[step.instructions.frequency, step.instructions.timing].filter(Boolean).join(" · ")}
+                        </Text>
+                      ) : null}
+                      {step.products?.map((product) => (
+                        <View key={product.id ?? `${product.name ?? "product"}-${index}`} style={styles.productRow}>
+                          <Text style={styles.productName}>
+                            {product.brand ? `${product.brand} – ` : ""}
+                            {product.name ?? "Product"}
+                          </Text>
+                          {product.why ? (
+                            <Text style={styles.productDescription}>{product.why}</Text>
+                          ) : null}
+                          {product.tier ? (
+                            <Text style={styles.productTier}>{product.tier}</Text>
+                          ) : null}
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                </View>
+              ))}
+              {lifestyleEntries.length ? (
+                <View style={[styles.card, styles.cardFullWidth, styles.cardSpacer]}>
+                  <Text style={styles.cardHeading}>Lifestyle notes</Text>
+                  {lifestyleEntries.map((entry, index) => (
+                    <View key={`lifestyle-${index}`} style={styles.lifestyleRow}>
+                      <Text style={styles.lifestyleLabel}>{entry.label}</Text>
+                      {entry.value ? (
+                        <Text style={styles.bodyText}>
+                          {Array.isArray(entry.value) ? entry.value.join(", ") : entry.value}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ))}
+                </View>
+              ) : null}
+            </>
           ) : (
             <View style={styles.routineStreamingRow}>
               <ActivityIndicator />

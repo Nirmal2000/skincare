@@ -57,8 +57,16 @@ export const resultStyles = StyleSheet.create({
   cardFullWidth: {
     alignSelf: "stretch",
   },
+  cardSpacer: {
+    marginTop: 16,
+  },
   title: {
     fontSize: 24,
+    fontWeight: "600",
+    color: "#0A0A0A",
+  },
+  subheading: {
+    fontSize: 16,
     fontWeight: "600",
     color: "#0A0A0A",
   },
@@ -182,6 +190,68 @@ export const resultStyles = StyleSheet.create({
     fontSize: 13,
     color: "#0A0A0A",
     lineHeight: 20,
+  },
+  concernCard: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  concernHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  severityPill: {
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+  },
+  severityLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    textTransform: "capitalize",
+  },
+  routineStepCard: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E5E5",
+    paddingTop: 12,
+  },
+  instructionsMeta: {
+    fontSize: 12,
+    color: "#878787",
+    marginTop: 4,
+  },
+  productRow: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
+  },
+  productName: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#0A0A0A",
+  },
+  productDescription: {
+    fontSize: 13,
+    color: "#5C5C5C",
+    marginTop: 4,
+  },
+  productTier: {
+    fontSize: 12,
+    color: "#6B6B6B",
+    marginTop: 4,
+    textTransform: "capitalize",
+  },
+  lifestyleRow: {
+    marginTop: 12,
+  },
+  lifestyleLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#0A0A0A",
   },
   backButton: {
     position: "absolute",
