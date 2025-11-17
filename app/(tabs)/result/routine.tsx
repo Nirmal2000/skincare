@@ -2,6 +2,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   Text,
   View,
@@ -20,6 +21,8 @@ import { useRoutineIntake } from "@/features/scans/routine-intake-store";
 import { PrimaryButton } from "@/lib/ui/facefit-components";
 import { resultStyles as styles } from "./styles";
 import { toSingle } from "./utils";
+import { Feather } from "@expo/vector-icons";
+import { useTabBarAutoHideScrollHandler } from "@/features/navigation/tab-bar-visibility";
 
 type Params = {
   taskId?: string | string[];
@@ -34,6 +37,7 @@ export default function RoutineScreen() {
   const taskId = toSingle(params.taskId);
   const routineRequestedParam = toSingle(params.routineRequested);
   const routineRequestedFromResult = routineRequestedParam === "true";
+  const scrollHandler = useTabBarAutoHideScrollHandler();
 
   const [taskPayload, setTaskPayload] = useState<FaceAnalysisTaskResponse | null>(null);
   const [routineStatus, setRoutineStatus] = useState<
@@ -126,12 +130,22 @@ export default function RoutineScreen() {
 
   return (
     <View style={styles.safeArea}>
+      <Pressable
+        onPress={handleClose}
+        style={[
+          styles.backButton,
+          { top: insets.top + 8, left: 12 },
+        ]}
+      >
+        <Feather name="chevron-left" size={26} color="#2A2A2A" />
+      </Pressable>
       <Animated.ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 16 }]}
         showsVerticalScrollIndicator={false}
         scrollEventThrottle={16}
+        onScroll={scrollHandler}
       >
-        <View style={[styles.section, { paddingBottom: 8 }]}>
+        <View style={[styles.section, { paddingBottom: 8, marginTop: 48 }]}>
           <Text style={styles.title}>Personalized Routine</Text>
           {routineJson ? (
             <View style={[styles.card, styles.cardFullWidth]}>
@@ -153,11 +167,6 @@ export default function RoutineScreen() {
               {routineError}
             </Text>
           ) : null}
-          <PrimaryButton
-            label="Back to result"
-            onPress={handleClose}
-            style={[styles.cardFullWidth, { marginTop: 12 }]}
-          />
           {!intakeCompleted ? (
             <PrimaryButton
               label="Fill routine preferences"

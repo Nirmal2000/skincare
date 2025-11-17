@@ -28,11 +28,11 @@ import { PrimaryButton } from "@/lib/ui/facefit-components";
 import {
   FaceIssueOverlay,
   type IssueMarker,
-} from "./result/components/FaceIssueOverlay";
-import { GlobalProfile } from "./result/components/GlobalProfile";
-import { IssueDetailCard } from "./result/components/IssueDetailCard";
-import { convertAnswersToPayload } from "./result/components/RoutineIntakeForm";
-import { resultStyles as styles } from "./result/styles";
+} from "./components/FaceIssueOverlay";
+import { GlobalProfile } from "./components/GlobalProfile";
+import { IssueDetailCard } from "./components/IssueDetailCard";
+import { convertAnswersToPayload } from "./components/RoutineIntakeForm";
+import { resultStyles as styles } from "./styles";
 import {
   buildIssueSummaries,
   clamp,
@@ -41,7 +41,7 @@ import {
   intensityToColor,
   parseLandmarksParam,
   toSingle,
-} from "./result/utils";
+} from "./utils";
 
 function extractFailureToken(message: string | null | undefined) {
   if (!message) return null;

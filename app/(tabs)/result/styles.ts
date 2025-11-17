@@ -183,6 +183,18 @@ export const resultStyles = StyleSheet.create({
     color: "#0A0A0A",
     lineHeight: 20,
   },
+  backButton: {
+    position: "absolute",
+    zIndex: 10,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 999,
+    padding: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
   intakeSection: {
     gap: 10,
   },
