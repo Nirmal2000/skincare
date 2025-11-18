@@ -28,6 +28,8 @@ export const Colors = {
   white: '#FFFFFF',
   appBackground: '#FAFAFA',
   darkBackground: '#000000ff',
+  surfaceSecondary: 'rgba(255, 255, 255, 0.15)',
+  black: '#000000',
 
   // Overlay
   overlayDark: 'rgba(0, 0, 0, 0.6)',

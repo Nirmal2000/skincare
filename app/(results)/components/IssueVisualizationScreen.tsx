@@ -61,17 +61,6 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
   const [selectedCategory, setSelectedCategory] = useState<IssueCategory | null>(null);
   const [imageLayout, setImageLayout] = useState({ width: 0, height: 0 });
 
-  // Format timestamp for display
-  const formattedDate = useMemo(() => {
-    const date = new Date(run.createdAt);
-    return date.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-    });
-  }, [run.createdAt]);
 
   // Filter to only detected issues
   const detectedIssues = useMemo(() => {
@@ -140,6 +129,14 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
     setImageLayout({ width, height });
   }, []);
 
+  const handleFullReportPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push({
+      pathname: '/(results)/full-report/[runId]',
+      params: { runId: run.id },
+    });
+  }, [run.id]);
+
   return (
     <View style={styles.container}>
       {/* Top Bar */}
@@ -149,9 +146,9 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
           { paddingTop: Math.max(insets.top, Spacing.large) },
         ]}
       >
-        <View style={styles.dateContainer}>
-          <Text style={styles.dateText}>{formattedDate}</Text>
-        </View>
+        <Pressable style={styles.fullReportButton} onPress={handleFullReportPress}>
+          <Text style={styles.fullReportText}>Full Report</Text>
+        </Pressable>
         <Pressable style={styles.closeButton} onPress={handleClose}>
           <Ionicons name="close" size={28} color={Colors.white} />
         </Pressable>
@@ -229,7 +226,7 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.default,
     backgroundColor: Colors.darkBackground,
   },
-  dateContainer: {
+  fullReportButton: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 20,
     borderWidth: 2,
@@ -237,7 +234,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.default,
     paddingVertical: Spacing.small,
   },
-  dateText: {
+  fullReportText: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.white,

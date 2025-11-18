@@ -248,10 +248,10 @@ export default function ScanScreen() {
         <Pressable style={styles.homeButton} onPress={handleHomePress}>
           <Ionicons name="home" size={28} color={Colors.white} />
         </Pressable>
-
+{/* 
         <View style={styles.centerLabel}>
           <Text style={styles.angleText}>Front Angle</Text>
-        </View>
+        </View> */}
 
         <View style={styles.referenceContainer}>
           <Image
