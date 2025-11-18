@@ -5,7 +5,8 @@
       "Skill(ui-designer)",
       "mcp__expo-docs__search_expo_docs",
       "mcp__expo-docs__get_expo_doc_content",
-      "mcp__expo-docs__get_expo_api_reference"
+      "mcp__expo-docs__get_expo_api_reference",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)"
     ],
     "deny": [],
     "ask": []

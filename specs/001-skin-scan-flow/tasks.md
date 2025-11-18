@@ -100,13 +100,13 @@ Single Expo project structure (from plan.md):
 
 ### Implementation for User Story 2
 
-- [ ] T027 [P] [US2] Create TabBarIcon component in components/TabBarIcon.tsx (renders icon with active state)
-- [ ] T028 [US2] Create bottom tabs layout in app/(tabs)/_layout.tsx with 4 tabs (index=Home, history, track, settings) and TabBarIcon
-- [ ] T029 [US2] Implement active tab indicator sliding animation in _layout.tsx using Reanimated translateX
-- [ ] T030 [US2] Create home screen in app/(tabs)/index.tsx with hero scan CTA button
-- [ ] T031 [US2] Display last scan summary on home screen (pull from useScanStore.getRecentRuns(1))
-- [ ] T032 [US2] Create track screen placeholder in app/(tabs)/track.tsx (empty state for future longitudinal insights)
-- [ ] T033 [US2] Wire home scan CTA to navigate to /(tabs)/scan
+- [X] T027 [P] [US2] Create TabBarIcon component in components/TabBarIcon.tsx (renders icon with active state)
+- [X] T028 [US2] Create bottom tabs layout in app/(tabs)/_layout.tsx with 4 tabs (index=Home, history, track, settings) and TabBarIcon
+- [X] T029 [US2] Implement active tab indicator sliding animation in _layout.tsx using Reanimated translateX
+- [X] T030 [US2] Create home screen in app/(tabs)/index.tsx with hero scan CTA button
+- [X] T031 [US2] Display last scan summary on home screen (pull from useScanStore.getRecentRuns(1))
+- [X] T032 [US2] Create track screen placeholder in app/(tabs)/track.tsx (empty state for future longitudinal insights)
+- [X] T033 [US2] Wire home scan CTA to navigate to /(tabs)/scan
 
 **Checkpoint**: Home screen displays with working tab bar. All 4 tabs navigate correctly. Scan button ready for next phase.
 

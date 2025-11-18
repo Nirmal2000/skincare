@@ -143,7 +143,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: ButtonSizes.primary.paddingHorizontal,
     paddingVertical: ButtonSizes.primary.paddingVertical,
     borderRadius: ButtonSizes.primary.borderRadius,
-    alignSelf: 'stretch'
   },
   secondary: {
     height: ButtonSizes.primary.height,
@@ -170,8 +169,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   gradient: {
-    flex: 1,
-    width: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: ButtonSizes.primary.borderRadius,

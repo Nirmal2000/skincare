@@ -159,13 +159,15 @@ export default function WelcomeScreen() {
 
       {/* Bottom Controls */}
       <View style={styles.controls}>
-        <Button
-          title={isLastQuestion ? 'Complete' : 'Next'}
-          onPress={goToNext}
-          variant="primary"
-          disabled={!isQuestionAnswered()}
-          style={styles.nextButton}
-        />
+        <View style={styles.nextButtonContainer}>
+          <Button
+            title={isLastQuestion ? 'Complete' : 'Next'}
+            onPress={goToNext}
+            variant="primary"
+            disabled={!isQuestionAnswered()}
+            style={styles.nextButton}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -397,14 +399,16 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   controls: {
-    alignItems: 'flex-end',
     paddingHorizontal: Spacing.large,
     paddingBottom: Spacing.large,
     paddingTop: Spacing.base,
   },
+  nextButtonContainer: {
+    alignSelf: 'flex-end',
+    minWidth: 140,
+  },
   nextButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 20,    
+    paddingHorizontal: 32,
   },
   backChevron: {
     position: 'absolute',
