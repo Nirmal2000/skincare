@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Session } from '@supabase/supabase-js';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import { supabase } from '../supabase-client';
 
 interface AuthStore {
@@ -9,6 +9,8 @@ interface AuthStore {
   session: Session | null;
   /** Loading state for auth operations */
   isLoading: boolean;
+  /** Whether the store has been hydrated from storage */
+  hasHydrated: boolean;
 
   // Actions
   /** Set current session */
@@ -19,6 +21,8 @@ interface AuthStore {
   refreshSession: () => Promise<void>;
   /** Initialize auth state from stored session */
   initialize: () => Promise<void>;
+  /** Mark store as hydrated */
+  setHydrated: () => void;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -26,9 +30,14 @@ export const useAuthStore = create<AuthStore>()(
     (set, get) => ({
       session: null,
       isLoading: false,
+      hasHydrated: false,
 
       setSession: (session) => {
         set({ session });
+      },
+
+      setHydrated: () => {
+        set({ hasHydrated: true });
       },
 
       signOut: async () => {
@@ -95,6 +104,9 @@ export const useAuthStore = create<AuthStore>()(
         // Only persist session, not loading states
         session: state.session,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated();
+      },
     }
   )
 );

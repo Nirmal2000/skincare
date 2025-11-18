@@ -24,7 +24,7 @@ export const Config = {
    * OAuth redirect URI for Supabase auth
    */
   auth: {
-    redirectUri: 'facefit://auth',
+    redirectUri: 'betterskin://auth',
   },
 } as const;
 

@@ -1,8 +1,9 @@
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
-import { supabase, SUPABASE_REDIRECT_PREFIX } from './supabase-client';
 import * as Haptics from 'expo-haptics';
+import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import { supabase, SUPABASE_REDIRECT_PREFIX } from './supabase-client';
 
+console.log('[OAuth Setup] WebBrowser.maybeCompleteAuthSession() called');
 WebBrowser.maybeCompleteAuthSession();
 
 /**
@@ -11,7 +12,17 @@ WebBrowser.maybeCompleteAuthSession();
  */
 export async function signInWithGoogle(): Promise<void> {
   try {
+    console.log('[Google Sign-In] Starting Haptics');
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    console.log('[Google Sign-In] Haptics done');
+
+    console.log('[Google Sign-In] Calling supabase.auth.signInWithOAuth', {
+      provider: 'google',
+      options: {
+        redirectTo: SUPABASE_REDIRECT_PREFIX,
+        skipBrowserRedirect: false,
+      }
+    });
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -21,15 +32,29 @@ export async function signInWithGoogle(): Promise<void> {
       },
     });
 
+    console.log('[Google Sign-In] Supabase response:', { data: !!data, error });
+
     if (error) {
+      console.error('[Google Sign-In] Supabase OAuth error:', error);
       throw error;
     }
 
+    console.log('[Google Sign-In] OAuth URL:', data?.url);
+
     if (data?.url) {
+      console.log('[Google Sign-In] Opening WebBrowser auth session');
       await WebBrowser.openAuthSessionAsync(data.url, SUPABASE_REDIRECT_PREFIX);
+      console.log('[Google Sign-In] WebBrowser auth session returned');
+    } else {
+      console.log('[Google Sign-In] No OAuth URL returned');
     }
   } catch (error) {
-    console.error('Error signing in with Google:', error);
+    console.error('[Google Sign-In] Catch block error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code || 'No code',
+    });
     throw error;
   }
 }

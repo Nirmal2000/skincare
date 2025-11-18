@@ -10,8 +10,11 @@ export default function SignInScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleGoogleSignIn = async () => {
+    console.log('[SignIn Screen] Google sign-in button pressed');
     try {
+      console.log('[SignIn Screen] Setting loading state to true');
       setLoading(true);
+      console.log('[SignIn Screen] Calling signInWithGoogle()');
       await signInWithGoogle();
     } catch (error) {
       Alert.alert(
@@ -19,8 +22,9 @@ export default function SignInScreen() {
         'Could not sign in with Google. Please try again.',
         [{ text: 'OK' }]
       );
-      console.error('Google sign in error:', error);
+      console.error('[SignIn Screen] Google sign in error:', error);
     } finally {
+      console.log('[SignIn Screen] Setting loading state to false');
       setLoading(false);
     }
   };

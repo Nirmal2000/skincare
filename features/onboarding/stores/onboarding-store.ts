@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { RoutineIntake } from '@/types/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 /**
  * Onboarding Answer Set
@@ -17,6 +17,9 @@ export interface OnboardingAnswerSet {
 }
 
 interface OnboardingStore extends OnboardingAnswerSet {
+  /** Whether the store has been hydrated from storage */
+  hasHydrated: boolean;
+
   // Actions
   /** Set answer for a specific question */
   setAnswer: <K extends keyof RoutineIntake>(
@@ -29,6 +32,8 @@ interface OnboardingStore extends OnboardingAnswerSet {
   reset: () => void;
   /** Get current answers as RoutineIntake object */
   getIntake: () => RoutineIntake;
+  /** Mark store as hydrated */
+  setHydrated: () => void;
 }
 
 const defaultState: OnboardingAnswerSet = {
@@ -50,6 +55,7 @@ export const useOnboardingStore = create<OnboardingStore>()(
   persist(
     (set, get) => ({
       ...defaultState,
+      hasHydrated: false,
 
       setAnswer: (key, value) => {
         set((state) => ({
@@ -84,10 +90,17 @@ export const useOnboardingStore = create<OnboardingStore>()(
           budget_preference: state.answers.budget_preference ?? 'no_pref',
         };
       },
+
+      setHydrated: () => {
+        set({ hasHydrated: true });
+      },
     }),
     {
       name: 'onboarding-store',
       storage: createJSONStorage(() => AsyncStorage),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated();
+      },
     }
   )
 );
