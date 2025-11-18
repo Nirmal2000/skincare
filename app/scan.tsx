@@ -1,21 +1,22 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import {
-  CameraView,
-  FaceDetectorMode,
-  FaceDetectionResult,
-  FaceDetectorClassifications,
-  useCameraPermissions,
-} from 'react-native-face-detector-camera';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
   Pressable,
   StyleSheet,
   Text,
-  View,
+  View
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  CameraView,
+  FaceDetectionResult,
+  FaceDetectorClassifications,
+  FaceDetectorMode,
+  useCameraPermissions,
+} from 'react-native-face-detector-camera';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -23,15 +24,14 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FaceDetectionOverlay } from '@/components/FaceDetectionOverlay';
 import { Colors, Spacing } from '@/constants/Tokens';
-import { useFaceDetection } from '@/hooks/useFaceDetection';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
-import { useScanStore } from '@/features/scans/stores/scan-store';
 import { startAnalysis } from '@/features/scans/face-analysis-api';
+import { useScanStore } from '@/features/scans/stores/scan-store';
+import { useFaceDetection } from '@/hooks/useFaceDetection';
 
 export default function ScanScreen() {
   // Hooks at top level
@@ -214,6 +214,7 @@ export default function ScanScreen() {
           mode: FaceDetectorMode.fast,
           runClassifications: FaceDetectorClassifications.none,
           minDetectionInterval: 200,
+          detectLandmarks: 2
         }}
         onFacesDetected={onFacesDetected}
         onCameraReady={() => {

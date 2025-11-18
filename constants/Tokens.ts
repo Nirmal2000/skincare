@@ -27,7 +27,7 @@ export const Colors = {
   // Background Colors
   white: '#FFFFFF',
   appBackground: '#FAFAFA',
-  darkBackground: '#2C2C2E',
+  darkBackground: '#000000ff',
 
   // Overlay
   overlayDark: 'rgba(0, 0, 0, 0.6)',

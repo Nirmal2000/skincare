@@ -153,3 +153,5 @@ Min Android/IOS versions:
 ## 📚 Author
 
 Made with ❤️ by [luicfrr](https://github.com/luicfrr)
+
+ LOG  [Face Detection] Preview landmarks: [{"bottomMouthPosition": {"x": 184.96250075101852, "y": 461.49999952316284}, "bounds": {"origin": [Object], "size": [Object]}, "leftCheekPosition": {"x": 112.1875017285347, "y": 392.2750004529953}, "leftEarPosition": {"x": 78.46250218153, "y": 347.90000104904175}, "leftEyePosition": {"x": 135.26250141859055, "y": 315.9500014781952}, "leftMouthPosition": {"x": 142.80625131726265, "y": 438.86874982714653}, "noseBasePosition": {"x": 184.07500076293945, "y": 377.1875006556511}, "rightCheekPosition": {"x": 267.94374963641167, "y": 398.04375037550926}, "rightEarPosition": {"x": 309.656249076128, "y": 366.0937508046627}, "rightEyePosition": {"x": 252.85624983906746, "y": 320.8312514126301}, "rightMouthPosition": {"x": 232.0000001192093, "y": 441.9749997854233}, "rollAngle": 2.6675703525543213, "yawAngle": -2.7053544521331787}]

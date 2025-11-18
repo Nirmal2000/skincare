@@ -8,6 +8,7 @@ export interface FaceDetectionState {
   isCentered: boolean;
   faceCount: number;
   faceSize: number | null; // Percentage of viewport filled (0-100)
+  landmarks: any[] | null; // Face landmark data from detection
 }
 
 /**
@@ -51,6 +52,7 @@ export function useFaceDetection(
     isCentered: false,
     faceCount: 0,
     faceSize: null,
+    landmarks: null,
   });
 
   /**
@@ -66,6 +68,7 @@ export function useFaceDetection(
           isCentered: false,
           faceCount: 0,
           faceSize: null,
+          landmarks: null,
         });
         return;
       }
@@ -79,6 +82,7 @@ export function useFaceDetection(
           isCentered: false,
           faceCount: faces.length,
           faceSize: null,
+          landmarks: null,
         });
         return;
       }
@@ -120,10 +124,12 @@ export function useFaceDetection(
         isCentered,
         faceCount: faces.length,
         faceSize: faceSizePercent,
+        landmarks: faces, // Return all detected faces with their landmark data
       });
 
       if (isCentered) {
         console.log('[Face Detection] Face centered and ready to capture');
+        console.log('[Face Detection] Preview landmarks:', faces);
       }
     },
     [

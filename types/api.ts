@@ -4,6 +4,65 @@
  * Source: docs/frontend_integration.md
  */
 
+/**
+ * Face Regions that Backend Recognizes
+ * Mapped from ML Kit Face Landmarks → Backend Issue Regions
+ */
+export type IssueRegion =
+  | 'NoseBase'           // ← noseBasePosition ✅
+  | 'LeftEar'            // ← leftEarPosition ✅
+  | 'RightEar'           // ← rightEarPosition ✅
+  | 'LeftEarTip'         // ❌ NOT AVAILABLE (ML Kit doesn't provide)
+  | 'RightEarTip'        // ❌ NOT AVAILABLE (ML Kit doesn't provide)
+  | 'LeftEye'            // ← leftEyePosition ✅
+  | 'RightEye'           // ← rightEyePosition ✅
+  | 'LeftCheek'          // ← leftCheekPosition ✅
+  | 'RightCheek'         // ← rightCheekPosition ✅
+  | 'MouthBottom'        // ← bottomMouthPosition ✅
+  | 'MouthLeft'          // ← leftMouthPosition ✅
+  | 'MouthRight'         // ← rightMouthPosition ✅
+  | 'FaceOval'           // ❌ NOT AVAILABLE (ML Kit doesn't provide face contour)
+  | 'LeftEyebrowTop'     // ❌ NOT AVAILABLE (ML Kit doesn't provide eyebrows)
+  | 'LeftEyebrowBottom'  // ❌ NOT AVAILABLE (ML Kit doesn't provide eyebrows)
+  | 'RightEyebrowTop'    // ❌ NOT AVAILABLE (ML Kit doesn't provide eyebrows)
+  | 'RightEyebrowBottom' // ❌ NOT AVAILABLE (ML Kit doesn't provide eyebrows)
+;
+
+/**
+ * ML Kit Landmarks → Backend Issue Region Mapping
+ */
+export const FACE_LANDMARK_TO_REGION: Record<string, IssueRegion> = {
+  // Available landmarks (12/16 total, 75% coverage)
+  noseBasePosition: 'NoseBase',
+  leftEarPosition: 'LeftEar',
+  rightEarPosition: 'RightEar',
+  leftEyePosition: 'LeftEye',
+  rightEyePosition: 'RightEye',
+  leftCheekPosition: 'LeftCheek',
+  rightCheekPosition: 'RightCheek',
+  bottomMouthPosition: 'MouthBottom',
+  leftMouthPosition: 'MouthLeft',
+  rightMouthPosition: 'MouthRight',
+
+  // Missing landmarks (4/16 total, 25% unavailable)
+  // leftEarTip: 'LeftEarTip',          // ❌ ML Kit doesn't distinguish tip
+  // rightEarTip: 'RightEarTip',        // ❌ ML Kit doesn't distinguish tip
+  // faceOval: 'FaceOval',              // ❌ ML Kit doesn't provide face oval contour
+  // leftEyebrowTop: 'LeftEyebrowTop',  // ❌ ML Kit doesn't provide eyebrows
+  // leftEyebrowBottom: 'LeftEyebrowBottom', // ❌ ML Kit doesn't provide eyebrows
+  // rightEyebrowTop: 'RightEyebrowTop', // ❌ ML Kit doesn't provide eyebrows
+  // rightEyebrowBottom: 'RightEyebrowBottom', // ❌ ML Kit doesn't provide eyebrows
+} as const;
+
+/**
+ * ML Kit landmark properties that are NOT mapped to backend regions
+ */
+export const UNMAPPED_LANDMARKS = [
+  'bounds',        // Face bounding box
+  'rollAngle',     // Face rotation angle
+  'yawAngle',      // Face tilt angle
+] as const;
+
 // ============================================================================
 // Task Status Response (from backend polling)
 // ============================================================================
