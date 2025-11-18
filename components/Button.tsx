@@ -1,15 +1,15 @@
+import { ButtonSizes, Colors, Shadows, Typography } from '@/constants/Tokens';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import {
-  TouchableOpacity,
-  Text,
-  StyleSheet,
-  ViewStyle,
-  TextStyle,
   ActivityIndicator,
+  StyleSheet,
+  Text,
+  TextStyle,
+  TouchableOpacity,
+  ViewStyle,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
-import { Colors, Typography, ButtonSizes, Shadows } from '@/constants/Tokens';
 
 type ButtonVariant = 'primary' | 'secondary' | 'icon' | 'circular';
 
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: ButtonSizes.primary.paddingHorizontal,
     paddingVertical: ButtonSizes.primary.paddingVertical,
     borderRadius: ButtonSizes.primary.borderRadius,
+    alignSelf: 'stretch'
   },
   secondary: {
     height: ButtonSizes.primary.height,

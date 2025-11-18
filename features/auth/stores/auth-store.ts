@@ -33,6 +33,10 @@ export const useAuthStore = create<AuthStore>()(
       hasHydrated: false,
 
       setSession: (session) => {
+        console.log('[Auth Store] setSession called:', {
+          hasSession: !!session,
+          userId: session?.user?.id,
+        });
         set({ session });
       },
 
@@ -131,3 +135,19 @@ export function useCurrentUser() {
 export function useAccessToken(): string | null {
   return useAuthStore((state) => state.session?.access_token ?? null);
 }
+
+/**
+ * Set up Supabase auth state listener
+ * This listens for auth state changes and updates the store automatically
+ */
+console.log('[Auth Store] Setting up Supabase auth state listener');
+supabase.auth.onAuthStateChange((event, session) => {
+  console.log('[Auth Store] Auth state changed:', {
+    event,
+    hasSession: !!session,
+    userId: session?.user?.id,
+  });
+
+  // Update the store when session changes
+  useAuthStore.getState().setSession(session);
+});

@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Redirect, Stack } from 'expo-router';
 
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useOnboardingComplete } from '@/features/onboarding/stores/onboarding-store';
@@ -27,10 +27,10 @@ export default function AuthLayout() {
   }
 
   // // AUTH CHECK - Uncomment below to enable auth redirects:
-  // if (session && onboardingComplete) {
-  //   console.log('[Auth Layout] Authenticated and onboarded, redirecting to tabs');
-  //   return <Redirect href="/(tabs)" />;
-  // }
+  if (session && onboardingComplete) {
+    console.log('[Auth Layout] Authenticated and onboarded, redirecting to tabs');
+    return <Redirect href="/(tabs)" />;
+  }
 
   // TEMPORARILY SKIP AUTH: Always show sign in, but clicking continues to onboarding
   console.log('[Auth Layout] Auth bypassed - showing auth stack');

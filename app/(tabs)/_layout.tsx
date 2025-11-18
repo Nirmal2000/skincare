@@ -36,10 +36,10 @@ export default function TabLayout() {
   }
 
   // // AUTH CHECK - Uncomment to enable auth redirect:
-  // if (!session) {
-  //   console.log('[Tabs Layout] Not authenticated, redirecting to auth');
-  //   return <Redirect href="/(auth)/signin" />;
-  // }
+  if (!session) {
+    console.log('[Tabs Layout] Not authenticated, redirecting to auth');
+    return <Redirect href="/(auth)/signin" />;
+  }
 
   // TEMPORARILY SKIP AUTH: Allow access even without auth
 

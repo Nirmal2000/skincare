@@ -18,9 +18,9 @@ export default function OnboardingLayout() {
   if (!authHydrated || !onboardingHydrated) return null;
 
   // // AUTH CHECK - Uncomment to enable auth redirect:
-  // if (!session) {
-  //   return <Redirect href="/(auth)/signin" />;
-  // }
+  if (!session) {
+    return <Redirect href="/(auth)/signin" />;
+  }
 
   // TEMPORARILY SKIP AUTH: Allow access even without auth
   // Keep onboarding completion redirect

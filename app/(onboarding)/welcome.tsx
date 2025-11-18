@@ -1,28 +1,29 @@
-import { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-  TextInput,
-  Pressable,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { useRef, useState } from 'react';
+import {
+  Dimensions,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
-import { Colors, Spacing, Typography, BorderRadius } from '@/constants/Tokens';
-import { useOnboardingStore } from '@/features/onboarding/stores/onboarding-store';
+import { BorderRadius, Colors, Spacing, Typography } from '@/constants/Tokens';
 import { ONBOARDING_QUESTIONS, Question, QuestionOption } from '@/features/onboarding/questions';
+import { useOnboardingStore } from '@/features/onboarding/stores/onboarding-store';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -114,6 +115,16 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Back Chevron */}
+      {currentIndex > 0 && (
+        <Pressable
+          onPress={goToPrevious}
+          style={styles.backChevron}
+        >
+          <Ionicons name="chevron-back" size={28} color={Colors.textPrimary} />
+        </Pressable>
+      )}
+
       {/* Progress Bar */}
       <View style={styles.progressContainer}>
         <View style={styles.progressBar}>
@@ -148,14 +159,6 @@ export default function WelcomeScreen() {
 
       {/* Bottom Controls */}
       <View style={styles.controls}>
-        {currentIndex > 0 && (
-          <Button
-            title="Back"
-            onPress={goToPrevious}
-            variant="secondary"
-            style={styles.backButton}
-          />
-        )}
         <Button
           title={isLastQuestion ? 'Complete' : 'Next'}
           onPress={goToNext}
@@ -249,7 +252,7 @@ function SingleSelectOptions({ options, selectedValue, onSelect }: SingleSelectO
             <Card
               variant="option"
               active={isSelected}
-              style={styles.optionCard}
+              style={StyleSheet.flatten([styles.optionCard, isSelected && styles.optionCardActive])}
             >
               <Text style={[styles.optionLabel, isSelected && styles.optionLabelActive]}>
                 {option.label}
@@ -288,7 +291,7 @@ function MultiSelectOptions({ options, selectedValues, onToggle }: MultiSelectOp
             <Card
               variant="option"
               active={isSelected}
-              style={styles.optionCard}
+              style={StyleSheet.flatten([styles.optionCard, isSelected && styles.optionCardActive])}
             >
               <Text style={[styles.optionLabel, isSelected && styles.optionLabelActive]}>
                 {option.label}
@@ -312,6 +315,7 @@ const styles = StyleSheet.create({
   progressContainer: {
     paddingHorizontal: Spacing.large,
     paddingVertical: Spacing.base,
+    marginTop: Spacing.xxl,
   },
   progressBar: {
     height: 4,
@@ -326,7 +330,7 @@ const styles = StyleSheet.create({
   progressText: {
     ...Typography.caption,
     color: Colors.textSecondary,
-    marginTop: Spacing.small,
+    marginTop: Spacing.large,
     textAlign: 'center',
   },
   carousel: {
@@ -340,22 +344,33 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   questionHeader: {
-    marginBottom: Spacing.large,
+    marginBottom: Spacing.xl,
   },
   questionTitle: {
     ...Typography.h2,
     color: Colors.textPrimary,
-    marginBottom: Spacing.base,
+    marginBottom: Spacing.small,
   },
   questionDescription: {
     ...Typography.body,
     color: Colors.textSecondary,
   },
   optionsContainer: {
-    gap: Spacing.base,
+    gap: Spacing.small,
   },
   optionCard: {
-    marginBottom: Spacing.base,
+    marginBottom: Spacing.small,
+    shadowColor: 'transparent',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    elevation: 0,
+    backgroundColor: Colors.white,
+  },
+  optionCardActive: {
+    backgroundColor: Colors.white,
+    borderWidth: 2,
+    borderColor: Colors.brandPink,
   },
   optionLabel: {
     ...Typography.bodyLarge,
@@ -364,7 +379,7 @@ const styles = StyleSheet.create({
   },
   optionLabelActive: {
     color: Colors.brandPink,
-    fontWeight: '600',
+    // fontWeight: '600',
   },
   optionDescription: {
     ...Typography.caption,
@@ -382,16 +397,20 @@ const styles = StyleSheet.create({
     color: Colors.textPrimary,
   },
   controls: {
-    flexDirection: 'row',
+    alignItems: 'flex-end',
     paddingHorizontal: Spacing.large,
     paddingBottom: Spacing.large,
     paddingTop: Spacing.base,
-    gap: Spacing.base,
-  },
-  backButton: {
-    flex: 1,
   },
   nextButton: {
-    flex: 2,
+    paddingHorizontal: 20,
+    paddingVertical: 20,    
+  },
+  backChevron: {
+    position: 'absolute',
+    top: Spacing.xxxl,
+    left: Spacing.small,
+    zIndex: 10,
+    padding: Spacing.small,
   },
 });

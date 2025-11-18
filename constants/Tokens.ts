@@ -152,7 +152,7 @@ export const Shadows = {
 
 export const ButtonSizes = {
   primary: {
-    height: 56,
+    height: 60,
     paddingHorizontal: 32,
     paddingVertical: 16,
     borderRadius: 28,
