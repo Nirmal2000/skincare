@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
 import { useRouter, useSegments } from 'expo-router';
+import { useEffect } from 'react';
 import { useAuthStore } from './stores/auth-store';
 
 /**

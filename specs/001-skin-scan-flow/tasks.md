@@ -8,6 +8,7 @@
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
 > **Constitution Guardrails**
+>
 > - Keep implementations straightforward—no speculative fallback screens or
 >   extra try/catch blocks unless recovery UX is defined.
 > - Prove features on Expo-managed iOS builds first.
@@ -23,6 +24,7 @@
 ## Path Conventions
 
 Single Expo project structure (from plan.md):
+
 - `app/` - Expo Router file-based routes
 - `components/` - Reusable UI primitives
 - `features/` - Feature-specific logic and stores
@@ -73,6 +75,7 @@ Single Expo project structure (from plan.md):
 ### Implementation for User Story 1
 
 **Auth Implementation**:
+
 - [X] T014 [P] [US1] Create OAuth functions in features/auth/oauth.ts (signInWithGoogle, signInWithApple using expo-web-browser)
 - [X] T015 [P] [US1] Create useAuthGate hook in features/auth/useAuthGate.ts (checks session, redirects if needed)
 - [X] T016 [US1] Create sign-in screen in app/(auth)/signin.tsx with Google/Apple buttons
@@ -80,6 +83,7 @@ Single Expo project structure (from plan.md):
 - [X] T018 [US1] Handle OAuth redirect in app/_layout.tsx useEffect with handleSupabaseRedirect (from supabase-client.ts)
 
 **Onboarding Implementation**:
+
 - [X] T019 [P] [US1] Create onboarding question data in features/onboarding/questions.ts (8 questions based on RoutineIntake schema)
 - [X] T020 [P] [US1] Create onboarding store in features/onboarding/stores/onboarding-store.ts with Zustand + AsyncStorage persistence (per data-model.md)
 - [X] T021 [US1] Create onboarding layout in app/(onboarding)/_layout.tsx (stack navigator)
@@ -121,20 +125,23 @@ Single Expo project structure (from plan.md):
 ### Implementation for User Story 3
 
 **Scan Store & API Client**:
-- [ ] T034 [P] [US3] Create scan store in features/scans/stores/scan-store.ts with Zustand + AsyncStorage (per data-model.md ScanRun schema)
-- [ ] T035 [P] [US3] Implement face analysis API client in features/scans/face-analysis-api.ts (startAnalysis, pollTaskStatus, pollUntilComplete, generateRoutine per research.md Section 4)
-- [ ] T036 [P] [US3] Create useFaceDetection hook in hooks/useFaceDetection.ts (centering validation logic per research.md Section 3)
+
+- [X] T034 [P] [US3] Create scan store in features/scans/stores/scan-store.ts with Zustand + AsyncStorage (per data-model.md ScanRun schema)
+- [X] T035 [P] [US3] Implement face analysis API client in features/scans/face-analysis-api.ts (startAnalysis, pollTaskStatus, pollUntilComplete, generateRoutine per research.md Section 4)
+- [X] T036 [P] [US3] Create useFaceDetection hook in hooks/useFaceDetection.ts (centering validation logic per research.md Section 3)
 
 **Scan Screen**:
-- [ ] T037 [US3] Create scan screen in app/(tabs)/scan.tsx with CameraView from react-native-face-detector-camera
-- [ ] T038 [US3] Configure face detector settings in scan.tsx (FaceDetectorMode.fast, minDetectionInterval: 200ms)
-- [ ] T039 [US3] Create FaceDetectionOverlay component in components/FaceDetectionOverlay.tsx with Reanimated border color (red→green when centered)
-- [ ] T040 [US3] Implement capture button in scan.tsx (disabled until face centered, haptic feedback on press)
-- [ ] T041 [US3] Add scan button pulse animation using Reanimated withRepeat + withSequence when face detected
-- [ ] T042 [US3] Display reference image thumbnail (top-right) and back button (top-left) in scan.tsx
-- [ ] T043 [US3] Handle photo capture: create ScanRun via useScanStore.createRun(photoUri) → navigate to /results/[runId]
+
+- [X] T037 [US3] Create scan screen in app/(tabs)/scan.tsx with CameraView from react-native-face-detector-camera
+- [X] T038 [US3] Configure face detector settings in scan.tsx (FaceDetectorMode.fast, minDetectionInterval: 200ms)
+- [X] T039 [US3] Create FaceDetectionOverlay component in components/FaceDetectionOverlay.tsx with Reanimated border color (red→green when centered)
+- [X] T040 [US3] Implement capture button in scan.tsx (disabled until face centered, haptic feedback on press)
+- [X] T041 [US3] Add scan button pulse animation using Reanimated withRepeat + withSequence when face detected
+- [X] T042 [US3] Display reference image thumbnail (top-right) and back button (top-left) in scan.tsx
+- [X] T043 [US3] Handle photo capture: create ScanRun via useScanStore.createRun(photoUri) → navigate to /results/[runId]
 
 **Result Screen**:
+
 - [ ] T044 [US3] Create result detail screen in app/(results)/[runId].tsx (dynamic route)
 - [ ] T045 [US3] Display captured photo at top of result screen using Image component
 - [ ] T046 [US3] Implement loading skeleton with Reanimated shimmer effect while status !== 'completed'
@@ -177,6 +184,7 @@ Single Expo project structure (from plan.md):
 **Purpose**: Settings screen and cross-cutting improvements
 
 **Settings Screen**:
+
 - [ ] T063 [P] [US-Settings] Create settings store in features/settings/stores/settings-store.ts with Zustand + AsyncStorage (per data-model.md)
 - [ ] T064 [US-Settings] Create settings screen in app/(tabs)/settings.tsx
 - [ ] T065 [US-Settings] Display user profile from useAuthStore (avatar, name, email)
@@ -185,6 +193,7 @@ Single Expo project structure (from plan.md):
 - [ ] T068 [US-Settings] Add "Sign Out" button → useAuthStore.signOut() → navigate to /(auth)/signin
 
 **Polish & Cross-Cutting**:
+
 - [ ] T069 [P] Add error boundary in app/_layout.tsx to catch unhandled errors (simple error screen with restart button)
 - [ ] T070 [P] Verify all screens use design tokens from constants/Tokens.ts (no hardcoded colors/spacing)
 - [ ] T071 [P] Add haptic feedback to all button presses (Expo Haptics.impactAsync)
@@ -229,6 +238,7 @@ Phase 2 (Foundational) ← BLOCKS everything below
 ### Recommended Implementation Order
 
 **Sequential (MVP-first)**:
+
 1. Phase 1 → Phase 2 (foundation)
 2. Phase 3 (US1) → STOP & VALIDATE → Deploy MVP
 3. Phase 4 (US2) → VALIDATE
@@ -237,6 +247,7 @@ Phase 2 (Foundational) ← BLOCKS everything below
 6. Phase 7 (Polish) → Final release
 
 **Parallel (with team)**:
+
 1. Phase 1 → Phase 2 together
 2. After Phase 2 completes:
    - Developer A: Phase 3 (US1)
@@ -249,6 +260,7 @@ Phase 2 (Foundational) ← BLOCKS everything below
 ### Within Each User Story
 
 **US1 (Auth & Onboarding)**:
+
 - T014, T015 can run parallel (both create new files)
 - T019, T020 can run parallel
 - T016 depends on T014, T015
@@ -256,36 +268,43 @@ Phase 2 (Foundational) ← BLOCKS everything below
 - T026 depends on all previous US1 tasks
 
 **US2 (Home & Tabs)**:
+
 - T027, T028, T032 can run parallel (different files)
 - T029 depends on T028 (same file)
 - T030, T031 can run parallel
 - T033 depends on T030
 
 **US3 (Scan & Result)**:
+
 - T034, T035, T036 can run parallel (different files)
 - T037-T043 sequential for scan screen (same file)
 - T044-T055 sequential for result screen (same file)
 - But scan screen (T037-T043) and result screen (T044-T055) can be developed in parallel by different developers
 
 **US4 (History)**:
+
 - All T056-T062 mostly sequential (same file)
 - T056, T061 can run parallel (different components)
 
 ### Parallel Opportunities
 
 **Phase 1** (all can run in parallel):
+
 - T002, T003, T004 (different files, independent checks)
 
 **Phase 2**:
+
 - Parallel: T007, T008, T009, T012, T013
 - Sequential: T006 → T010 → T011 (tokens needed first, then Supabase, then store)
 
 **Phase 3 (US1)** - 2 parallel tracks:
+
 - Track A (Auth): T014, T015 → T016 → T017 → T018
 - Track B (Onboarding): T019, T020 → T021, T022 → T023, T024, T025
 - Merge: T026 (needs both tracks done)
 
 **Phase 5 (US3)** - 2 parallel tracks:
+
 - Track A (Scan screen): T037-T043
 - Track B (Result screen): T044-T055
 - Prerequisites for both: T034, T035, T036 (can all run parallel first)
@@ -355,6 +374,7 @@ With 2-3 developers:
 **Total Tasks**: 75
 
 **By Phase**:
+
 - Phase 1 (Setup): 5 tasks
 - Phase 2 (Foundational): 8 tasks
 - Phase 3 (US1: Auth & Onboarding): 13 tasks
@@ -364,6 +384,7 @@ With 2-3 developers:
 - Phase 7 (Polish): 13 tasks
 
 **By User Story**:
+
 - US1 (P1): 13 tasks → **MVP scope**
 - US2 (P2): 7 tasks
 - US3 (P2): 22 tasks → **Highest complexity (camera, API, polling)**
@@ -372,6 +393,7 @@ With 2-3 developers:
 **Parallel Opportunities**: 35 tasks marked [P] (can run in parallel within phase)
 
 **Independent Test Criteria**:
+
 - US1: Sign in + complete 5 questions → lands on home
 - US2: All 4 tabs navigate correctly
 - US3: Capture photo → see analysis results

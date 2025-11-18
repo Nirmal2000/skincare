@@ -1,16 +1,18 @@
-import { StyleSheet, View, Text, ScrollView } from 'react-native';
-import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
-import { Colors, Spacing, Typography, Layout } from '@/constants/Tokens';
+import { Colors, Layout, Spacing, Typography } from '@/constants/Tokens';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 export default function HomeScreen() {
   const session = useAuthStore((state) => state.session);
+  const insets = useSafeAreaInsets();
 
   const handleScanPress = () => {
-    router.push('/(tabs)/scan');
+    router.push('/scan');
   };
 
   // TODO: Phase 5 - Add scan store integration:
@@ -21,7 +23,13 @@ export default function HomeScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={{        
+        paddingHorizontal: Layout.screenMarginHorizontal,
+        paddingTop: Math.max(insets.top, Spacing.large),
+        paddingBottom: Spacing.xxl,
+        
+      }}
+      contentInsetAdjustmentBehavior="never"
       showsVerticalScrollIndicator={false}
     >
       {/* Header */}
@@ -89,13 +97,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.backgroundBlush,
   },
-  scrollContent: {
-    paddingHorizontal: Layout.screenMarginHorizontal,
-    paddingTop: Spacing.large,
-    paddingBottom: Spacing.xxl,
-  },
+
   header: {
-    marginBottom: Spacing.xl,
+    marginBottom: Spacing.xl,    
   },
   greeting: {
     ...Typography.h1,

@@ -1,13 +1,12 @@
-import { Redirect, Tabs } from 'expo-router';
-import React from 'react';
-import * as Haptics from 'expo-haptics';
-
 import { TabBarIcon } from '@/components/TabBarIcon';
 import { Colors, Spacing } from '@/constants/Tokens';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
-import { useOnboardingComplete, useOnboardingStore } from '@/features/onboarding/stores/onboarding-store';
-import { StyleSheet, Platform } from 'react-native';
 
+import { useOnboardingComplete, useOnboardingStore } from '@/features/onboarding/stores/onboarding-store';
+import * as Haptics from 'expo-haptics';
+import { Redirect, Tabs } from 'expo-router';
+import React from 'react';
+import { Platform, StyleSheet } from 'react-native';
 /**
  * Tabs Layout
  * Main app tabs with navigation protection
@@ -49,26 +48,26 @@ export default function TabLayout() {
 
   console.log('[Tabs Layout] Showing tabs (authenticated and onboarded)');
 
-  return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: Colors.brandPink,
-        tabBarInactiveTintColor: Colors.textTertiary,
-        headerShown: false,
-        tabBarStyle: styles.tabBar,
-        tabBarLabelStyle: styles.tabBarLabel,
-        tabBarShowLabel: true,
-        tabBarHideOnKeyboard: true,
-      }}
-      screenListeners={{
-        tabPress: () => {
-          // Haptic feedback on tab press (iOS standard)
-          if (Platform.OS === 'ios') {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          }
-        },
-      }}
-    >
+  return (    
+      <Tabs
+        screenOptions={{
+          tabBarActiveTintColor: Colors.brandPink,
+          tabBarInactiveTintColor: Colors.textTertiary,
+          headerShown: false,
+          tabBarStyle: styles.tabBar,
+          tabBarLabelStyle: styles.tabBarLabel,
+          tabBarShowLabel: true,
+          tabBarHideOnKeyboard: true,
+        }}
+        screenListeners={{
+          tabPress: () => {
+            // Haptic feedback on tab press (iOS standard)
+            if (Platform.OS === 'ios') {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            }
+          },
+        }}
+      >
       <Tabs.Screen
         name="index"
         options={{
@@ -105,20 +104,13 @@ export default function TabLayout() {
           ),
         }}
       />
-      {/* Hidden tabs for scan and other screens */}
-      <Tabs.Screen
-        name="scan"
-        options={{
-          href: null, // Hide from tab bar
-        }}
-      />
       <Tabs.Screen
         name="explore"
         options={{
           href: null, // Hide from tab bar (leftover from template)
         }}
       />
-    </Tabs>
+    </Tabs>    
   );
 }
 

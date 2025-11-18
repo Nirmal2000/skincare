@@ -4,6 +4,7 @@ import { Slot } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { handleOAuthRedirect } from '@/features/auth/oauth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -43,9 +44,11 @@ export default function RootLayout() {
 
 
   return (
+    <SafeAreaProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Slot />
       <StatusBar style="auto" />
     </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
