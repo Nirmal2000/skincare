@@ -17,34 +17,31 @@
   the iteration process.
 -->
 
-**Language/Version**: [e.g., Python 3.11, Swift 5.9, Rust 1.75 or NEEDS CLARIFICATION]  
-**Primary Dependencies**: [e.g., FastAPI, UIKit, LLVM or NEEDS CLARIFICATION]  
-**Storage**: [if applicable, e.g., PostgreSQL, CoreData, files or N/A]  
-**Testing**: [e.g., pytest, XCTest, cargo test or NEEDS CLARIFICATION]  
-**Target Platform**: [e.g., Linux server, iOS 15+, WASM or NEEDS CLARIFICATION]
-**Project Type**: [single/web/mobile - determines source structure]  
-**Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]  
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable or NEEDS CLARIFICATION]  
-**Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
+**Language/Version**: TypeScript + React Native 0.81 (Expo SDK 54)  
+**Primary Dependencies**: Expo Router, React Navigation, React Native Reanimated, Expo Haptics  
+**Storage**: Local JSON/state only unless spec mandates backend  
+**Testing**: Expo Test + component story/playground capture  
+**Target Platform**: iOS 17+ via Expo managed workflow  
+**Project Type**: Mobile (single Expo project)  
+**Performance Goals**: 60 fps animations, <100 ms gesture latency  
+**Constraints**: Avoid extra fallbacks/try-catch, Reanimated for motion, Expo-compatible deps  
+**Scale/Scope**: Boutique skincare companion (single app, <20 screens)
 
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Confirm every item below before writing code:
-
-1. **Simplicity** – Does each deliverable map to a single screen or component with only the
-   state it consumes?
-2. **User Story Alignment** – Is every task tied to an independently testable user story in
-   the spec with a named priority?
-3. **State Ownership** – Have you declared one owner per piece of state (component, context,
-   or data module) with no parallel caches?
-4. **Expo Stack** – Does the plan rely solely on Expo-managed dependencies listed in
-   `package.json`, or is owner approval recorded for any addition?
-5. **Owner Install Only** – Have you listed any needed packages (name + purpose) instead of
-   editing `package.json` or installing locally?
-6. **Deterministic UX** – Are failure paths explicit (inline messaging) instead of silent
-   retries, blanket try/catch, or background fallbacks?
+1. **Straightforward Surfaces** – Identify any defensive fallbacks or try/catch
+   blocks; justify only when we can recover with a defined UX.
+2. **Expo iOS Focus** – Confirm every dependency and native capability works in
+   Expo managed workflow with iOS builds (sim/device + `expo prebuild`).
+3. **Reanimated Motion** – List the screens/interactions that need animation and
+   describe the Reanimated primitives/worklets that will power them.
+4. **Deterministic State** – Document the single source of truth (hook, context,
+   cache) for each story; note how data enters/leaves components without hidden
+   globals.
+5. **Design-System Fidelity** – Map the feature to tokens/assets from
+   `.claude/skills/ui-designer`; capture any intentional deviations.
 
 ## Project Structure
 

@@ -1,0 +1,199 @@
+/**
+ * API Response Types
+ * Source: specs/001-skin-scan-flow/data-model.md
+ * Source: docs/frontend_integration.md
+ */
+
+// ============================================================================
+// Task Status Response (from backend polling)
+// ============================================================================
+
+export interface TaskStatusResponse {
+  task_id: string;
+  status: TaskStatus;
+  result: UpgradedFaceAnalysisResult | null;
+  error: string | null;
+  routine_json: RoutinePlan | null;
+}
+
+export type TaskStatus =
+  | 'queued'
+  | 'processing'
+  | 'global_profile_complete'
+  | 'texture_complete'
+  | 'pigmentation_complete'
+  | 'acne_complete'
+  | 'aging_complete'
+  | 'completed'
+  | 'failed';
+
+// ============================================================================
+// Face Analysis Result
+// ============================================================================
+
+export interface UpgradedFaceAnalysisResult {
+  global_profile: GlobalProfile;
+  issues: IssuesCollection;
+}
+
+export interface GlobalProfile {
+  skin_type: {
+    label: 'dry' | 'oily' | 'combination' | 'normal' | 'unknown';
+    confidence: number; // 0-1
+  };
+  skin_tone: {
+    lightness: 'very_light' | 'light' | 'medium' | 'tan' | 'brown' | 'dark';
+    undertone: 'yellow' | 'neutral' | 'red' | 'olive' | 'unknown';
+  };
+  skin_age: {
+    estimated_age: number;
+    relative_to_real_age: 'younger' | 'similar' | 'older' | 'unknown';
+  };
+  scores: {
+    overall: number; // 0-100
+    wrinkles: number;
+    dark_circles: number;
+    oily_shine: number;
+    pores: number;
+    blackheads: number;
+    acne: number;
+    sensitivity_redness: number;
+    pigmentation: number;
+    hydration: number;
+    roughness: number;
+  };
+  summary_description: string;
+}
+
+export interface IssuesCollection {
+  oily_shine: IssueItem[];
+  dryness_dehydration: IssueItem[];
+  enlarged_pores_texture: IssueItem[];
+  blackheads: IssueItem[];
+  acne_active: IssueItem[];
+  acne_scars_post_inflammatory: IssueItem[];
+  pigmentation_brown_spots: IssueItem[];
+  freckles: IssueItem[];
+  melasma_like_patches: IssueItem[];
+  redness_sensitivity: IssueItem[];
+  wrinkles_and_fine_lines: IssueItem[];
+  eye_bags: IssueItem[];
+  dark_circles: IssueItem[];
+  moles_or_nevi: IssueItem[];
+}
+
+export interface IssueItem {
+  region: string; // Face region identifier
+  intensity: number; // 0-1
+  area: number; // 1-10 scale
+  description: string;
+}
+
+// ============================================================================
+// Routine Recommendation
+// ============================================================================
+
+export interface RoutineIntake {
+  sensitivity?: 'low' | 'medium' | 'high' | 'unsure';
+  pregnancy?: 'yes' | 'no' | 'prefer_not_to_say';
+  rx_topical?: 'yes' | 'no' | 'unsure';
+  allergies?: string[];
+  fitzpatrick?: 'I-II' | 'III-IV' | 'V-VI' | 'unsure';
+  current_actives?: string[];
+  country?: string | null;
+  budget_preference?: 'budget' | 'mid' | 'premium' | 'no_pref';
+}
+
+export interface RoutinePlan {
+  routine: {
+    am: RoutineStep[];
+    midday?: RoutineStep[];
+    pm: RoutineStep[];
+  };
+  reasons: {
+    prioritized_concerns: {
+      key: string;
+      severity: string;
+      why: string;
+    }[];
+    notes: string;
+  };
+  warnings: string[];
+  lifestyle: {
+    sleep: string;
+    stress: string;
+    sun: string;
+    habits: string;
+    routine_hygiene: string;
+    diet: {
+      increase: string[];
+      limit: string[];
+      supplements: string[];
+    };
+  };
+}
+
+export interface RoutineStep {
+  type: 'cleanser' | 'active' | 'moisturizer' | 'sunscreen' | 'refresh' | 'other';
+  instructions: {
+    how: string;
+    frequency: string;
+    timing: string;
+  };
+  products: ProductRecommendation[];
+}
+
+export interface ProductRecommendation {
+  id?: string;
+  brand: string;
+  name: string;
+  tier: 'budget' | 'mid' | 'premium';
+  url: string;
+  why: string;
+}
+
+// ============================================================================
+// API Request Payloads
+// ============================================================================
+
+export interface StartAnalysisRequest {
+  image: File | Blob;
+  real_age?: number;
+}
+
+export interface StartAnalysisResponse {
+  task_id: string;
+}
+
+export interface GenerateRoutineRequest {
+  task_id: string;
+  intake: RoutineIntake;
+}
+
+export interface GenerateRoutineResponse {
+  task_id: string;
+  poll_path: string;
+}
+
+// ============================================================================
+// API Error Response
+// ============================================================================
+
+export interface APIErrorResponse {
+  detail: string;
+  status?: number;
+}
+
+// ============================================================================
+// Helper Types
+// ============================================================================
+
+export type IssueCategory = keyof IssuesCollection;
+
+export type SkinType = GlobalProfile['skin_type']['label'];
+
+export type SkinToneLightness = GlobalProfile['skin_tone']['lightness'];
+
+export type SkinToneUndertone = GlobalProfile['skin_tone']['undertone'];
+
+export type AgeComparison = GlobalProfile['skin_age']['relative_to_real_age'];

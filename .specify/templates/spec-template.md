@@ -4,17 +4,16 @@
 **Created**: [DATE]  
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
-**Testing Policy**: Default to manual validation at the screen level. Add automated tests only
-when the user explicitly requests them in the feature brief.
-**Dependency Policy**: Document any required npm packages by name and justification; do not
-modify `package.json` or install them yourself.
+
+> **Constitution Alignment**: Keep stories independently testable on iOS via
+> Expo managed workflow, power all motion with Reanimated, and avoid defensive
+> fallbacks or speculative try/catch blocks.
 
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
   IMPORTANT: User stories should be PRIORITIZED as user journeys ordered by importance.
-  Each user story corresponds to a single Expo Router screen or flow and must be
-  INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
+  Each user story/journey must be INDEPENDENTLY TESTABLE - meaning if you implement just ONE of them,
   you should still have a viable MVP (Minimum Viable Product) that delivers value.
   
   Assign priorities (P1, P2, P3, etc.) to each story, where P1 is the most critical.
@@ -31,7 +30,8 @@ modify `package.json` or install them yourself.
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
+**Independent Test**: [Describe how this can be tested independently on iOS via
+Expo run + Reanimated preview]
 
 **Acceptance Scenarios**:
 
@@ -77,8 +77,11 @@ modify `package.json` or install them yourself.
   Fill them out with the right edge cases.
 -->
 
-- What message appears when [boundary condition] prevents completion?
-- How does the screen surface failure for [error scenario] without background retries?
+- What happens when [boundary condition] on iOS simulators/devices?
+- How does the system handle [error scenario] without adding new fallback UI?
+- Does the Reanimated interaction stay at 60 fps when [stress case] occurs?
+- What is the UX if Expo-managed capability [push, camera, etc.] is
+  unavailable?
 
 ## Requirements *(mandatory)*
 
@@ -89,14 +92,16 @@ modify `package.json` or install them yourself.
 
 ### Functional Requirements
 
-- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"] with
-  no optional fallback path.
-- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
-- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
-- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"] using a single
-  state owner.
-- **FR-005**: System MUST [behavior, e.g., "log all security events"] and surface failures
-  inline.
+- **FR-001**: Experience MUST run inside Expo Router on iOS with no custom
+  native modules.
+- **FR-002**: Reanimated MUST drive [specific animation/gesture], referencing
+  shared values/worklets.
+- **FR-003**: Users MUST be able to [key interaction, e.g., "preview skincare
+  plan"] using deterministic state (single hook/context).
+- **FR-004**: System MUST surface errors only when we can provide a corrective
+  action—no placeholder fallbacks.
+- **FR-005**: UI MUST apply tokens/assets from `.claude/skills/ui-designer` and
+  `assets/`.
 
 *Example of marking unclear requirements:*
 

@@ -1,49 +1,24 @@
-import * as Linking from "expo-linking";
-import { Stack } from "expo-router";
-import { useEffect } from "react";
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
+import 'react-native-reanimated';
 
-import {
-  handleSupabaseRedirect,
-  SUPABASE_REDIRECT_PREFIX,
-} from "@/features/auth/supabase-client";
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
-function useSupabaseLinking() {
-  useEffect(() => {
-    const handleUrl = (url?: string | null) => {
-      if (!url || !url.startsWith(SUPABASE_REDIRECT_PREFIX)) {
-        return;
-      }
-      console.log("Processing Supabase redirect:", url);
-      handleSupabaseRedirect(url);
-    };
-
-    const subscription = Linking.addEventListener("url", ({ url }) =>
-      handleUrl(url),
-    );
-
-    Linking.getInitialURL().then(handleUrl);
-
-    return () => {
-      subscription.remove();
-    };
-  }, []);
-}
+export const unstable_settings = {
+  anchor: '(tabs)',
+};
 
 export default function RootLayout() {
-  useSupabaseLinking();
+  const colorScheme = useColorScheme();
 
   return (
-    <Stack>
-      <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen
-        name="edit-age"
-        options={{ headerShown: false, presentation: "modal" }}
-      />
-      <Stack.Screen
-        name="(auth)/signin"
-        options={{ presentation: "modal", headerShown: false }}
-      />
-    </Stack>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+      </Stack>
+      <StatusBar style="auto" />
+    </ThemeProvider>
   );
 }

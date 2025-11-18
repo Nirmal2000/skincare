@@ -1,0 +1,764 @@
+openapi: 3.0.3
+info:
+  title: Face Analysis API
+  description: |
+    Backend API for the BetterSkin mobile app face analysis workflow.
+    Supports async multi-pass LLM analysis with status polling and routine generation.
+
+    **Authentication**: All endpoints (except health checks) require Bearer token from Supabase auth.
+
+    **Workflow**:
+    1. POST /start-task → Upload image, get task_id
+    2. GET /tasks/{task_id} → Poll until status = 'completed'
+    3. POST /recommend → Generate routine
+    4. GET /tasks/{task_id} → Poll until routine_json !== null
+
+    **Reference**: See `docs/frontend_integration.md` for detailed integration guide
+  version: 1.0.0
+  contact:
+    name: BetterSkin API Support
+    email: support@thebetterskin.com
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+  - url: https://api.thebetterskin.com
+    description: Production (placeholder)
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Analysis
+    description: Face analysis workflow
+  - name: Routine
+    description: Routine generation
+
+paths:
+  /:
+    get:
+      summary: Root health check
+      tags: [Health]
+      operationId: getRootHealth
+      responses:
+        '200':
+          description: API is running
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: FastAPI is running
+
+  /health:
+    get:
+      summary: Detailed health status
+      tags: [Health]
+      operationId: getHealthStatus
+      responses:
+        '200':
+          description: Health check passed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /start-task:
+    post:
+      summary: Start face analysis task
+      description: |
+        Upload an image to begin background face analysis. Returns a task_id for polling.
+        The backend processes the image through multiple LLM passes (global profile, texture, pigmentation, acne, aging).
+      tags: [Analysis]
+      operationId: startAnalysisTask
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, or WebP)
+                real_age:
+                  type: integer
+                  description: User's actual age (helps model assess perceived vs real age)
+                  example: 28
+                  minimum: 13
+                  maximum: 120
+      responses:
+        '200':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [task_id]
+                properties:
+                  task_id:
+                    type: string
+                    format: uuid
+                    example: 550e8400-e29b-41d4-a716-446655440000
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /tasks:
+    get:
+      summary: List recent analysis tasks
+      description: Retrieve the latest face analyses for the authenticated user
+      tags: [Analysis]
+      operationId: listTasks
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of tasks to return
+          schema:
+            type: integer
+            default: 10
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskStatusResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /tasks/{task_id}:
+    get:
+      summary: Get task status and results
+      description: |
+        Poll for current task status, analysis results, and routine recommendations.
+        Use this endpoint throughout the workflow to track progress.
+
+        Poll every 1-2 seconds until status = 'completed' for analysis results.
+        Continue polling after calling /recommend until routine_json !== null.
+      tags: [Analysis]
+      operationId: getTaskStatus
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: task_id
+          in: path
+          required: true
+          description: UUID of the task to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Task status and results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TaskStatusResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - trying to access another user's task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+  /recommend:
+    post:
+      summary: Generate personalized routine
+      description: |
+        Generate a personalized skincare routine based on completed face analysis and user intake questionnaire.
+        The request is queued asynchronously; poll /tasks/{task_id} for the result.
+
+        **Prerequisites**: Task status must be 'completed' before calling this endpoint.
+      tags: [Routine]
+      operationId: generateRoutine
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecommendationRequest'
+      responses:
+        '202':
+          description: Request accepted, routine generation started
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [task_id, poll_path]
+                properties:
+                  task_id:
+                    type: string
+                    format: uuid
+                  poll_path:
+                    type: string
+                    example: /tasks/550e8400-e29b-41d4-a716-446655440000
+        '400':
+          description: Bad request - analysis not ready or invalid intake
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - trying to generate routine for another user's task
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/ServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Supabase access token from OAuth flow
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: Provide a valid image file.
+
+    Unauthorized:
+      description: Unauthorized - missing or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: Unauthorized
+
+    UnprocessableEntity:
+      description: Unprocessable entity - validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: Unprocessable Entity
+
+    ServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            detail: Internal server error
+
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
+          description: Human-readable error message
+
+    TaskStatusResponse:
+      type: object
+      required: [task_id, status, result, error, routine_json]
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum:
+            - queued
+            - processing
+            - global_profile_complete
+            - texture_complete
+            - pigmentation_complete
+            - acne_complete
+            - aging_complete
+            - completed
+            - failed
+          description: |
+            Current processing status:
+            - queued: Task registered, awaiting processing
+            - processing: Analysis is running
+            - *_complete: Intermediate step finished (partial results)
+            - completed: All analysis steps done; full result ready
+            - failed: Analysis encountered an unrecoverable error
+        result:
+          $ref: '#/components/schemas/UpgradedFaceAnalysisResult'
+          nullable: true
+        error:
+          type: string
+          nullable: true
+          description: Error message if status is 'failed'
+        routine_json:
+          $ref: '#/components/schemas/RoutinePlan'
+          nullable: true
+
+    UpgradedFaceAnalysisResult:
+      type: object
+      required: [global_profile, issues]
+      properties:
+        global_profile:
+          $ref: '#/components/schemas/GlobalProfile'
+        issues:
+          $ref: '#/components/schemas/IssuesCollection'
+
+    GlobalProfile:
+      type: object
+      required: [skin_type, skin_tone, skin_age, scores, summary_description]
+      properties:
+        skin_type:
+          type: object
+          required: [label, confidence]
+          properties:
+            label:
+              type: string
+              enum: [dry, oily, combination, normal, unknown]
+            confidence:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 1
+        skin_tone:
+          type: object
+          required: [lightness, undertone]
+          properties:
+            lightness:
+              type: string
+              enum: [very_light, light, medium, tan, brown, dark]
+            undertone:
+              type: string
+              enum: [yellow, neutral, red, olive, unknown]
+        skin_age:
+          type: object
+          required: [estimated_age, relative_to_real_age]
+          properties:
+            estimated_age:
+              type: integer
+              minimum: 13
+              maximum: 120
+            relative_to_real_age:
+              type: string
+              enum: [younger, similar, older, unknown]
+        scores:
+          type: object
+          required:
+            - overall
+            - wrinkles
+            - dark_circles
+            - oily_shine
+            - pores
+            - blackheads
+            - acne
+            - sensitivity_redness
+            - pigmentation
+            - hydration
+            - roughness
+          properties:
+            overall:
+              type: integer
+              minimum: 0
+              maximum: 100
+            wrinkles:
+              type: integer
+              minimum: 0
+              maximum: 100
+            dark_circles:
+              type: integer
+              minimum: 0
+              maximum: 100
+            oily_shine:
+              type: integer
+              minimum: 0
+              maximum: 100
+            pores:
+              type: integer
+              minimum: 0
+              maximum: 100
+            blackheads:
+              type: integer
+              minimum: 0
+              maximum: 100
+            acne:
+              type: integer
+              minimum: 0
+              maximum: 100
+            sensitivity_redness:
+              type: integer
+              minimum: 0
+              maximum: 100
+            pigmentation:
+              type: integer
+              minimum: 0
+              maximum: 100
+            hydration:
+              type: integer
+              minimum: 0
+              maximum: 100
+            roughness:
+              type: integer
+              minimum: 0
+              maximum: 100
+        summary_description:
+          type: string
+          description: Human-readable summary of skin condition
+
+    IssuesCollection:
+      type: object
+      required:
+        - oily_shine
+        - dryness_dehydration
+        - enlarged_pores_texture
+        - blackheads
+        - acne_active
+        - acne_scars_post_inflammatory
+        - pigmentation_brown_spots
+        - freckles
+        - melasma_like_patches
+        - redness_sensitivity
+        - wrinkles_and_fine_lines
+        - eye_bags
+        - dark_circles
+        - moles_or_nevi
+      properties:
+        oily_shine:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        dryness_dehydration:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        enlarged_pores_texture:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        blackheads:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        acne_active:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        acne_scars_post_inflammatory:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        pigmentation_brown_spots:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        freckles:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        melasma_like_patches:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        redness_sensitivity:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        wrinkles_and_fine_lines:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        eye_bags:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        dark_circles:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+        moles_or_nevi:
+          type: array
+          items:
+            $ref: '#/components/schemas/IssueItem'
+
+    IssueItem:
+      type: object
+      required: [region, intensity, area, description]
+      properties:
+        region:
+          type: string
+          description: Face region identifier (e.g., NoseBase, LeftCheek)
+        intensity:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: Issue intensity/severity
+        area:
+          type: integer
+          minimum: 1
+          maximum: 10
+          description: Size of affected area
+        description:
+          type: string
+          description: Human-readable description of the issue
+
+    RecommendationRequest:
+      type: object
+      required: [task_id, intake]
+      properties:
+        task_id:
+          type: string
+          format: uuid
+        intake:
+          $ref: '#/components/schemas/RoutineIntake'
+
+    RoutineIntake:
+      type: object
+      properties:
+        sensitivity:
+          type: string
+          enum: [low, medium, high, unsure]
+          default: unsure
+        pregnancy:
+          type: string
+          enum: [yes, no, prefer_not_to_say]
+          default: prefer_not_to_say
+        rx_topical:
+          type: string
+          enum: [yes, no, unsure]
+          default: unsure
+        allergies:
+          type: array
+          items:
+            type: string
+          default: []
+          example: [fragrance, alcohol]
+        fitzpatrick:
+          type: string
+          enum: [I-II, III-IV, V-VI, unsure]
+          default: unsure
+          description: Fitzpatrick skin tone scale
+        current_actives:
+          type: array
+          items:
+            type: string
+          default: []
+          example: [vitamin_c, retinol, niacinamide]
+        country:
+          type: string
+          nullable: true
+          description: Country code for product availability
+          example: US
+        budget_preference:
+          type: string
+          enum: [budget, mid, premium, no_pref]
+          default: no_pref
+
+    RoutinePlan:
+      type: object
+      required: [routine, reasons, warnings, lifestyle]
+      properties:
+        routine:
+          $ref: '#/components/schemas/RoutineSections'
+        reasons:
+          $ref: '#/components/schemas/RoutineReasons'
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Important warnings or contraindications
+        lifestyle:
+          $ref: '#/components/schemas/RoutineLifestyle'
+
+    RoutineSections:
+      type: object
+      required: [am, pm]
+      properties:
+        am:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutineStep'
+        midday:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutineStep'
+          nullable: true
+        pm:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutineStep'
+
+    RoutineStep:
+      type: object
+      required: [type, instructions, products]
+      properties:
+        type:
+          type: string
+          enum: [cleanser, active, moisturizer, sunscreen, refresh, other]
+        instructions:
+          $ref: '#/components/schemas/RoutineInstruction'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoutineProduct'
+
+    RoutineInstruction:
+      type: object
+      required: [how, frequency, timing]
+      properties:
+        how:
+          type: string
+          description: Application method
+          example: Apply a pea-sized amount to damp skin
+        frequency:
+          type: string
+          description: How often to use
+          example: Once daily
+        timing:
+          type: string
+          description: When to use
+          example: Morning after cleansing
+
+    RoutineProduct:
+      type: object
+      required: [brand, name, tier, url, why]
+      properties:
+        id:
+          type: string
+          nullable: true
+          description: Product ID for tracking (optional)
+        brand:
+          type: string
+          example: CeraVe
+        name:
+          type: string
+          example: Hydrating Facial Cleanser
+        tier:
+          type: string
+          enum: [budget, mid, premium]
+        url:
+          type: string
+          format: uri
+          example: https://example.com/product
+        why:
+          type: string
+          description: Rationale for this recommendation
+          example: Gentle formula suitable for sensitive skin
+
+    RoutineReasons:
+      type: object
+      required: [prioritized_concerns, notes]
+      properties:
+        prioritized_concerns:
+          type: array
+          items:
+            $ref: '#/components/schemas/PrioritizedConcern'
+        notes:
+          type: string
+          description: Additional context or explanations
+
+    PrioritizedConcern:
+      type: object
+      required: [key, severity, why]
+      properties:
+        key:
+          type: string
+          enum: [pigmentation, acne, oily_shine, dryness, redness, wrinkles]
+        severity:
+          type: string
+          enum: [mild, moderate, severe]
+        why:
+          type: string
+          description: Explanation of concern priority
+
+    RoutineLifestyle:
+      type: object
+      required: [sleep, stress, sun, habits, routine_hygiene, diet]
+      properties:
+        sleep:
+          type: string
+          description: Sleep recommendations
+        stress:
+          type: string
+          description: Stress management tips
+        sun:
+          type: string
+          description: Sun protection advice
+        habits:
+          type: string
+          description: General habits to develop
+        routine_hygiene:
+          type: string
+          description: Hygiene tips for skincare routine
+        diet:
+          $ref: '#/components/schemas/RoutineLifestyleDiet'
+
+    RoutineLifestyleDiet:
+      type: object
+      required: [increase, limit, supplements]
+      properties:
+        increase:
+          type: array
+          items:
+            type: string
+          description: Foods/nutrients to increase
+          example: [omega-3, vitamin C]
+        limit:
+          type: array
+          items:
+            type: string
+          description: Foods/nutrients to limit
+          example: [sugar, dairy]
+        supplements:
+          type: array
+          items:
+            type: string
+          description: Recommended supplements
+          example: [vitamin D, zinc]
