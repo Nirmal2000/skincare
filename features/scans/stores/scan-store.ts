@@ -2,14 +2,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
-  UpgradedFaceAnalysisResult,
   RoutineIntake,
   RoutinePlan,
+  UpgradedFaceAnalysisResult,
 } from '../../../types/api';
 import {
-  startAnalysis,
   pollUntilComplete,
-  APIError,
+  startAnalysis
 } from '../face-analysis-api';
 
 /**
@@ -21,6 +20,7 @@ export interface ScanRun {
   photoUri: string; // Local file URI from camera
   taskId: string | null; // Backend task ID from /start-task
   status: ScanRunStatus;
+  landmarks: any[] | null; // Face landmarks from ML Kit detection at capture time
   result: UpgradedFaceAnalysisResult | null; // From backend
   routineIntake: RoutineIntake | null; // User's routine questionnaire
   routine: RoutinePlan | null; // From backend /recommend
@@ -104,6 +104,7 @@ export const useScanStore = create<ScanStore>()(
           photoUri,
           taskId: null,
           status: 'captured',
+          landmarks: null,
           result: null,
           routineIntake: null,
           routine: null,

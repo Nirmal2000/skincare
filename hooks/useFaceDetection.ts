@@ -129,7 +129,7 @@ export function useFaceDetection(
 
       if (isCentered) {
         console.log('[Face Detection] Face centered and ready to capture');
-        console.log('[Face Detection] Preview landmarks:', faces);
+        // console.log('[Face Detection] Preview landmarks:', faces);
       }
     },
     [

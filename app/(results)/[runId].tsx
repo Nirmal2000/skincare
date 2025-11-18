@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useLocalSearchParams } from 'expo-router';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { useAuthGate } from '@/features/auth/useAuthGate';
 import { useScanStore } from '@/features/scans/stores/scan-store';
 import { Colors, Spacing } from '@/constants/Tokens';
 import ScanLoadingScreen from './components/ScanLoadingScreen';
 import ScanLoadingOverlay from './components/ScanLoadingOverlay';
+import { IssueVisualizationScreen } from './components/IssueVisualizationScreen';
 
 /**
  * Result Detail Screen
@@ -17,10 +18,13 @@ import ScanLoadingOverlay from './components/ScanLoadingOverlay';
 export default function ResultScreen() {
   const { runId } = useLocalSearchParams<{ runId: string }>();
   const { session } = useAuthGate();
-  const { getRunById, uploadRun, pollRunStatus } = useScanStore();
+  const uploadRun = useScanStore((state) => state.uploadRun);
+  const pollRunStatus = useScanStore((state) => state.pollRunStatus);
+  const getRunById = useScanStore((state) => state.getRunById);
   const [error, setError] = useState<string | null>(null);
 
-  const run = getRunById(runId || '');
+  // Subscribe to store updates for this specific run
+  const run = useScanStore((state) => state.runs.find((r) => r.id === runId));
 
   useEffect(() => {
     if (!runId || !session) return;
@@ -75,6 +79,7 @@ export default function ResultScreen() {
 
   // Loading state: Show face image, facial areas, and progress bars
   if (run.status !== 'completed') {
+    console.log('[Result Screen] Status:', run.status);
     return (
       <View style={styles.loadingContainer}>
         <ScanLoadingScreen photoUri={run.photoUri} />
@@ -86,14 +91,9 @@ export default function ResultScreen() {
     );
   }
 
-  // Completed state: Show results (placeholder for now)
-  return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.resultText}>Results ready!</Text>
-      <Text style={styles.subtext}>Run ID: {runId}</Text>
-      {/* T049-T051: Results rendering will go here */}
-    </ScrollView>
-  );
+  // Completed state: Show issue visualization
+  console.log('[Result Screen] Rendering issue visualization, result:', run.result ? 'present' : 'missing');
+  return <IssueVisualizationScreen run={run} />;
 }
 
 const styles = StyleSheet.create({

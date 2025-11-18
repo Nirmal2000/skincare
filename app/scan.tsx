@@ -47,7 +47,7 @@ export default function ScanScreen() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { isCentered, faceCount, handleFacesDetected } = useFaceDetection(
+  const { isCentered, faceCount, landmarks, handleFacesDetected } = useFaceDetection(
     viewportSize.width,
     viewportSize.height
   );
@@ -93,6 +93,12 @@ export default function ScanScreen() {
 
       const runId = createRun(photo.uri, session.user.id);
       console.log('[Scan Screen] Created scan run:', runId);
+      console.log('[Scan Screen] Storing landmarks:', landmarks);
+
+      // Store the face landmarks captured at photo time
+      if (landmarks) {
+        updateRun(runId, { landmarks });
+      }
 
       updateRun(runId, { status: 'uploading' });
 
@@ -133,7 +139,7 @@ export default function ScanScreen() {
       setIsCapturing(false);
       setIsUploading(false);
     }
-  }, [cameraRef, session, isCentered, createRun, updateRun]);
+  }, [cameraRef, session, isCentered, landmarks, createRun, updateRun]);
 
   const handleHomePress = useCallback(() => {
     router.back();

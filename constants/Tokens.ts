@@ -6,8 +6,8 @@
 
 export const Colors = {
   // Primary Colors
-  brandPink: '#FF2D92',
-  brandMagenta: '#E91E8C',
+  brandPink: '#000000ff',
+  brandMagenta: '#000000ff',
   backgroundBlush: '#FFF5F8',
 
   // Secondary Colors

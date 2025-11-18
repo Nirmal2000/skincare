@@ -55,6 +55,35 @@ export const FACE_LANDMARK_TO_REGION: Record<string, IssueRegion> = {
 } as const;
 
 /**
+ * Backend Issue Region → Frontend ML Kit Landmark Mapping
+ * Reverse mapping for resolving landmarks from regions
+ */
+export const ISSUE_REGION_TO_LANDMARK: Record<IssueRegion, string> = {
+  // Direct 1:1 mappings
+  NoseBase: 'noseBasePosition',
+  LeftEar: 'leftEarPosition',
+  RightEar: 'rightEarPosition',
+  LeftEarTip: 'leftEarPosition',        // Map to same landmark as LeftEar
+  RightEarTip: 'rightEarPosition',      // Map to same landmark as RightEar
+  LeftEye: 'leftEyePosition',
+  RightEye: 'rightEyePosition',
+  LeftCheek: 'leftCheekPosition',
+  RightCheek: 'rightCheekPosition',
+  MouthBottom: 'bottomMouthPosition',
+  MouthLeft: 'leftMouthPosition',
+  MouthRight: 'rightMouthPosition',
+
+  // Eyebrow mappings (using available landmarks as proxy, not actual contours)
+  LeftEyebrowTop: 'leftEyePosition',     // Approximate with eye position
+  LeftEyebrowBottom: 'leftEyePosition',  // Approximate with eye position
+  RightEyebrowTop: 'rightEyePosition',   // Approximate with eye position
+  RightEyebrowBottom: 'rightEyePosition', // Approximate with eye position
+
+  // Face oval not available
+  FaceOval: 'noseBasePosition',           // Fallback to nose as center reference
+} as const;
+
+/**
  * ML Kit landmark properties that are NOT mapped to backend regions
  */
 export const UNMAPPED_LANDMARKS = [
