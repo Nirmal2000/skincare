@@ -1,15 +1,13 @@
+import { BorderRadius, Colors, Spacing } from '@/constants/Tokens';
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withDelay,
   Easing,
-  FadeIn,
-  ZoomIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming
 } from 'react-native-reanimated';
-import { Colors, Spacing, Typography, BorderRadius } from '@/constants/Tokens';
 import { FacialArea } from './ScanLoadingScreen';
 
 interface FacialAreaLabelProps {
@@ -17,39 +15,48 @@ interface FacialAreaLabelProps {
   order: number; // 0-4, determines animation start delay
 }
 
-// Position calculations for labels around the circle
-const CIRCLE_CENTER = { x: Dimensions.get('window').width / 2, y: 0 };
-const CIRCLE_RADIUS = 120;
+// Position calculations for labels around the circular face image
+// Image container is 220x220, face image is 200x200 centered within it
+// So the center of the circle is at (110, 110) relative to the image container
+const IMAGE_CONTAINER_SIZE = 220;
+const FACE_IMAGE_SIZE = 100;
+const CIRCLE_CENTER_OFFSET = IMAGE_CONTAINER_SIZE / 2; // 110
+const CIRCLE_RADIUS = FACE_IMAGE_SIZE / 2 + 20; // 100 + 20px padding for label width
 
 function getPositionStyle(position: FacialArea['position']) {
   switch (position) {
     case 'top':
+      // Position above the forehead area, slightly above center-top of circle
       return {
-        top: -120,
-        left: -60,
+        top: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS - 30, // 110 - 100 - 30 = -20
+        left: CIRCLE_CENTER_OFFSET - 45, // Center horizontally, accounting for label width
       };
     case 'bottom-left':
+      // Position below left cheek area
       return {
-        bottom: -100,
-        left: -80,
+        top: CIRCLE_CENTER_OFFSET + CIRCLE_RADIUS + 10, // 110 + 100 + 10 = 220
+        left: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS + 10, // 110 - 100 + 10 = 20
       };
     case 'bottom-right':
+      // Position below right cheek area
       return {
-        bottom: -100,
-        right: -80,
+        top: CIRCLE_CENTER_OFFSET + CIRCLE_RADIUS + 10, // 110 + 100 + 10 = 220
+        right: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS + 10, // 110 - 100 + 10 = 20 (relative to right edge)
       };
     case 'left':
+      // Position to the left of left cheek
       return {
-        left: -100,
-        top: 40,
+        top: CIRCLE_CENTER_OFFSET - 10, // Center vertically, slight adjustment
+        left: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS - 30, // 110 - 100 - 30 = -20
       };
     case 'right':
+      // Position to the right of right cheek
       return {
-        right: -100,
-        top: 40,
+        top: CIRCLE_CENTER_OFFSET - 10, // Center vertically, slight adjustment
+        right: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS - 30, // 110 - 100 - 30 = -20 (relative to right edge)
       };
     default:
-      return { top: 0, left: 0 };
+      return { top: CIRCLE_CENTER_OFFSET, left: CIRCLE_CENTER_OFFSET };
   }
 }
 

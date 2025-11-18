@@ -83,7 +83,8 @@ const styles = StyleSheet.create({
     height: 220,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.xl,
+    marginTop: Spacing.xxl, // 32 - move image down in screen
+    marginBottom: Spacing.medium, // 20 - adjust spacing
   },
 
   faceImage: {

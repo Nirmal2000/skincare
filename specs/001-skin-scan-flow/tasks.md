@@ -142,11 +142,11 @@ Single Expo project structure (from plan.md):
 
 **Result Screen**:
 
-- [ ] T044 [US3] Create result detail screen in app/(results)/[runId].tsx (dynamic route)
-- [ ] T045 [US3] Display captured photo at top of result screen using Image component
-- [ ] T046 [US3] Implement loading skeleton with Reanimated shimmer effect while status !== 'completed'
-- [ ] T047 [US3] Call uploadRun and pollRunStatus in useEffect when screen mounts (per data-model.md flow diagrams)
-- [ ] T048 [US3] Display progressive status text ("Analyzing skin type...", "Analyzing texture..." based on TaskStatusResponse.status)
+- [X] T044 [US3] Create result detail screen in app/(results)/[runId].tsx (dynamic route)
+- [X] T045 [US3] Display captured photo at top of result screen using Image component
+- [X] T046 [US3] Implement loading skeleton with Reanimated shimmer effect while status !== 'completed'
+- [X] T047 [US3] Call uploadRun and pollRunStatus in useEffect when screen mounts (per data-model.md flow diagrams)
+- [X] T048 [US3] Display progressive status text ("Analyzing skin type...", "Analyzing texture..." based on TaskStatusResponse.status)
 - [ ] T049 [US3] When status = 'completed', render global_profile (skin type, scores, summary) using Card components
 - [ ] T050 [US3] Render detected issues grouped by category (oily_shine, acne_active, etc.) as IssueDetailCard components
 - [ ] T051 [US3] Create IssueDetailCard component in app/(results)/components/IssueDetailCard.tsx (displays region, severity, description)
