@@ -49,12 +49,7 @@ export async function signInWithGoogle(): Promise<void> {
       console.log('[Google Sign-In] No OAuth URL returned');
     }
   } catch (error) {
-    console.error('[Google Sign-In] Catch block error:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      code: error.code || 'No code',
-    });
+    console.error('[Google Sign-In] Catch block error:', error);
     throw error;
   }
 }
