@@ -73,21 +73,20 @@ Single Expo project structure (from plan.md):
 ### Implementation for User Story 1
 
 **Auth Implementation**:
-- [ ] T014 [P] [US1] Create OAuth functions in features/auth/oauth.ts (signInWithGoogle, signInWithApple using expo-web-browser)
-- [ ] T015 [P] [US1] Create useAuthGate hook in features/auth/useAuthGate.ts (checks session, redirects if needed)
-- [ ] T016 [US1] Create sign-in screen in app/(auth)/signin.tsx with Google/Apple buttons
-- [ ] T017 [US1] Create auth layout in app/(auth)/_layout.tsx (stack navigator for auth flow)
-- [ ] T018 [US1] Handle OAuth redirect in app/_layout.tsx useEffect with handleSupabaseRedirect (from supabase-client.ts)
+- [X] T014 [P] [US1] Create OAuth functions in features/auth/oauth.ts (signInWithGoogle, signInWithApple using expo-web-browser)
+- [X] T015 [P] [US1] Create useAuthGate hook in features/auth/useAuthGate.ts (checks session, redirects if needed)
+- [X] T016 [US1] Create sign-in screen in app/(auth)/signin.tsx with Google/Apple buttons
+- [X] T017 [US1] Create auth layout in app/(auth)/_layout.tsx (stack navigator for auth flow)
+- [X] T018 [US1] Handle OAuth redirect in app/_layout.tsx useEffect with handleSupabaseRedirect (from supabase-client.ts)
 
 **Onboarding Implementation**:
-- [ ] T019 [P] [US1] Create onboarding question data in features/onboarding/questions.ts (5 questions with types per research.md Section 6)
-- [ ] T020 [P] [US1] Create onboarding store in features/onboarding/stores/onboarding-store.ts with Zustand + AsyncStorage persistence (per data-model.md)
-- [ ] T021 [US1] Create onboarding layout in app/(onboarding)/_layout.tsx (stack navigator)
-- [ ] T022 [US1] Create AgeScroller component in app/(onboarding)/components/AgeScroller.tsx (number picker for age question)
-- [ ] T023 [US1] Create welcome screen in app/(onboarding)/welcome.tsx with 5-screen carousel using Reanimated shared values (swipe gestures per research.md Section 6)
-- [ ] T024 [US1] Implement progress bar in welcome.tsx with Reanimated width animation
-- [ ] T025 [US1] Wire onboarding completion to navigate to /(tabs) in welcome.tsx
-- [ ] T026 [US1] Add auth gate logic in app/_layout.tsx root layout (check session → onboarding complete → route to tabs)
+- [X] T019 [P] [US1] Create onboarding question data in features/onboarding/questions.ts (8 questions based on RoutineIntake schema)
+- [X] T020 [P] [US1] Create onboarding store in features/onboarding/stores/onboarding-store.ts with Zustand + AsyncStorage persistence (per data-model.md)
+- [X] T021 [US1] Create onboarding layout in app/(onboarding)/_layout.tsx (stack navigator)
+- [X] T022 [US1] Create welcome screen in app/(onboarding)/welcome.tsx with 8-question carousel using Reanimated shared values
+- [X] T023 [US1] Implement progress bar in welcome.tsx with Reanimated width animation
+- [X] T024 [US1] Wire onboarding completion to navigate to /(tabs) in welcome.tsx
+- [X] T025 [US1] Add auth gate logic in app/_layout.tsx root layout (check session → onboarding complete → route to tabs)
 
 **Checkpoint**: User can sign in with Google/Apple, complete 5 questions, and land on home screen. Auth + onboarding state persists across app restarts.
 

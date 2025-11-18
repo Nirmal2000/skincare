@@ -8,17 +8,9 @@ description: "Task list template for feature implementation"
 **Input**: Design documents from `/specs/[###-feature-name]/`
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only
-include them if explicitly requested in the feature specification.
+**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
-
-> **Constitution Guardrails**
-> - Keep implementations straightforward—no speculative fallback screens or
->   extra try/catch blocks unless recovery UX is defined.
-> - Prove features on Expo-managed iOS builds first.
-> - Power all motion/gestures with React Native Reanimated primitives.
-> - Reference the shared design tokens/assets for every UI element.
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -28,7 +20,7 @@ include them if explicitly requested in the feature specification.
 
 ## Path Conventions
 
-- **Single project**: `app/`, `components/`, `constants/` at repository root
+- **Single project**: `src/`, `tests/` at repository root
 - **Web app**: `backend/src/`, `frontend/src/`
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
 - Paths shown below assume single project - adjust based on plan.md structure
@@ -57,9 +49,8 @@ include them if explicitly requested in the feature specification.
 **Purpose**: Project initialization and basic structure
 
 - [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize Expo/TypeScript dependencies (ensure Reanimated + gesture handler configured)
+- [ ] T002 Initialize [language] project with [framework] dependencies
 - [ ] T003 [P] Configure linting and formatting tools
-- [ ] T004 [P] Verify Expo iOS build + simulator run succeeds before feature work
 
 ---
 
@@ -71,10 +62,11 @@ include them if explicitly requested in the feature specification.
 
 Examples of foundational tasks (adjust based on your project):
 
-- [ ] T005 Setup deterministic state primitives (context/store) shared by stories
-- [ ] T006 [P] Configure Expo Router routes and layout groups
-- [ ] T007 Create base components under `components/` with design tokens
-- [ ] T008 Configure Reanimated + gesture handler Babel plugin (if not already) and add baseline animation playground
+- [ ] T004 Setup database schema and migrations framework
+- [ ] T005 [P] Implement authentication/authorization framework
+- [ ] T006 [P] Setup API routing and middleware structure
+- [ ] T007 Create base models/entities that all stories depend on
+- [ ] T008 Configure error handling and logging infrastructure
 - [ ] T009 Setup environment configuration management
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
@@ -96,12 +88,12 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Create [Entity1] hook/context in `hooks/`
-- [ ] T013 [P] [US1] Create [Entity2] data mapper in `constants/`
-- [ ] T014 [US1] Implement service/util in `app/(feature)/[file].ts`
-- [ ] T015 [US1] Build UI component in `components/[name].tsx` applying design tokens
-- [ ] T016 [US1] Wire Reanimated animation/gesture for this story (shared value + worklet)
-- [ ] T017 [US1] Validate Expo iOS build + record simulator screencap (if required)
+- [ ] T012 [P] [US1] Create [Entity1] model in src/models/[entity1].py
+- [ ] T013 [P] [US1] Create [Entity2] model in src/models/[entity2].py
+- [ ] T014 [US1] Implement [Service] in src/services/[service].py (depends on T012, T013)
+- [ ] T015 [US1] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T016 [US1] Add validation and error handling
+- [ ] T017 [US1] Add logging for user story 1 operations
 
 **Checkpoint**: At this point, User Story 1 should be fully functional and testable independently
 
@@ -120,10 +112,10 @@ Examples of foundational tasks (adjust based on your project):
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] Create [Entity] store/hook in `hooks/`
-- [ ] T021 [US2] Implement service/helper in `utils/`
-- [ ] T022 [US2] Build UI entry in `app/(tabs)/[screen].tsx`
-- [ ] T023 [US2] Integrate with US1 primitives without duplicating fallbacks
+- [ ] T020 [P] [US2] Create [Entity] model in src/models/[entity].py
+- [ ] T021 [US2] Implement [Service] in src/services/[service].py
+- [ ] T022 [US2] Implement [endpoint/feature] in src/[location]/[file].py
+- [ ] T023 [US2] Integrate with User Story 1 components (if needed)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work independently
 

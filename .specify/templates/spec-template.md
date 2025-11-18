@@ -5,10 +5,6 @@
 **Status**: Draft  
 **Input**: User description: "$ARGUMENTS"
 
-> **Constitution Alignment**: Keep stories independently testable on iOS via
-> Expo managed workflow, power all motion with Reanimated, and avoid defensive
-> fallbacks or speculative try/catch blocks.
-
 ## User Scenarios & Testing *(mandatory)*
 
 <!--
@@ -30,8 +26,7 @@
 
 **Why this priority**: [Explain the value and why it has this priority level]
 
-**Independent Test**: [Describe how this can be tested independently on iOS via
-Expo run + Reanimated preview]
+**Independent Test**: [Describe how this can be tested independently - e.g., "Can be fully tested by [specific action] and delivers [specific value]"]
 
 **Acceptance Scenarios**:
 
@@ -77,11 +72,8 @@ Expo run + Reanimated preview]
   Fill them out with the right edge cases.
 -->
 
-- What happens when [boundary condition] on iOS simulators/devices?
-- How does the system handle [error scenario] without adding new fallback UI?
-- Does the Reanimated interaction stay at 60 fps when [stress case] occurs?
-- What is the UX if Expo-managed capability [push, camera, etc.] is
-  unavailable?
+- What happens when [boundary condition]?
+- How does system handle [error scenario]?
 
 ## Requirements *(mandatory)*
 
@@ -92,16 +84,11 @@ Expo run + Reanimated preview]
 
 ### Functional Requirements
 
-- **FR-001**: Experience MUST run inside Expo Router on iOS with no custom
-  native modules.
-- **FR-002**: Reanimated MUST drive [specific animation/gesture], referencing
-  shared values/worklets.
-- **FR-003**: Users MUST be able to [key interaction, e.g., "preview skincare
-  plan"] using deterministic state (single hook/context).
-- **FR-004**: System MUST surface errors only when we can provide a corrective
-  action—no placeholder fallbacks.
-- **FR-005**: UI MUST apply tokens/assets from `.claude/skills/ui-designer` and
-  `assets/`.
+- **FR-001**: System MUST [specific capability, e.g., "allow users to create accounts"]
+- **FR-002**: System MUST [specific capability, e.g., "validate email addresses"]  
+- **FR-003**: Users MUST be able to [key interaction, e.g., "reset their password"]
+- **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
+- **FR-005**: System MUST [behavior, e.g., "log all security events"]
 
 *Example of marking unclear requirements:*
 

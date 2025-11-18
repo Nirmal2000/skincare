@@ -1,0 +1,12 @@
+{
+  "mcpServers": [
+    {
+      "name": "expo-docs",
+      "command": "npx",
+      "args": [
+        "expo-local-docs-mcp"
+      ],
+      "transport": "stdio"
+    }
+  ]
+}
