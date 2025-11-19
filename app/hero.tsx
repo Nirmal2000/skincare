@@ -28,7 +28,7 @@ export default function HeroScreen() {
 
   return (
     <ImageBackground
-      source={require('@/assets/images/ob1.png')}
+      source={require('@/assets/images/ob1.jpg')}
       style={styles.container}
       resizeMode="cover"
     >

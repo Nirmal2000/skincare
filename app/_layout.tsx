@@ -14,6 +14,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { handleOAuthRedirect } from '@/features/auth/oauth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { RevenueCatProvider } from '@/features/subscription/providers/RevenueCatProvider';
+import { initRevenueCat, linkUserToRevenueCat } from '@/features/subscription/config/revenuecat-config';
+import { useAuthStore } from '@/features/auth/stores/auth-store';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -33,6 +36,7 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const session = useAuthStore((state) => state.session);
 
   // Load custom fonts
   const [fontsLoaded] = useFonts({
@@ -44,12 +48,30 @@ export default function RootLayout() {
     'ZTNature-BlackItalic': require('../assets/fonts/zt_nature/ZTNature-BlackItalic.ttf'),
   });
 
-  // Hide splash screen when fonts are loaded
+  // Initialize RevenueCat when fonts are loaded
   useEffect(() => {
     if (fontsLoaded) {
       SplashScreen.hideAsync();
+      // Initialize RevenueCat with anonymous user (will be linked later when user signs in)
+      initRevenueCat();
     }
   }, [fontsLoaded]);
+
+  // Link RevenueCat to Supabase user ID when user authenticates
+  useEffect(() => {
+    const linkUser = async () => {
+      if (session?.user?.id) {
+        console.log('[RevenueCat] Linking user:', session.user.id);
+        try {
+          await linkUserToRevenueCat(session.user.id);
+        } catch (error) {
+          console.error('[RevenueCat] Failed to link user:', error);
+        }
+      }
+    };
+
+    linkUser();
+  }, [session?.user?.id]);
 
   // Handle OAuth redirect from deep link
   useEffect(() => {
@@ -85,10 +107,12 @@ export default function RootLayout() {
   return (
     <FaceDetectionProvider options={FACE_OPTIONS}>
       <SafeAreaProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Slot />
-          <StatusBar style="auto" />
-        </ThemeProvider>
+        <RevenueCatProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Slot />
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </RevenueCatProvider>
       </SafeAreaProvider>
     </FaceDetectionProvider>
   );

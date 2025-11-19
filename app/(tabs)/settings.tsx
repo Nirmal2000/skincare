@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -19,8 +20,10 @@ import { useAuthStore, useCurrentUser } from '@/features/auth/stores/auth-store'
 import { useOnboardingStore } from '@/features/onboarding/stores/onboarding-store';
 import { useScanStore } from '@/features/scans/stores/scan-store';
 import { useTrackingStore } from '@/features/tracking/stores/tracking-store';
+import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const user = useCurrentUser();
   const session = useAuthStore((state) => state.session);
@@ -28,6 +31,7 @@ export default function SettingsScreen() {
   const resetOnboarding = useOnboardingStore((state) => state.reset);
   const clearAllScans = useScanStore((state) => state.clearAll);
   const clearAllTracking = useTrackingStore((state) => state.clearAll);
+  const { isPro, isLoadingCustomerInfo } = useSubscription();
 
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -105,8 +109,13 @@ export default function SettingsScreen() {
 
   const handleManageMembership = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Alert.alert('Coming Soon', 'Membership management will be available soon.');
-  }, []);
+    router.push('/(subscription)/manage');
+  }, [router]);
+
+  const handleUpgradeToPro = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    router.push('/(subscription)/paywall');
+  }, [router]);
 
   const handleRemoveAllRuns = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -237,6 +246,38 @@ export default function SettingsScreen() {
 
         {/* Membership Section */}
         <Text style={styles.sectionHeader}>Membership</Text>
+
+        {/* Show subscription status badge */}
+        {!isLoadingCustomerInfo && (
+          <View style={styles.membershipBadge}>
+            <View style={[styles.statusDot, isPro && styles.statusDotPro]} />
+            <Text style={styles.membershipStatus}>
+              {isPro ? 'Pro Member' : 'Free Plan'}
+            </Text>
+          </View>
+        )}
+
+        {/* Show Upgrade button for free users, Manage for Pro users */}
+        {!isPro ? (
+          <Pressable onPress={handleUpgradeToPro}>
+            <Card variant="listItem" style={styles.upgradeCard}>
+              <View style={styles.settingRow}>
+                <View style={styles.settingLeft}>
+                  <Ionicons name="star-outline" size={20} color={Colors.brandPrimary} />
+                  <View style={styles.upgradeTextContainer}>
+                    <Text style={[styles.settingTitle, styles.upgradeTitle]}>
+                      Upgrade to Pro
+                    </Text>
+                    <Text style={styles.upgradeSubtitle}>
+                      Unlock all premium features
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="chevron-forward" size={20} color={Colors.brandPrimary} />
+              </View>
+            </Card>
+          </Pressable>
+        ) : null}
 
         <Pressable onPress={handleManageMembership}>
           <Card variant="listItem">
@@ -383,5 +424,44 @@ const styles = StyleSheet.create({
   },
   signOutContainer: {
     marginTop: Spacing.xl,
+  },
+  membershipBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.base,
+    paddingHorizontal: Spacing.tiny,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.textTertiary,
+    marginRight: Spacing.small,
+  },
+  statusDotPro: {
+    backgroundColor: Colors.successGreen,
+  },
+  membershipStatus: {
+    ...Typography.bodySmall,
+    color: Colors.textSecondary,
+    fontWeight: '600',
+  },
+  upgradeCard: {
+    borderWidth: 1,
+    borderColor: Colors.brandPrimary,
+    backgroundColor: 'rgba(77, 124, 255, 0.05)',
+  },
+  upgradeTextContainer: {
+    marginLeft: Spacing.default,
+    flex: 1,
+  },
+  upgradeTitle: {
+    color: Colors.brandPrimary,
+    marginLeft: 0,
+  },
+  upgradeSubtitle: {
+    ...Typography.bodySmall,
+    color: Colors.textSecondary,
+    marginTop: 2,
   },
 });

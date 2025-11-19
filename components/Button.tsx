@@ -213,9 +213,9 @@ const styles = StyleSheet.create({
   contentRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   rightIconContainer: {
-    marginLeft: 4,
+    marginLeft: 0,
   },
 });
