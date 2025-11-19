@@ -39,6 +39,8 @@ interface MarkerPosition {
   x: number;
   y: number;
   region: string;
+  intensity: number;
+  description: string;
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -67,6 +69,7 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
   const [imageLayout, setImageLayout] = useState({ width: 0, height: 0 });
   const [isGeneratingRoutine, setIsGeneratingRoutine] = useState(false);
   const [routineError, setRoutineError] = useState<string | null>(null);
+  const [selectedMarkerIndex, setSelectedMarkerIndex] = useState<number | null>(null);
 
   // Store access
   const session = useAuthStore((state) => state.session);
@@ -157,6 +160,8 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
         x: displayX,
         y: displayY,
         region,
+        intensity: issueItem.intensity,
+        description: issueItem.description,
       });
     }
 
@@ -172,6 +177,11 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
 
   const handleChipPress = useCallback((category: IssueCategory) => {
     setSelectedCategory((prev) => (prev === category ? null : category));
+    setSelectedMarkerIndex(null); // Close any open tooltip when changing category
+  }, []);
+
+  const handleMarkerPress = useCallback((index: number) => {
+    setSelectedMarkerIndex((prev) => (prev === index ? null : index));
   }, []);
 
   const handleClose = useCallback(() => {
@@ -290,7 +300,10 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
       </View>
 
       {/* Image Section */}
-      <View style={styles.imageContainer}>
+      <Pressable
+        style={styles.imageContainer}
+        onPress={() => setSelectedMarkerIndex(null)}
+      >
         <Image
           source={{ uri: run.photoUri }}
           style={styles.image}
@@ -305,6 +318,12 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
             x={position.x}
             y={position.y}
             index={index}
+            intensity={position.intensity}
+            description={position.description}
+            isSelected={selectedMarkerIndex === index}
+            onPress={() => handleMarkerPress(index)}
+            containerHeight={imageLayout.height}
+            containerWidth={imageLayout.width}
           />
         ))}
 
@@ -314,7 +333,7 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
           style={styles.bottomGradient}
           pointerEvents="none"
         />
-      </View>
+      </Pressable>
 
       {/* Issue Chips Section */}
       <View
