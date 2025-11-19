@@ -96,6 +96,12 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
       return [];
     }
 
+    // Need dimensions for coordinate transformation
+    if (!run.previewDimensions || !run.photoDimensions) {
+      console.warn('[Issue Viz] Missing dimension data for coordinate transformation');
+      return [];
+    }
+
     const positions: MarkerPosition[] = [];
 
     for (const issueItem of issueItems) {
@@ -114,18 +120,55 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
         continue;
       }
 
-      // For now, use coordinates as-is since they're in the same space as the image
-      // In future, we may need to scale if camera preview size != photo size
+      // Transform coordinates: preview space → photo space → display space
+      // Step 1: Scale from preview to photo coordinates
+      const scaleX = run.photoDimensions.width / run.previewDimensions.width;
+      const scaleY = run.photoDimensions.height / run.previewDimensions.height;
+
+      const photoX = landmarkPosition.x * scaleX;
+      const photoY = landmarkPosition.y * scaleY;
+
+      // Step 2: Calculate how photo is displayed with resizeMode="cover"
+      // Cover maintains aspect ratio and fills the view, cropping if necessary
+      const photoAspect = run.photoDimensions.width / run.photoDimensions.height;
+      const displayAspect = imageLayout.width / imageLayout.height;
+
+      let displayScale: number;
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (photoAspect > displayAspect) {
+        // Photo is wider - will be cropped horizontally
+        displayScale = imageLayout.height / run.photoDimensions.height;
+        const scaledPhotoWidth = run.photoDimensions.width * displayScale;
+        offsetX = (imageLayout.width - scaledPhotoWidth) / 2;
+      } else {
+        // Photo is taller - will be cropped vertically
+        displayScale = imageLayout.width / run.photoDimensions.width;
+        const scaledPhotoHeight = run.photoDimensions.height * displayScale;
+        offsetY = (imageLayout.height - scaledPhotoHeight) / 2;
+      }
+
+      // Step 3: Transform to display coordinates
+      const displayX = photoX * displayScale + offsetX;
+      const displayY = photoY * displayScale + offsetY;
+
       positions.push({
-        x: landmarkPosition.x,
-        y: landmarkPosition.y,
+        x: displayX,
+        y: displayY,
         region,
       });
     }
 
     console.log(`[Issue Viz] Generated ${positions.length} markers for ${selectedCategory}`);
+    console.log('[Issue Viz] Transformation:', {
+      preview: run.previewDimensions,
+      photo: run.photoDimensions,
+      display: imageLayout,
+      sample: positions[0]
+    });
     return positions;
-  }, [selectedCategory, run.result?.issues, run.landmarks, imageLayout]);
+  }, [selectedCategory, run.result?.issues, run.landmarks, run.previewDimensions, run.photoDimensions, imageLayout]);
 
   const handleChipPress = useCallback((category: IssueCategory) => {
     setSelectedCategory((prev) => (prev === category ? null : category));

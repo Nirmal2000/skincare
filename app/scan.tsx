@@ -85,10 +85,16 @@ export default function ScanScreen() {
       const runId = createRun(photo.uri, session.user.id);
       console.log('[Scan Screen] Created scan run:', runId);
       console.log('[Scan Screen] Storing landmarks:', landmarks);
+      console.log('[Scan Screen] Photo dimensions:', photo.width, 'x', photo.height);
+      console.log('[Scan Screen] Preview dimensions:', viewportSize.width, 'x', viewportSize.height);
 
       // Store the face landmarks captured at photo time
       if (landmarks) {
-        updateRun(runId, { landmarks });
+        updateRun(runId, {
+          landmarks,
+          previewDimensions: { width: viewportSize.width, height: viewportSize.height },
+          photoDimensions: { width: photo.width, height: photo.height }
+        });
       }
 
       updateRun(runId, { status: 'uploading' });

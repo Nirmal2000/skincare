@@ -22,6 +22,8 @@ export interface ScanRun {
   taskId: string | null; // Backend task ID from /start-task
   status: ScanRunStatus;
   landmarks: any[] | null; // Face landmarks from ML Kit detection at capture time
+  previewDimensions: { width: number; height: number } | null; // Camera preview size when landmarks were captured
+  photoDimensions: { width: number; height: number } | null; // Actual photo dimensions
   result: UpgradedFaceAnalysisResult | null; // From backend
   routineIntake: RoutineIntake | null; // User's routine questionnaire
   routine: RoutinePlan | null; // From backend /recommend
@@ -254,6 +256,8 @@ export const useScanStore = create<ScanStore>()(
           taskId: null,
           status: 'captured',
           landmarks: null,
+          previewDimensions: null,
+          photoDimensions: null,
           result: null,
           routineIntake: null,
           routine: null,
