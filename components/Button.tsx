@@ -8,6 +8,7 @@ import {
   Text,
   TextStyle,
   TouchableOpacity,
+  View,
   ViewStyle,
 } from 'react-native';
 
@@ -26,6 +27,8 @@ interface ButtonProps {
   loading?: boolean;
   /** Custom icon component (for icon/circular variants) */
   icon?: React.ReactNode;
+  /** Right icon component */
+  rightIcon?: React.ReactNode;
   /** Custom container style */
   style?: ViewStyle;
   /** Custom text style */
@@ -41,6 +44,7 @@ export function Button({
   disabled = false,
   loading = false,
   icon,
+  rightIcon,
   style,
   textStyle,
   haptic = true,
@@ -128,7 +132,10 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={variant === 'white' ? Colors.black : Colors.textPrimary} />
       ) : (
-        <Text style={textStyles}>{title}</Text>
+        <View style={styles.contentRow}>
+          <Text style={textStyles}>{title}</Text>
+          {rightIcon && <View style={styles.rightIconContainer}>{rightIcon}</View>}
+        </View>
       )}
     </TouchableOpacity>
   );
@@ -202,5 +209,13 @@ const styles = StyleSheet.create({
   },
   textDisabled: {
     opacity: 0.6,
+  },
+  contentRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  rightIconContainer: {
+    marginLeft: 4,
   },
 });

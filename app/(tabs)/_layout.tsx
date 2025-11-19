@@ -14,6 +14,9 @@ import { Platform, Animated, Pressable, GestureResponderEvent } from 'react-nati
  * Main app tabs with navigation protection
  * Redirects based on auth and onboarding status
  *
+ * TESTING MODE: Onboarding completion check is currently DISABLED
+ * To restore normal flow, uncomment the onboardingComplete check below
+ *
  * Tabs: Home, History, Track, Settings
  */
 
@@ -70,6 +73,7 @@ export default function TabLayout() {
   const session = useAuthStore((state) => state.session);
   const authHydrated = useAuthStore((state) => state.hasHydrated);
   const onboardingHydrated = useOnboardingStore((state) => state.hasHydrated);
+  const hasSeenHero = useOnboardingStore((state) => state.hasSeenHero);
   const onboardingComplete = useOnboardingComplete();
 
   console.log('[Tabs Layout] Render:', {
@@ -77,6 +81,7 @@ export default function TabLayout() {
     onboardingHydrated,
     hasSession: !!session,
     userEmail: session?.user?.email,
+    hasSeenHero,
     onboardingComplete
   });
 
@@ -86,19 +91,26 @@ export default function TabLayout() {
     return null;
   }
 
+  // If hasn't seen hero yet, redirect to hero screen
+  if (!hasSeenHero) {
+    console.log('[Tabs Layout] Hero not seen, redirecting to hero');
+    return <Redirect href="/hero" />;
+  }
+
   // Auth check
   if (!session) {
     console.log('[Tabs Layout] Not authenticated, redirecting to auth');
     return <Redirect href="/(auth)/signin" />;
   }
 
-  // If onboarding not completed, redirect to onboarding
-  if (!onboardingComplete) {
-    console.log('[Tabs Layout] Onboarding not completed, redirecting to onboarding');
-    return <Redirect href="/(onboarding)/welcome" />;
-  }
+  // TESTING: Disabled onboarding completion check
+  // Uncomment these lines to restore normal behavior:
+  // if (!onboardingComplete) {
+  //   console.log('[Tabs Layout] Onboarding not completed, redirecting to onboarding');
+  //   return <Redirect href="/(onboarding)/welcome" />;
+  // }
 
-  console.log('[Tabs Layout] Showing tabs (authenticated and onboarded)');
+  console.log('[Tabs Layout] Showing tabs (TESTING MODE - onboarding check disabled)');
 
   return (
       <Tabs

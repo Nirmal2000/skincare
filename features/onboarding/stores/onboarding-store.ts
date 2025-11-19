@@ -14,6 +14,8 @@ export interface OnboardingAnswerSet {
   complete: boolean;
   /** Timestamp of completion */
   completedAt: number | null;
+  /** Whether user has seen the hero screen (first-launch flag) */
+  hasSeenHero: boolean;
 }
 
 interface OnboardingStore extends OnboardingAnswerSet {
@@ -28,6 +30,8 @@ interface OnboardingStore extends OnboardingAnswerSet {
   ) => void;
   /** Mark onboarding as complete */
   markComplete: () => void;
+  /** Mark hero screen as seen */
+  markHeroSeen: () => void;
   /** Reset all onboarding data */
   reset: () => void;
   /** Get current answers as RoutineIntake object */
@@ -49,6 +53,7 @@ const defaultState: OnboardingAnswerSet = {
   },
   complete: false,
   completedAt: null,
+  hasSeenHero: false,
 };
 
 export const useOnboardingStore = create<OnboardingStore>()(
@@ -71,6 +76,10 @@ export const useOnboardingStore = create<OnboardingStore>()(
           complete: true,
           completedAt: Date.now(),
         });
+      },
+
+      markHeroSeen: () => {
+        set({ hasSeenHero: true });
       },
 
       reset: () => {
