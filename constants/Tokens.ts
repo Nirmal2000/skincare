@@ -41,6 +41,13 @@ export const Colors = {
   // Overlays
   overlayDark: 'rgba(0, 0, 0, 0.45)',
 
+  // Aliases for consistency
+  primary: '#4D7CFF',
+  success: '#00C853',
+  warning: '#FF9500',
+  error: '#FF3B30',
+  border: '#E2E4EE',
+
   // Gradients
   gradients: {
     header: [
@@ -107,6 +114,12 @@ export const Typography = {
     lineHeight: 24,
     fontFamily: FontFamily.medium,
     letterSpacing: -0.2,
+  },
+  h4: {
+    fontSize: 16,
+    lineHeight: 22,
+    fontFamily: FontFamily.medium,
+    letterSpacing: -0.1,
   },
 
   // Body Text

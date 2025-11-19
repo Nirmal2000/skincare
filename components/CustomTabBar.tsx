@@ -39,20 +39,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabBarPill: {
-    height: 50,
+    height: 64,
     borderRadius: 32,
     backgroundColor: Colors.appBackground,  // 👈 THIS is the color we want
     // overflow: 'hidden',
   },
   innerTabBar: {
-    flex: 1,
     backgroundColor: 'transparent',
     borderTopWidth: 0,
     elevation: 0,
     shadowColor: 'transparent',
-
-    paddingTop: 100,  // 👈 THIS IS THE FIX
-    paddingBottom: 4,
+    height: 64,
+    justifyContent: 'center',
   },
 
 });

@@ -6,6 +6,10 @@ import Svg, { Path } from 'react-native-svg';
 import { Colors, Layout, Spacing, Typography } from '@/constants/Tokens';
 import { useScanStore } from '@/features/scans/stores/scan-store';
 import LatestScanSummary from '@/features/results/LatestScanSummary';
+import SkinScoreTimeline from '@/features/metrics/components/SkinScoreTimeline';
+import TopIssuesCards from '@/features/metrics/components/TopIssuesCards';
+import AffectedRegionsMap from '@/features/metrics/components/AffectedRegionsMap';
+import CategoryTrendsCarousel from '@/features/metrics/components/CategoryTrendsCarousel';
 const LogoImage = require('@/assets/images/bfflogo.png');
 
 export default function HomeScreen() {
@@ -68,22 +72,26 @@ export default function HomeScreen() {
       {/* Scrollable Content */}
       <ScrollView
         contentContainerStyle={{
-          paddingHorizontal: Layout.screenMarginHorizontal,
           paddingBottom: Math.max(insets.bottom, Spacing.xxl),
         }}
         contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
-        {/* Latest Scan Summary Card */}
-        <LatestScanSummary />
-
-        {/* Scan Button */}
-        <View style={[styles.scanButtonContainer, styles.scanButtonWithScans]}>
+        {/* Scan Button - Now at Top */}
+        <View style={[styles.scanButtonContainer]}>
           <TouchableOpacity style={styles.scanButtonTouchable} onPress={handleScanPress}>
             <View style={styles.scanButton}>
               <Image source={LogoImage} style={styles.scanLogo} />
             </View>
           </TouchableOpacity>
+        </View>
+
+        {/* Metrics Section - Scrollable Below */}
+        <View style={styles.metricsSection}>
+          <SkinScoreTimeline />
+          <TopIssuesCards />
+          <AffectedRegionsMap />
+          <CategoryTrendsCarousel />
         </View>
       </ScrollView>
     </View>
@@ -122,13 +130,15 @@ const styles = StyleSheet.create({
 
   scanButtonContainer: {
     paddingHorizontal: Layout.screenMarginHorizontal,
-    marginBottom: Spacing.xl,
-  },
-  scanButtonWithScans: {
-    alignItems: 'flex-start',
+    marginBottom: Spacing.base,
+    alignItems: 'center',
+    paddingTop: Spacing.base,
   },
   scanButtonTouchable: {
     alignItems: 'center',
+  },
+  metricsSection: {
+    paddingHorizontal: Layout.screenMarginHorizontal,
   },
   scanButton: {
     width: 200,

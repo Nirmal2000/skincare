@@ -46,6 +46,7 @@ export const TabBarIcon: React.FC<Props> = ({ name, focused }) => {
         name={name}
         size={28}
         color={focused ? Colors.brandPrimary : Colors.textTertiary}
+        style={styles.icon}
       />
     </View>
   );
@@ -54,9 +55,10 @@ export const TabBarIcon: React.FC<Props> = ({ name, focused }) => {
 const styles = StyleSheet.create({
   container: {
     width: 56,
-    height: 48,
+    height: 56,
     alignItems: 'center',
     justifyContent: 'center',
+    marginTop: 24,
   },
   blob: {
     position: 'absolute',
@@ -64,5 +66,8 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     backgroundColor: 'rgba(77, 124, 255, 0.18)', // soft blue glow
+  },
+  icon: {
+    marginTop: 0,
   },
 });

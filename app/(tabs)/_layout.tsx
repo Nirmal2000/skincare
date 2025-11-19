@@ -115,6 +115,8 @@ export default function TabLayout() {
           headerShown: false,
           tabBarItemStyle: {
             width: TAB_ITEM_WIDTH,
+            height: 64,
+            justifyContent: 'center',
           },
           tabBarShowLabel: false,
           tabBarHideOnKeyboard: true,
