@@ -306,7 +306,7 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
           <Button
             title={run.routine ? 'View Your Routine' : 'Unlock Your Routine'}
             onPress={handleUnlockRoutine}
-            variant="white"
+            variant="primary"
             loading={isGeneratingRoutine}
             disabled={isGeneratingRoutine || !run.result}
           />
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
   },
   fullReportText: {
     fontSize: 20,
-    fontWeight: '400',
+    fontWeight: '200',
     color: Colors.white,
   },
   closeButton: {
@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     overflow: 'hidden',
     marginTop: 1,
-    marginBottom: 50,
+    marginBottom: 20,
   },
   image: {
     width: '100%',
@@ -378,14 +378,14 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 200,
+    height: 100,
   },
   chipsContainer: {
     backgroundColor: Colors.darkBackground,
-    paddingTop: 10,
+    paddingTop: 0,
   },
   chipsContent: {
-    paddingHorizontal: Spacing.large,
+    paddingHorizontal: Spacing.small,
   },
   noIssuesContainer: {
     alignItems: 'center',

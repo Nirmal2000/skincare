@@ -19,7 +19,7 @@ export default function HomeScreen() {
     <View style={styles.container}>
       {/* Fixed Header */}
       <SafeAreaView edges={['top']} style={styles.headerArea}>
-        <View style={[styles.header, { paddingTop: 8 }]}>
+        <View style={[styles.header, { paddingTop: 12 }]}>
           <Text style={styles.greeting}>
             Good day!
           </Text>

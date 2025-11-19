@@ -84,7 +84,7 @@ export default function HistoryScreen() {
     <View style={styles.container}>
       {/* Header */}
       <SafeAreaView edges={['top']} style={styles.headerArea}>
-        <View style={[styles.headerTop, { paddingTop: 8 }]}>
+        <View style={[styles.headerTop, { paddingTop: 12 }]}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>History</Text>
             <Text style={styles.headerSubtitle}>

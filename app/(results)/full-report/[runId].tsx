@@ -219,11 +219,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.appBackground,
   },
   header: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.appBackground,
     paddingHorizontal: Spacing.large,
     paddingBottom: Spacing.default,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.backgroundLight,
+    // borderBottomWidth: 1,
+    // borderBottomColor: Colors.backgroundLight,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     padding: Spacing.large,
   },
   scoreBox: {
-    backgroundColor: Colors.brandPink,
+    backgroundColor: Colors.brandSecondary,
     borderRadius: 20,
     padding: Spacing.xl,
     alignItems: 'center',
@@ -256,13 +256,13 @@ const styles = StyleSheet.create({
   scoreLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.white,
+    color: Colors.black,
     marginBottom: Spacing.small,
   },
   scoreValue: {
     fontSize: 56,
     fontWeight: '700',
-    color: Colors.white,
+    color: Colors.black,
     lineHeight: 60,
   },
   scoreOutOf: {

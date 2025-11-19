@@ -160,7 +160,7 @@ export default function SettingsScreen() {
   return (
     <View style={styles.container}>
       <SafeAreaView edges={['top']} style={styles.safeAreaTop}>
-        <View style={{ paddingTop: 8 }} />
+        <View style={{ paddingTop: 12 }} />
       </SafeAreaView>
       <ScrollView
         style={styles.scrollView}
@@ -314,13 +314,13 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.lavender,
+    backgroundColor: Colors.brandSecondary,
   },
   avatarFallback: {
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: Colors.lavender,
+    backgroundColor: Colors.brandSecondary,
     justifyContent: 'center',
     alignItems: 'center',
   },
