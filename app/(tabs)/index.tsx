@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Layout, Spacing, Typography } from '@/constants/Tokens';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
@@ -18,21 +18,24 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       {/* Fixed Header */}
-      <View style={[styles.header, { paddingTop: Math.max(insets.top, Spacing.large), paddingHorizontal: Layout.screenMarginHorizontal }]}>
-        <Text style={styles.greeting}>
-          Good day!
-        </Text>
-        <Text style={styles.subtitle}>
-          Your skincare journey starts here
-        </Text>
-      </View>
+      <SafeAreaView edges={['top']} style={styles.headerArea}>
+        <View style={[styles.header, { paddingTop: 8 }]}>
+          <Text style={styles.greeting}>
+            Good day!
+          </Text>
+          <Text style={styles.subtitle}>
+            Your skincare journey starts here
+          </Text>
+        </View>
+      </SafeAreaView>
 
       {/* Scrollable Content */}
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: Layout.screenMarginHorizontal,
-          paddingBottom: Spacing.xxl,
+          paddingBottom: Math.max(insets.bottom, Spacing.xxl),
         }}
+        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
         {/* Latest Scan Summary Card */}
@@ -57,6 +60,10 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.appBackground,
   },
 
+  headerArea: {
+    backgroundColor: Colors.appBackground,
+    paddingHorizontal: Layout.screenMarginHorizontal,
+  },
   header: {
     marginBottom: Spacing.xl,
   },

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { StatusBar, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import CalendarView from '../../features/tracking/components/CalendarView';
 import RoutineModal from '../../features/tracking/components/RoutineModal';
 import { useTrackingStoreHydrated } from '../../features/tracking/stores/tracking-store';
@@ -10,6 +11,7 @@ export default function TrackScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const isHydrated = useTrackingStoreHydrated();
+  const insets = useSafeAreaInsets();
 
   const handleDatePress = (date: string) => {
     setSelectedDate(date);
@@ -28,14 +30,14 @@ export default function TrackScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.appBackground }}>
-      {/* <SafeAreaView style={{ flex: 1,  }}> */}
-        <StatusBar
-          barStyle="dark-content"
-          backgroundColor="#FFF5F8"
-        />
+      <StatusBar barStyle="dark-content" />
 
-        {/* Main Calendar View */}
-        <CalendarView onDatePress={handleDatePress} />
+      <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: Colors.appBackground }}>
+        <View style={{ paddingTop: 8, flex: 1 }}>
+          {/* Main Calendar View */}
+          <CalendarView onDatePress={handleDatePress} />
+        </View>
+      </SafeAreaView>
 
       {/* Routine Modal */}
       {true && (
@@ -45,7 +47,6 @@ export default function TrackScreen() {
           onClose={handleCloseModal}
         />
       )}
-      {/* </SafeAreaView> */}
     </GestureHandlerRootView>
   );
 }

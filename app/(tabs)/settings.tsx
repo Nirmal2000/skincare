@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
 import { Card } from '@/components/Card';
@@ -159,13 +159,16 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      <SafeAreaView edges={['top']} style={styles.safeAreaTop}>
+        <View style={{ paddingTop: 8 }} />
+      </SafeAreaView>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
-          { paddingTop: Math.max(insets.top, Spacing.large) },
           { paddingBottom: Math.max(insets.bottom, Spacing.large) },
         ]}
+        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}
@@ -282,6 +285,9 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: Colors.appBackground,
+  },
+  safeAreaTop: {
     backgroundColor: Colors.appBackground,
   },
   scrollView: {

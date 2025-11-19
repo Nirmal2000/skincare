@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors, Spacing, Typography } from '@/constants/Tokens';
 import { useAuthGate } from '@/features/auth/useAuthGate';
@@ -83,13 +83,8 @@ export default function HistoryScreen() {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View
-        style={[
-          styles.header,
-          { paddingTop: Math.max(insets.top, Spacing.large) },
-        ]}
-      >
-        <View style={styles.headerTop}>
+      <SafeAreaView edges={['top']} style={styles.headerArea}>
+        <View style={[styles.headerTop, { paddingTop: 8 }]}>
           <View style={styles.headerLeft}>
             <Text style={styles.headerTitle}>History</Text>
             <Text style={styles.headerSubtitle}>
@@ -118,7 +113,7 @@ export default function HistoryScreen() {
             )}
           </View>
         </View>
-      </View>
+      </SafeAreaView>
 
       {/* Content */}
       <ScrollView
@@ -132,6 +127,7 @@ export default function HistoryScreen() {
             ),
           },
         ]}
+        contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
       >
         {userScans.length > 0 ? (
@@ -182,12 +178,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: Colors.appBackground,
   },
-  header: {
+  headerArea: {
     backgroundColor: Colors.appBackground,
     paddingHorizontal: Spacing.large,
     paddingBottom: Spacing.default,
-    // borderBottomWidth: 1,
-    // borderBottomColor: Colors.backgroundLight,
   },
   headerTop: {
     flexDirection: 'row',
