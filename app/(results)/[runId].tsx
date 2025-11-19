@@ -94,7 +94,15 @@ export default function ResultScreen() {
 
   // Completed state: Show issue visualization
   console.log('[Result Screen] Rendering issue visualization, result:', run.result ? 'present' : 'missing');
-  return <IssueVisualizationScreen run={run} />;
+  return (
+      <View style={styles.loadingContainer}>
+        <ScanLoadingScreen photoUri={run.photoUri} />
+
+        <View style={styles.progressBarContainer}>
+          <ScanLoadingOverlay />
+        </View>
+      </View>
+    );
 }
 
 const styles = StyleSheet.create({

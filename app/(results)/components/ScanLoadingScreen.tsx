@@ -13,8 +13,7 @@ export interface FacialArea {
 interface ScanLoadingScreenProps { photoUri: string; onLoadingComplete?: () => void; }
 
 const FACIAL_AREAS_ALL: FacialArea[] = [
-  { id: 'forehead', label: 'Forehead', position: 'top' },
-  { id: 'chin', label: 'Chin', position: 'bottom-left' },
+  { id: 'forehead', label: 'Forehead', position: 'top' },  
   { id: 'upper-nose', label: 'Upper nose', position: 'top' },
   { id: 'nasolabial', label: 'Nasolabial fold', position: 'bottom-left' },
   { id: 'cheeks', label: 'Cheeks', position: 'bottom-right' },

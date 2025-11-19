@@ -1,6 +1,7 @@
 import { BorderRadius, Colors, Spacing } from '@/constants/Tokens';
+import { BlurView } from 'expo-blur';
 import React, { useEffect } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -40,7 +41,7 @@ function getPositionStyle(position: FacialArea['position']) {
     case 'top-right':
       return {
         top: CIRCLE_CENTER - CIRCLE_RADIUS + 5,
-        right: CIRCLE_CENTER - CIRCLE_RADIUS - 30,
+        right: CIRCLE_CENTER - CIRCLE_RADIUS - 50,
       };
 
     case 'bottom-left':
@@ -133,8 +134,8 @@ export default function FacialAreaLabel({
 
   return (
     <Animated.View style={[styles.labelContainer, positionStyle, motionAnimatedStyle]}>
-      {/* Label box */}
-      <View style={styles.labelBox}>
+      {/* Label box with backdrop blur */}
+      <BlurView intensity={20} tint="dark" style={styles.labelBox}>
         {/* Tick */}
         <Animated.View style={[styles.tickContainer, tickAnimatedStyle]}>
           <Text style={styles.tickText}>✓</Text>
@@ -142,7 +143,7 @@ export default function FacialAreaLabel({
 
         {/* Text */}
         <Text style={styles.labelText}>{area.label}</Text>
-      </View>
+      </BlurView>
     </Animated.View>
   );
 }
@@ -151,21 +152,28 @@ export default function FacialAreaLabel({
 const styles = StyleSheet.create({
   labelContainer: {
     position: 'absolute',
-    width: 130,
+    width: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
 
   labelBox: {
-    backgroundColor: 'rgba(0, 0, 0, 0)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: BorderRadius.medium,
-    paddingHorizontal: Spacing.default,
+    paddingHorizontal: 5,
     paddingVertical: Spacing.small,
     alignItems: 'center',
     flexDirection: 'row',
     gap: Spacing.small,
-    borderColor: Colors.white,
+    borderColor: 'rgba(255, 255, 255, 0.4)',
     borderWidth: 1,
+    // Glow shadow effect
+    shadowColor: Colors.white,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 8,
+    overflow: 'hidden', // Important for BlurView on Android
   },
 
   tickContainer: {
