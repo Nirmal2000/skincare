@@ -6,7 +6,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { Colors, Spacing } from '@/constants/Tokens';
+import { Colors, Spacing, Typography } from '@/constants/Tokens';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -56,8 +56,8 @@ export function IssueChip({ label, isSelected, onPress }: IssueChipProps) {
 
 const styles = StyleSheet.create({
   chip: {
-    paddingHorizontal: Spacing.large,
-    paddingVertical: Spacing.default,
+    paddingHorizontal: Spacing.base,
+    paddingVertical: Spacing.base,
     backgroundColor: Colors.surfaceSecondary,
     borderRadius: 24,
     marginRight: Spacing.default,
@@ -69,9 +69,8 @@ const styles = StyleSheet.create({
     borderColor: Colors.white,
   },
   chipText: {
-    color: Colors.white,
-    fontSize: 14,
-    fontWeight: '600',
+    ...Typography.body,
+    color: Colors.white,    
   },
   chipTextSelected: {
     color: Colors.textPrimary,

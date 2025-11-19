@@ -112,15 +112,15 @@ export default function CalendarView({ onDatePress }: CalendarViewProps) {
     todayTextColor: Colors.brandSecondary,
     dayTextColor: Colors.textPrimary,
     // Dimmed color for disabled (past) days
-    textDisabledColor: Colors.brandPrimary,
+    textDisabledColor: Colors.textTertiary,
     dotColor: Colors.accentBlue,
     selectedDotColor: Colors.white,
     arrowColor: Colors.brandSecondary,
     monthTextColor: Colors.textPrimary,
     indicatorColor: Colors.brandSecondary,
-    textDayFontSize: 16,
-    textMonthFontSize: 18,
-    textDayHeaderFontSize: 14,
+    textDayFontSize: Typography.body.fontSize,
+    textMonthFontSize: Typography.h3.fontSize,
+    textDayHeaderFontSize: Typography.caption.fontSize,
     'stylesheet.calendar.header': {
       week: {
         marginTop: 5,
@@ -223,7 +223,7 @@ export default function CalendarView({ onDatePress }: CalendarViewProps) {
               } else if (completionStatus === 'partial') {
                 // 🟠 partial – orange check
                 content = (
-                  <Feather name="check-circle" size={24} color="#FF9500" />
+                  <Feather name="check-circle" size={24} color={Colors.warningOrange} />
                 );
               } else if (completionStatus === 'none') {
                 // ❌ not done – red cross-in-circle
@@ -231,7 +231,7 @@ export default function CalendarView({ onDatePress }: CalendarViewProps) {
                   <Entypo
                     name="circle-with-cross"
                     size={24}
-                    color="#FF3B30"
+                    color={Colors.errorRed}
                   />
                 );
               } else {
@@ -239,7 +239,7 @@ export default function CalendarView({ onDatePress }: CalendarViewProps) {
                   <Text
                     style={{
                       ...Typography.body,
-                      color: Colors.brandPrimary,
+                      color: Colors.textTertiary,
                     }}
                   >
                     {date.day}
@@ -252,7 +252,7 @@ export default function CalendarView({ onDatePress }: CalendarViewProps) {
                 <Text
                   style={{
                     ...Typography.body,
-                    color: isPast ? Colors.brandPrimary : Colors.textPrimary,
+                    color: isPast ? Colors.textTertiary : Colors.textPrimary,
                   }}
                 >
                   {date.day}

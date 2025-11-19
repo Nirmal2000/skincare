@@ -30,6 +30,8 @@ export const Colors = {
 
   // Success / System
   successGreen: '#00C853',
+  warningOrange: '#FF9500',       // Warning, partial completion
+  errorRed: '#FF3B30',            // Error, incomplete tasks
   black: '#000000',
 
   // Borders

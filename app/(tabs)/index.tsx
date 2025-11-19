@@ -36,7 +36,12 @@ export default function HomeScreen() {
         <View style={styles.centeredContent}>
           <TouchableOpacity style={styles.scanButtonTouchable} onPress={handleScanPress}>
             <View style={styles.scanButton}>
-              <Text style={styles.scanButtonText}>BETTERSKIN</Text>
+              <Svg width="125" height="125" viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M9,3A1,1,0,0,1,8,4H5A1,1,0,0,0,4,5V8A1,1,0,0,1,2,8V5A3,3,0,0,1,5,2H8A1,1,0,0,1,9,3ZM2,19a3,3,0,0,0,3,3H8a1,1,0,0,0,0-2H5a1,1,0,0,1-1-1V16a1,1,0,0,0-2,0Zm19-4a1,1,0,0,0-1,1v3a1,1,0,0,1-1,1H16a1,1,0,0,0,0,2h3a3,3,0,0,0,3-3V16A1,1,0,0,0,21,15ZM19,2H16a1,1,0,0,0,0,2h3a1,1,0,0,1,1,1V8a1,1,0,0,0,2,0V5A3,3,0,0,0,19,2ZM8,9V8A1,1,0,0,0,6,8V9A1,1,0,0,0,8,9ZM18,9V8a1,1,0,0,0-2,0V9a1,1,0,0,0,2,0ZM8.775,14.368a1,1,0,0,0-1.55,1.264,6,6,0,0,0,9.55,0,1,1,0,1,0-1.55-1.264,4,4,0,0,1-6.45,0ZM11,7a1,1,0,0,0-1,1v3.01A3,3,0,0,0,13,14a1,1,0,0,0-.01-2,.991.991,0,0,1-.99-.99V8A1,1,0,0,0,11,7Z"
+                  fill={Colors.textPrimary}
+                />
+              </Svg>
             </View>
           </TouchableOpacity>
           <Text style={styles.tagline}>Scan, Understand, React</Text>
@@ -112,7 +117,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: -80,
+    marginTop: -110,
   },
 
   scanButtonContainer: {

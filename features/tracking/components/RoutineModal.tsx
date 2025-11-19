@@ -75,8 +75,8 @@ function SwipeableItem({
         {item.completed && (
           <Text
             style={{
+              ...Typography.caption,
               color: Colors.white,
-              fontSize: 14,
               fontWeight: 'bold',
             }}
           >
@@ -125,7 +125,7 @@ function SwipeableItem({
             alignItems: 'center',
           }}
         >
-          <Ionicons name="trash" size={24} color="#000000" />
+          <Ionicons name="trash" size={24} color={Colors.black} />
         </View>
       </View>
     );
@@ -277,7 +277,6 @@ function RoutineSection({
                 color: newItemName.trim()
                   ? Colors.white
                   : Colors.textTertiary,
-                fontSize: 16,
               }}
             >
               +

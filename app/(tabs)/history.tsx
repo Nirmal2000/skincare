@@ -3,6 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Svg, { Path } from 'react-native-svg';
 
 import { Colors, Spacing, Typography } from '@/constants/Tokens';
 import { useAuthGate } from '@/features/auth/useAuthGate';
@@ -142,12 +143,14 @@ export default function HistoryScreen() {
           ))
         ) : (
           <View style={styles.emptyState}>
-            <Ionicons
-              name="camera-outline"
-              size={64}
-              color={Colors.textTertiary}
-              style={styles.emptyIcon}
-            />
+            <Svg width="120" height="120" viewBox="0 0 24 24" fill="none" style={styles.emptyIcon}>
+              <Path
+                fillRule="evenodd"
+                clipRule="evenodd"
+                d="M5 8a1 1 0 0 1-2 0V5.923c0-.76.082-1.185.319-1.627.223-.419.558-.754.977-.977C4.738 3.082 5.162 3 5.923 3H8a1 1 0 0 1 0 2H5.923c-.459 0-.57.022-.684.082a.364.364 0 0 0-.157.157c-.06.113-.082.225-.082.684V8zm3 11a1 1 0 1 1 0 2H5.923c-.76 0-1.185-.082-1.627-.319a2.363 2.363 0 0 1-.977-.977C3.082 19.262 3 18.838 3 18.077V16a1 1 0 1 1 2 0v2.077c0 .459.022.57.082.684.038.07.087.12.157.157.113.06.225.082.684.082H8zm7-15a1 1 0 0 0 1 1h2.077c.459 0 .57.022.684.082.07.038.12.087.157.157.06.113.082.225.082.684V8a1 1 0 1 0 2 0V5.923c0-.76-.082-1.185-.319-1.627a2.363 2.363 0 0 0-.977-.977C19.262 3.082 18.838 3 18.077 3H16a1 1 0 0 0-1 1zm4 12a1 1 0 1 1 2 0v2.077c0 .76-.082 1.185-.319 1.627a2.364 2.364 0 0 1-.977.977c-.442.237-.866.319-1.627.319H16a1 1 0 1 1 0-2h2.077c.459 0 .57-.022.684-.082a.363.363 0 0 0 .157-.157c.06-.113.082-.225.082-.684V16zM3 11a1 1 0 1 0 0 2h18a1 1 0 1 0 0-2H3z"
+                fill={Colors.textTertiary}
+              />
+            </Svg>
             <Text style={styles.emptyTitle}>No Scans Yet</Text>
             <Text style={styles.emptyMessage}>
               Your scan history will appear here once you complete your first
@@ -218,7 +221,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    padding: Spacing.large,
+    padding: Spacing.large,    
   },
   emptyState: {
     flex: 1,
@@ -226,20 +229,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: Spacing.xxxl,
     paddingHorizontal: Spacing.xl,
+    minHeight: 500,
   },
   emptyIcon: {
     marginBottom: Spacing.large,
     opacity: 0.5,
   },
   emptyTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    ...Typography.h2,
     color: Colors.textPrimary,
     marginBottom: Spacing.small,
     textAlign: 'center',
   },
   emptyMessage: {
-    fontSize: 15,
+    ...Typography.bodyLarge,
     color: Colors.textSecondary,
     textAlign: 'center',
     lineHeight: 22,

@@ -17,7 +17,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/Button';
-import { Colors, Spacing } from '@/constants/Tokens';
+import { Colors, Spacing, Typography } from '@/constants/Tokens';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { useOnboardingStore } from '@/features/onboarding/stores/onboarding-store';
 import { generateRoutine, pollTaskStatus } from '@/features/scans/face-analysis-api';
@@ -242,7 +242,7 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
           <Text style={styles.fullReportText}>Full Report</Text>
         </Pressable>
         <Pressable style={styles.closeButton} onPress={handleClose}>
-          <Ionicons name="close" size={14} color={Colors.white} />
+          <Ionicons name="close" size={28} color={Colors.white} />
         </Pressable>
       </View>
 
@@ -342,22 +342,21 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.small,
   },
   fullReportText: {
-    fontSize: 20,
-    fontWeight: '200',
+    ...Typography.bodyLarge,    
     color: Colors.white,
   },
   closeButton: {
-    width: 22,
-    height: 22,
+    // width: 22,
+    // height: 22,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    // backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderWidth: 0,
     borderColor: Colors.white,
     position: 'absolute',
     right: Spacing.large,
-    top: 80
+    top: 75
   },
   imageContainer: {
     flex: 1,
