@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   labelBox: {
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     borderRadius: BorderRadius.medium,
-    paddingHorizontal: 5,
+    paddingHorizontal: 8,
     paddingVertical: Spacing.small,
     alignItems: 'center',
     flexDirection: 'row',

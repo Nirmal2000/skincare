@@ -206,7 +206,7 @@ export default function ScanScreen() {
       <View
         style={[
           styles.topBar,
-          { paddingTop: Math.max(insets.top, Spacing.default) },
+          { paddingTop: Math.max(insets.top, Spacing.default), paddingBottom: Spacing.default },
         ]}
         pointerEvents="box-none"
       >
@@ -231,22 +231,25 @@ export default function ScanScreen() {
       <View
         style={[
           styles.bottomBar,
-          { paddingBottom: Math.max(insets.bottom, Spacing.default) },
+          { paddingBottom: Math.max(insets.bottom, Spacing.default), paddingTop: Spacing.default },
         ]}
         pointerEvents="box-none"
       >
-        <Pressable
-          style={[
-            styles.captureButton,
-            !isCentered && styles.captureButtonDisabled,
-          ]}
-          onPress={handleCapture}
-          disabled={!isCentered || isCapturing || isUploading}
-        >
-          {isCapturing || isUploading ? (
+        {isCapturing || isUploading ? (
+          <View style={styles.captureButton}>
             <ActivityIndicator size="large" color={Colors.brandPrimary} />
-          ) : null}
-        </Pressable>
+          </View>
+        ) : (
+          <Pressable
+            style={[
+              styles.captureButton,
+              !isCentered && styles.captureButtonDisabled,
+            ]}
+            onPress={handleCapture}
+            disabled={!isCentered}
+          >
+          </Pressable>
+        )}
 
         <View style={styles.statusContainer}>
           {!isCentered && faceCount === 0 && (
