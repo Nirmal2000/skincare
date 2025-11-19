@@ -44,7 +44,7 @@ export const TabBarIcon: React.FC<Props> = ({ name, focused }) => {
       />
       <Ionicons
         name={name}
-        size={22}
+        size={28}
         color={focused ? Colors.brandPrimary : Colors.textTertiary}
       />
     </View>
@@ -53,16 +53,16 @@ export const TabBarIcon: React.FC<Props> = ({ name, focused }) => {
 
 const styles = StyleSheet.create({
   container: {
-    width: 48,
-    height: 40,
+    width: 56,
+    height: 48,
     alignItems: 'center',
     justifyContent: 'center',
   },
   blob: {
     position: 'absolute',
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: 'rgba(77, 124, 255, 0.18)', // soft blue glow
   },
 });

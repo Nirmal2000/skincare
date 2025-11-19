@@ -1,4 +1,5 @@
 import { TabBarIcon } from '@/components/TabBarIcon';
+import { CustomTabBar, TAB_ITEM_WIDTH } from '@/components/CustomTabBar';
 import { Colors, Spacing } from '@/constants/Tokens';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
@@ -6,8 +7,8 @@ import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { useOnboardingComplete, useOnboardingStore } from '@/features/onboarding/stores/onboarding-store';
 import * as Haptics from 'expo-haptics';
 import { Redirect, Tabs } from 'expo-router';
-import React,  { useRef } from 'react';
-import { Platform, StyleSheet, Animated, Pressable, GestureResponderEvent } from 'react-native';
+import React, { useRef } from 'react';
+import { Platform, Animated, Pressable, GestureResponderEvent } from 'react-native';
 /**
  * Tabs Layout
  * Main app tabs with navigation protection
@@ -99,17 +100,25 @@ export default function TabLayout() {
 
   console.log('[Tabs Layout] Showing tabs (authenticated and onboarded)');
 
-  return (    
+  return (
       <Tabs
+        tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={{
+          tabBarStyle: {
+            backgroundColor: 'transparent',   // 👈 don’t fight the pill
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowColor: 'transparent',
+          },
           tabBarActiveTintColor: Colors.brandPrimary,
           tabBarInactiveTintColor: Colors.textTertiary,
           headerShown: false,
-          tabBarStyle: styles.tabBar,
-          tabBarLabelStyle: styles.tabBarLabel,
-          tabBarShowLabel: true,
+          tabBarItemStyle: {
+            width: TAB_ITEM_WIDTH,
+          },
+          tabBarShowLabel: false,
           tabBarHideOnKeyboard: true,
-          tabBarButton: (props) => <AnimatedTabBarButton {...props} />, // 👈 add this
+          tabBarButton: (props) => <AnimatedTabBarButton {...props} />,
         }}
         screenListeners={{
           tabPress: () => {
@@ -162,21 +171,6 @@ export default function TabLayout() {
           href: null, // Hide from tab bar (leftover from template)
         }}
       />
-    </Tabs>    
+    </Tabs>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-  backgroundColor: `${Colors.appBackground}`,
-  borderTopWidth: 0,
-  height: 64,
-  elevation: 0,
-  shadowColor: 'transparent',
-},
-  tabBarLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-    marginTop: 4,
-  },
-});

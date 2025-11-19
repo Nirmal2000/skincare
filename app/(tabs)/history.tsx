@@ -183,11 +183,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.appBackground,
   },
   header: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.appBackground,
     paddingHorizontal: Spacing.large,
     paddingBottom: Spacing.default,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.backgroundLight,
+    // borderBottomWidth: 1,
+    // borderBottomColor: Colors.backgroundLight,
   },
   headerTop: {
     flexDirection: 'row',
