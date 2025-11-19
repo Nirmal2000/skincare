@@ -312,7 +312,7 @@ function MultiSelectOptions({ options, selectedValues, onToggle }: MultiSelectOp
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundBlush,
+    backgroundColor: Colors.appBackground,
   },
   progressContainer: {
     paddingHorizontal: Spacing.large,
@@ -321,13 +321,13 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     height: 4,
-    backgroundColor: Colors.lavender,
+    backgroundColor: Colors.brandSecondary,
     borderRadius: BorderRadius.small,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: Colors.brandPink,
+    backgroundColor: Colors.brandPrimary,
   },
   progressText: {
     ...Typography.caption,
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   optionCardActive: {
     backgroundColor: Colors.white,
     borderWidth: 2,
-    borderColor: Colors.brandPink,
+    borderColor: Colors.brandPrimary,
   },
   optionLabel: {
     ...Typography.bodyLarge,
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   optionLabelActive: {
-    color: Colors.brandPink,
+    color: Colors.brandPrimary,
     // fontWeight: '600',
   },
   optionDescription: {
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.medium,
     borderWidth: 2,
-    borderColor: Colors.lavender,
+    borderColor: Colors.brandSecondary,
     paddingHorizontal: Spacing.medium,
     paddingVertical: Spacing.base,
     color: Colors.textPrimary,

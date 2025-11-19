@@ -78,7 +78,8 @@ export default function ResultScreen() {
   }
 
   // Loading state: Show face image, facial areas, and progress bars
-  if (run.status !== 'completed') {
+  // Only show loading for analysis, not for routine generation
+  if (run.status !== 'completed' && run.status !== 'routine_pending' && run.status !== 'routine_ready') {
     console.log('[Result Screen] Status:', run.status);
     return (
       <View style={styles.loadingContainer}>

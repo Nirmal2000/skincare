@@ -26,14 +26,20 @@ export default function AuthLayout() {
     return null;
   }
 
-  // // AUTH CHECK - Uncomment below to enable auth redirects:
+  // If authenticated but onboarding not complete, redirect to onboarding
+  if (session && !onboardingComplete) {
+    console.log('[Auth Layout] Authenticated but not onboarded, redirecting to onboarding');
+    return <Redirect href="/(onboarding)/welcome" />;
+  }
+
+  // If authenticated and onboarded, redirect to tabs
   if (session && onboardingComplete) {
     console.log('[Auth Layout] Authenticated and onboarded, redirecting to tabs');
     return <Redirect href="/(tabs)" />;
   }
 
-  // TEMPORARILY SKIP AUTH: Always show sign in, but clicking continues to onboarding
-  console.log('[Auth Layout] Auth bypassed - showing auth stack');
+  // Not authenticated, show auth stack
+  console.log('[Auth Layout] Not authenticated - showing auth stack');
 
   return (
     <Stack

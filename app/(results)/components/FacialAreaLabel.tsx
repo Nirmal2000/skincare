@@ -15,57 +15,58 @@ interface FacialAreaLabelProps {
   order: number; // 0-4, determines animation start delay
 }
 
-// Position calculations for labels around the circular face image
-// Image container is 220x220, face image is 200x200 centered within it
-// So the center of the circle is at (110, 110) relative to the image container
+// Image container is 220x220, face image is 200x200 centered
 const IMAGE_CONTAINER_SIZE = 220;
-const FACE_IMAGE_SIZE = 100;
-const CIRCLE_CENTER_OFFSET = IMAGE_CONTAINER_SIZE / 2; // 110
-const CIRCLE_RADIUS = FACE_IMAGE_SIZE / 2 + 20; // 100 + 20px padding for label width
+const FACE_IMAGE_SIZE = 200;
+const CIRCLE_CENTER = IMAGE_CONTAINER_SIZE / 2; // 110
+const CIRCLE_RADIUS = FACE_IMAGE_SIZE / 2 + 30; // 100 + 30 = 130
 
 function getPositionStyle(position: FacialArea['position']) {
   switch (position) {
     case 'top':
-      // Position above the forehead area, slightly above center-top of circle
+      // straight above
       return {
-        top: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS - 30, // 110 - 100 - 30 = -20
-        left: CIRCLE_CENTER_OFFSET - 45, // Center horizontally, accounting for label width
+        top: CIRCLE_CENTER - CIRCLE_RADIUS - 60,
+        left: CIRCLE_CENTER - 60,
       };
+
+    case 'top-left':
+      return {
+        top: CIRCLE_CENTER - CIRCLE_RADIUS + 10,
+        left: CIRCLE_CENTER - CIRCLE_RADIUS - 60,
+      };
+
+    case 'top-right':
+      return {
+        top: CIRCLE_CENTER - CIRCLE_RADIUS + 5,
+        right: CIRCLE_CENTER - CIRCLE_RADIUS - 40,
+      };
+
     case 'bottom-left':
-      // Position below left cheek area
       return {
-        top: CIRCLE_CENTER_OFFSET + CIRCLE_RADIUS + 10, // 110 + 100 + 10 = 220
-        left: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS + 10, // 110 - 100 + 10 = 20
+        top: CIRCLE_CENTER + CIRCLE_RADIUS + 10,
+        left: CIRCLE_CENTER - CIRCLE_RADIUS - 50,
       };
+
     case 'bottom-right':
-      // Position below right cheek area
       return {
-        top: CIRCLE_CENTER_OFFSET + CIRCLE_RADIUS + 10, // 110 + 100 + 10 = 220
-        right: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS + 10, // 110 - 100 + 10 = 20 (relative to right edge)
+        top: CIRCLE_CENTER + CIRCLE_RADIUS - 0,
+        right: CIRCLE_CENTER - CIRCLE_RADIUS - 10,
       };
-    case 'left':
-      // Position to the left of left cheek
-      return {
-        top: CIRCLE_CENTER_OFFSET - 10, // Center vertically, slight adjustment
-        left: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS - 30, // 110 - 100 - 30 = -20
-      };
-    case 'right':
-      // Position to the right of right cheek
-      return {
-        top: CIRCLE_CENTER_OFFSET - 10, // Center vertically, slight adjustment
-        right: CIRCLE_CENTER_OFFSET - CIRCLE_RADIUS - 30, // 110 - 100 - 30 = -20 (relative to right edge)
-      };
+
     default:
-      return { top: CIRCLE_CENTER_OFFSET, left: CIRCLE_CENTER_OFFSET };
+      return { top: CIRCLE_CENTER, left: CIRCLE_CENTER };
   }
 }
+
+
 
 export default function FacialAreaLabel({
   area,
   order,
 }: FacialAreaLabelProps) {
   // Tick appears after 2 seconds per order (0s, 2s, 4s, 6s, 8s)
-  const tickDelay = order * 2000;
+  const tickDelay = order * 4000;
 
   // Animation values
   const tickScale = useSharedValue(0);
@@ -116,7 +117,7 @@ export default function FacialAreaLabel({
 const styles = StyleSheet.create({
   labelContainer: {
     position: 'absolute',
-    width: 120,
+    width: 130,
     justifyContent: 'center',
     alignItems: 'center',
   },

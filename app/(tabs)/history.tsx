@@ -4,11 +4,11 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Colors, Spacing } from '@/constants/Tokens';
+import { Colors, Spacing, Typography } from '@/constants/Tokens';
 import { useAuthGate } from '@/features/auth/useAuthGate';
 import { useScanStore } from '@/features/scans/stores/scan-store';
 
-import { ScanHistoryCard } from './components/ScanHistoryCard';
+import { ScanHistoryCard } from '@/features/results/ScanHistoryCard';
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
@@ -208,11 +208,10 @@ const styles = StyleSheet.create({
   headerButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: Colors.brandPink,
+    color: Colors.brandPrimary,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
+    ...Typography.h1,
     color: Colors.textPrimary,
     marginBottom: Spacing.tiny,
   },

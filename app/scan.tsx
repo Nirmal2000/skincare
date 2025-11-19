@@ -17,16 +17,8 @@ import {
   FaceDetectorMode,
   useCameraPermissions,
 } from 'react-native-face-detector-camera';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { FaceDetectionOverlay } from '@/components/FaceDetectionOverlay';
 import { Colors, Spacing } from '@/constants/Tokens';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { startAnalysis } from '@/features/scans/face-analysis-api';
@@ -52,7 +44,6 @@ export default function ScanScreen() {
     viewportSize.height
   );
 
-  const pulseScale = useSharedValue(1);
 
   // Callbacks
   const onFacesDetected = useCallback(
@@ -148,35 +139,17 @@ export default function ScanScreen() {
 
   // Effects
   useEffect(() => {
-    if (isCentered && !isCapturing && !isUploading) {
-      pulseScale.value = withRepeat(
-        withSequence(
-          withTiming(1.1, { duration: 600 }),
-          withTiming(1, { duration: 600 })
-        ),
-        -1
-      );
-    } else {
-      pulseScale.value = withTiming(1, { duration: 300 });
-    }
-  }, [isCentered, isCapturing, isUploading, pulseScale]);
-
-  useEffect(() => {
     if (permission === null) {
       requestPermission();
     }
   }, [permission, requestPermission]);
-
-  const pulseButtonStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: pulseScale.value }],
-  }));
 
   // Loading state while checking permissions
   if (permission === null) {
     return (
       <View style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={Colors.brandPink} />
+          <ActivityIndicator size="large" color={Colors.brandPrimary} />
           <Text style={styles.loadingText}>Initializing camera...</Text>
         </View>
       </View>
@@ -230,18 +203,10 @@ export default function ScanScreen() {
         onLayout={handleCameraLayout}
       />
 
-      {/* Overlay only shows after camera is ready */}
-      {cameraReady && (
-        <FaceDetectionOverlay
-          isCentered={isCentered}
-          isDetecting={faceCount > 0}
-        />
-      )}
-
       <View
         style={[
           styles.topBar,
-          { paddingTop: Math.max(insets.top, Spacing.large) },
+          { paddingTop: Math.max(insets.top, Spacing.default) },
         ]}
         pointerEvents="box-none"
       >
@@ -266,38 +231,22 @@ export default function ScanScreen() {
       <View
         style={[
           styles.bottomBar,
-          { paddingBottom: Math.max(insets.bottom + Spacing.large, Spacing.xl) },
+          { paddingBottom: Math.max(insets.bottom, Spacing.default) },
         ]}
         pointerEvents="box-none"
       >
-        <Animated.View style={pulseButtonStyle}>
-          <Pressable
-            style={[
-              styles.captureButton,
-              !isCentered && styles.captureButtonDisabled,
-            ]}
-            onPress={handleCapture}
-            disabled={!isCentered || isCapturing || isUploading}
-          >
-            {isCapturing || isUploading ? (
-              <>
-                <ActivityIndicator
-                  size="large"
-                  color={Colors.white}
-                  style={{ marginBottom: Spacing.small }}
-                />
-                <Text style={styles.captureButtonText}>
-                  {isCapturing ? 'Capturing...' : 'Uploading...'}
-                </Text>
-              </>
-            ) : (
-              <>
-                <View style={styles.captureButtonInner} />
-                <Text style={styles.captureButtonText}>Take Photo</Text>
-              </>
-            )}
-          </Pressable>
-        </Animated.View>
+        <Pressable
+          style={[
+            styles.captureButton,
+            !isCentered && styles.captureButtonDisabled,
+          ]}
+          onPress={handleCapture}
+          disabled={!isCentered || isCapturing || isUploading}
+        >
+          {isCapturing || isUploading ? (
+            <ActivityIndicator size="large" color={Colors.brandPrimary} />
+          ) : null}
+        </Pressable>
 
         <View style={styles.statusContainer}>
           {!isCentered && faceCount === 0 && (
@@ -403,35 +352,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   captureButton: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: Colors.brandPink,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: Spacing.large,
-    shadowColor: Colors.brandPink,
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
-    elevation: 8,
+    marginBottom: Spacing.default,
   },
   captureButtonDisabled: {
     backgroundColor: Colors.textTertiary,
-    shadowOpacity: 0.2,
-  },
-  captureButtonInner: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: Colors.white,
-    opacity: 0.9,
-    marginBottom: Spacing.tiny,
-  },
-  captureButtonText: {
-    color: Colors.white,
-    fontWeight: '600',
-    fontSize: 13,
+    opacity: 0.5,
   },
   statusContainer: {
     alignItems: 'center',
@@ -445,7 +376,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   readyText: {
-    color: Colors.successGreen,
+    color: Colors.white,
     fontWeight: '600',
   },
   errorContainer: {
@@ -471,7 +402,7 @@ const styles = StyleSheet.create({
   settingsButton: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.default,
-    backgroundColor: Colors.brandPink,
+    backgroundColor: Colors.brandPrimary,
     borderRadius: 12,
   },
   settingsButtonText: {

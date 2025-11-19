@@ -7,63 +7,65 @@ import React from 'react';
 export interface FacialArea {
   id: string;
   label: string;
-  position: 'top' | 'bottom-left' | 'bottom-right' | 'left' | 'right';
+  position: 'top-left' | 'top' | 'top-right' | 'bottom-left' | 'bottom-right';
 }
 
-interface ScanLoadingScreenProps {
-  photoUri: string;
-  onLoadingComplete?: () => void;
-}
+interface ScanLoadingScreenProps { photoUri: string; onLoadingComplete?: () => void; }
 
 const FACIAL_AREAS_ALL: FacialArea[] = [
   { id: 'forehead', label: 'Forehead', position: 'top' },
   { id: 'chin', label: 'Chin', position: 'bottom-left' },
-  { id: 'upper-nose', label: 'Upper nose', position: 'right' },
+  { id: 'upper-nose', label: 'Upper nose', position: 'top' },
   { id: 'nasolabial', label: 'Nasolabial fold', position: 'bottom-left' },
   { id: 'cheeks', label: 'Cheeks', position: 'bottom-right' },
-  { id: 'left-cheek', label: 'Left cheek', position: 'left' },
-  { id: 'right-cheek', label: 'Right cheek', position: 'right' },
+  { id: 'left-cheek', label: 'Left cheek', position: 'top-left' },
+  { id: 'right-cheek', label: 'Right cheek', position: 'top-right' },
 ];
 
-// Helper: Shuffle array and pick N items
+// These are your 5 orbit slots
+const ORBIT_POSITIONS: FacialArea['position'][] = [
+  'top-left',
+  'top',
+  'top-right',
+  'bottom-left',
+  'bottom-right',
+];
+
+// Shuffle and pick N, then assign unique positions
 function getRandomAreas(areas: FacialArea[], count: number): FacialArea[] {
-  const shuffled = [...areas].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+  const shuffled = [...areas].sort(() => Math.random() - 0.5).slice(0, count);
+
+  return shuffled.map((area, index) => ({
+    ...area,
+    position: ORBIT_POSITIONS[index], // force unique slot
+  }));
 }
 
 export default function ScanLoadingScreen({
   photoUri,
   onLoadingComplete,
 }: ScanLoadingScreenProps) {
-  // Get 5 random facial areas on component mount
-  const selectedAreas = React.useMemo(() => {
-    return getRandomAreas(FACIAL_AREAS_ALL, 5);
-  }, []);
+  const selectedAreas = React.useMemo(
+    () => getRandomAreas(FACIAL_AREAS_ALL, 5),
+    []
+  );
 
   return (
     <View style={styles.container}>
-      {/* Face Image with Glow Effect */}
       <View style={styles.imageContainer}>
-        {/* Glow background */}
         <View style={[styles.imageShadow, styles.glowLayer1]} />
         <View style={[styles.imageShadow, styles.glowLayer2]} />
 
-        {/* Image */}
         <Image
           source={{ uri: photoUri }}
           style={styles.faceImage}
           resizeMode="cover"
         />
-      </View>
 
-      {/* Facial Area Labels with Ticks */}
-      {selectedAreas.map((area) => (
-        <FacialAreaLabel
-          key={area.id}
-          area={area}
-          order={selectedAreas.indexOf(area)}
-        />
-      ))}
+        {selectedAreas.map((area, index) => (
+          <FacialAreaLabel key={area.id} area={area} order={index} />
+        ))}
+      </View>
     </View>
   );
 }

@@ -11,7 +11,7 @@ import {
   ViewStyle,
 } from 'react-native';
 
-type ButtonVariant = 'primary' | 'secondary' | 'icon' | 'circular';
+type ButtonVariant = 'primary' | 'secondary' | 'white' | 'icon' | 'circular';
 
 interface ButtonProps {
   /** Button text label */
@@ -59,6 +59,7 @@ export function Button({
     styles.base,
     variant === 'primary' && styles.primary,
     variant === 'secondary' && styles.secondary,
+    variant === 'white' && styles.white,
     variant === 'icon' && styles.icon,
     variant === 'circular' && styles.circular,
     disabled && styles.disabled,
@@ -69,6 +70,7 @@ export function Button({
     styles.text,
     variant === 'primary' && styles.textPrimary,
     variant === 'secondary' && styles.textSecondary,
+    variant === 'white' && styles.textWhite,
     disabled && styles.textDisabled,
     textStyle,
   ];
@@ -83,7 +85,7 @@ export function Button({
         style={containerStyle}
       >
         <LinearGradient
-          colors={[Colors.brandPink, Colors.brandMagenta]}
+          colors={[Colors.brandPrimary, Colors.brandSecondary]}
           start={{ x: 0, y: 0 }}
           end={{ x: 0, y: 1 }}
           style={styles.gradient}
@@ -115,7 +117,7 @@ export function Button({
     );
   }
 
-  // Secondary and other variants
+  // Secondary, white, and other variants
   return (
     <TouchableOpacity
       activeOpacity={0.8}
@@ -124,7 +126,7 @@ export function Button({
       style={containerStyle}
     >
       {loading ? (
-        <ActivityIndicator color={Colors.textPrimary} />
+        <ActivityIndicator color={variant === 'white' ? Colors.black : Colors.textPrimary} />
       ) : (
         <Text style={textStyles}>{title}</Text>
       )}
@@ -149,7 +151,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: ButtonSizes.primary.paddingHorizontal,
     paddingVertical: ButtonSizes.primary.paddingVertical,
     borderRadius: ButtonSizes.primary.borderRadius,
-    backgroundColor: Colors.lavender,
+    backgroundColor: Colors.brandSecondary,
+  },
+  white: {
+    height: ButtonSizes.primary.height,
+    paddingHorizontal: ButtonSizes.primary.paddingHorizontal,
+    paddingVertical: ButtonSizes.primary.paddingVertical,
+    borderRadius: ButtonSizes.primary.borderRadius,
+    backgroundColor: Colors.white,
   },
   icon: {
     width: ButtonSizes.icon.size,
@@ -187,6 +196,9 @@ const styles = StyleSheet.create({
   },
   textSecondary: {
     color: Colors.textPrimary,
+  },
+  textWhite: {
+    color: Colors.black,
   },
   textDisabled: {
     opacity: 0.6,

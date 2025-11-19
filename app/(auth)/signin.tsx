@@ -61,7 +61,7 @@ export default function SignInScreen() {
       <View style={styles.content}>
         {/* Hero Section */}
         <View style={styles.hero}>
-          <Text style={styles.title}>Welcome to BetterSkin</Text>
+          <Text style={styles.title}>Welcome to BETTERSKIN</Text>
           <Text style={styles.subtitle}>
             Personalized skincare analysis powered by AI
           </Text>
@@ -96,7 +96,7 @@ export default function SignInScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.backgroundBlush,
+    backgroundColor: Colors.appBackground,
   },
   content: {
     flex: 1,

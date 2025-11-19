@@ -1,12 +1,13 @@
 import { TabBarIcon } from '@/components/TabBarIcon';
 import { Colors, Spacing } from '@/constants/Tokens';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
+import type { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 
 import { useOnboardingComplete, useOnboardingStore } from '@/features/onboarding/stores/onboarding-store';
 import * as Haptics from 'expo-haptics';
 import { Redirect, Tabs } from 'expo-router';
-import React from 'react';
-import { Platform, StyleSheet } from 'react-native';
+import React,  { useRef } from 'react';
+import { Platform, StyleSheet, Animated, Pressable, GestureResponderEvent } from 'react-native';
 /**
  * Tabs Layout
  * Main app tabs with navigation protection
@@ -14,6 +15,56 @@ import { Platform, StyleSheet } from 'react-native';
  *
  * Tabs: Home, History, Track, Settings
  */
+
+const AnimatedTabBarButton: React.FC<BottomTabBarButtonProps> = ({
+  children,
+  onPress,
+  onPressIn,
+  onPressOut,
+  style,
+  ...rest
+}) => {
+  const scale = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = (e: GestureResponderEvent) => {
+    Animated.spring(scale, {
+      toValue: 0.9,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 200,
+    }).start();
+    onPressIn?.(e);
+  };
+
+  const handlePressOut = (e: GestureResponderEvent) => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 200,
+    }).start();
+    onPressOut?.(e);
+  };
+
+  const handlePress = (e: GestureResponderEvent) => {
+    onPress?.(e);
+  };
+
+  return (
+    <Animated.View style={[{ flex: 1, transform: [{ scale }] }, style]}>
+      <Pressable
+        {...rest}               // <— forward accessibility / etc
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        onPress={handlePress}
+      >
+        {children}
+      </Pressable>
+    </Animated.View>
+  );
+};
+
+
 export default function TabLayout() {
   const session = useAuthStore((state) => state.session);
   const authHydrated = useAuthStore((state) => state.hasHydrated);
@@ -51,13 +102,14 @@ export default function TabLayout() {
   return (    
       <Tabs
         screenOptions={{
-          tabBarActiveTintColor: Colors.brandPink,
+          tabBarActiveTintColor: Colors.brandPrimary,
           tabBarInactiveTintColor: Colors.textTertiary,
           headerShown: false,
           tabBarStyle: styles.tabBar,
           tabBarLabelStyle: styles.tabBarLabel,
           tabBarShowLabel: true,
           tabBarHideOnKeyboard: true,
+          tabBarButton: (props) => <AnimatedTabBarButton {...props} />, // 👈 add this
         }}
         screenListeners={{
           tabPress: () => {
@@ -116,32 +168,14 @@ export default function TabLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.lavender,
-    height: Platform.select({
-      ios: 88, // Account for safe area on iOS (standard iOS tab bar height with home indicator)
-      android: 70,
-    }),
-    paddingBottom: Platform.select({
-      ios: Spacing.large, // Extra padding for iOS home indicator
-      android: Spacing.small,
-    }),
-    paddingTop: Spacing.small,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
+  backgroundColor: `${Colors.appBackground}`,
+  borderTopWidth: 0,
+  height: 64,
+  elevation: 0,
+  shadowColor: 'transparent',
+},
   tabBarLabel: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
     marginTop: 4,
   },

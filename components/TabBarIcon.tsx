@@ -1,26 +1,68 @@
-import React from 'react';
-import { StyleSheet } from 'react-native';
+// TabBarIcon.tsx
+import React, { useEffect, useRef } from 'react';
+import { Animated, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, Icons } from '@/constants/Tokens';
+import { Colors } from '@/constants/Tokens';
 
-interface TabBarIconProps {
+type Props = {
   name: keyof typeof Ionicons.glyphMap;
   focused: boolean;
-}
+};
 
-export function TabBarIcon({ name, focused }: TabBarIconProps) {
+export const TabBarIcon: React.FC<Props> = ({ name, focused }) => {
+  const blob = useRef(new Animated.Value(focused ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.spring(blob, {
+      toValue: focused ? 1 : 0,
+      useNativeDriver: true,
+      friction: 6,
+      tension: 200,
+    }).start();
+  }, [focused, blob]);
+
+  const scale = blob.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.4, 1], // grows into a blob
+  });
+
+  const opacity = blob.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 1],
+  });
+
   return (
-    <Ionicons
-      name={name}
-      size={Icons.tabBar}
-      color={focused ? Colors.brandPink : Colors.textTertiary}
-      style={styles.icon}
-    />
+    <View style={styles.container}>
+      <Animated.View
+        style={[
+          styles.blob,
+          {
+            opacity,
+            transform: [{ scale }],
+          },
+        ]}
+      />
+      <Ionicons
+        name={name}
+        size={22}
+        color={focused ? Colors.brandPrimary : Colors.textTertiary}
+      />
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  icon: {
-    marginBottom: -3,
+  container: {
+    width: 48,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  blob: {
+    position: 'absolute',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(77, 124, 255, 0.18)', // soft blue glow
   },
 });

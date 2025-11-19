@@ -5,45 +5,64 @@
  */
 
 export const Colors = {
-  // Primary Colors
-  brandPink: '#000000ff',
-  brandMagenta: '#000000ff',
-  backgroundBlush: '#FFF5F8',
+//gomms
+  darkBackground: '#050509',
 
-  // Secondary Colors
-  lavender: '#E8E8F0',
-  backgroundLight: '#F5F5F7',
+  // Brand Core
+  brandPrimary: '#4D7CFF',        // Strong blue used for active states (e.g., Day 1)
+  brandSecondary: '#A6B8FF',      // Soft blue-lavender used in header gradient accents
 
-  // Accent Colors
-  accentBlue: '#5A9FFF',
-  successGreen: '#00C853',
-  accentCyan: '#4DD0E1',
-
-  // Functional Colors
-  textPrimary: '#1A1A1A',
-  textSecondary: '#6B6B6B',
-  textTertiary: '#9E9E9E',
-
-  // Background Colors
+  // Neutrals / Surfaces
   white: '#FFFFFF',
-  appBackground: '#FAFAFA',
-  darkBackground: '#000000ff',
-  surfaceSecondary: 'rgba(255, 255, 255, 0.15)',
+  appBackground: '#FAFAFC',       // Soft cool white
+  backgroundLight: '#F5F6FA',     // Light neutral background
+  surfaceCard: '#FFFFFF',         // Cards in the daily plan
+  surfaceSecondary: 'rgba(255, 255, 255, 0.25)', // overlays on gradients
+
+  // Text
+  textPrimary: '#1A1B1F',         // Strong dark charcoal
+  textSecondary: '#6E7180',       // Medium gray (subtitles)
+  textTertiary: '#A7A9B4',        // Disabled, hints, locked tasks
+
+  // Accents
+  accentBlue: '#4D7CFF',          // Primary action color
+  accentCyan: '#66D1FF',          // Optional accent for icons / scan button glow
+
+  // Success / System
+  successGreen: '#00C853',
   black: '#000000',
 
-  // Overlay
-  overlayDark: 'rgba(0, 0, 0, 0.6)',
+  // Borders
+  borderSoft: 'rgba(0, 0, 0, 0.05)',
+  borderSubtle: '#E2E4EE',
 
-  // Dark Mode (for future implementation)
+  // Overlays
+  overlayDark: 'rgba(0, 0, 0, 0.45)',
+
+  // Gradients
+  gradients: {
+    header: [
+      '#DDE3FF', // very soft blue
+      '#EEF1FF', // pale lavender
+      '#FFFFFF'  // fades into white
+    ],
+    bottomBar: [
+      'rgba(255,255,255,0.95)',
+      'rgba(255,255,255,1)',
+    ],
+  },
+
+  // Dark Mode (optional future)
   dark: {
     background: '#121212',
     surface: '#1E1E1E',
-    brandPink: '#FF5FA8',
+    brandPrimary: '#6D9BFF',
     textPrimary: '#FFFFFF',
     textSecondary: '#B0B0B0',
     successGreen: '#00E676',
   },
 } as const;
+
 
 export const Spacing = {
   micro: 2,
@@ -58,24 +77,33 @@ export const Spacing = {
   xxxl: 64,
 } as const;
 
+export const FontFamily = {
+  thin: 'ZTNature-Thin',
+  thinItalic: 'ZTNature-ThinItalic',
+  medium: 'ZTNature-Medium',
+  mediumItalic: 'ZTNature-MediumItalic',
+  black: 'ZTNature-Black',
+  blackItalic: 'ZTNature-BlackItalic',
+} as const;
+
 export const Typography = {
   // Headings
   h1: {
     fontSize: 32,
     lineHeight: 38,
-    fontWeight: '700' as const,
+    fontFamily: FontFamily.black,
     letterSpacing: -0.5,
   },
   h2: {
     fontSize: 24,
     lineHeight: 30,
-    fontWeight: '700' as const,
+    fontFamily: FontFamily.black,
     letterSpacing: -0.3,
   },
   h3: {
     fontSize: 18,
     lineHeight: 24,
-    fontWeight: '600' as const,
+    fontFamily: FontFamily.medium,
     letterSpacing: -0.2,
   },
 
@@ -83,19 +111,19 @@ export const Typography = {
   bodyLarge: {
     fontSize: 17,
     lineHeight: 24,
-    fontWeight: '400' as const,
+    fontFamily: FontFamily.medium,
     letterSpacing: 0,
   },
   body: {
     fontSize: 15,
     lineHeight: 22,
-    fontWeight: '400' as const,
+    fontFamily: FontFamily.medium,
     letterSpacing: 0,
   },
   bodySmall: {
     fontSize: 13,
     lineHeight: 18,
-    fontWeight: '400' as const,
+    fontFamily: FontFamily.medium,
     letterSpacing: 0.1,
   },
 
@@ -103,19 +131,19 @@ export const Typography = {
   caption: {
     fontSize: 12,
     lineHeight: 16,
-    fontWeight: '500' as const,
+    fontFamily: FontFamily.medium,
     letterSpacing: 0.2,
   },
   button: {
     fontSize: 16,
     lineHeight: 24,
-    fontWeight: '600' as const,
+    fontFamily: FontFamily.medium,
     letterSpacing: 0.2,
   },
   progress: {
     fontSize: 14,
     lineHeight: 18,
-    fontWeight: '500' as const,
+    fontFamily: FontFamily.medium,
     letterSpacing: 0.1,
   },
 } as const;

@@ -3,8 +3,10 @@ import {
   RNMLKitFaceDetectorOptions,
 } from '@infinitered/react-native-mlkit-face-detection';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useFonts } from 'expo-font';
 import * as Linking from 'expo-linking';
 import { Slot } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
@@ -12,6 +14,9 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { handleOAuthRedirect } from '@/features/auth/oauth';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+
+// Prevent splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync();
 
 const FACE_OPTIONS: RNMLKitFaceDetectorOptions = {
   performanceMode: 'accurate',
@@ -29,6 +34,22 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
+  // Load custom fonts
+  const [fontsLoaded] = useFonts({
+    'ZTNature-Thin': require('../assets/fonts/zt_nature/ZTNature-Thin.ttf'),
+    'ZTNature-ThinItalic': require('../assets/fonts/zt_nature/ZTNature-ThinItalic.ttf'),
+    'ZTNature-Medium': require('../assets/fonts/zt_nature/ZTNature-Medium.ttf'),
+    'ZTNature-MediumItalic': require('../assets/fonts/zt_nature/ZTNature-MediumItalic.ttf'),
+    'ZTNature-Black': require('../assets/fonts/zt_nature/ZTNature-Black.ttf'),
+    'ZTNature-BlackItalic': require('../assets/fonts/zt_nature/ZTNature-BlackItalic.ttf'),
+  });
+
+  // Hide splash screen when fonts are loaded
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
 
   // Handle OAuth redirect from deep link
   useEffect(() => {
@@ -53,6 +74,11 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, []);
+
+  // Don't render until fonts are loaded
+  if (!fontsLoaded) {
+    return null;
+  }
 
 
 

@@ -1,52 +1,51 @@
-import { StyleSheet, View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { StatusBar, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import CalendarView from '../../features/tracking/components/CalendarView';
+import RoutineModal from '../../features/tracking/components/RoutineModal';
+import { useTrackingStoreHydrated } from '../../features/tracking/stores/tracking-store';
+import { Colors } from '@/constants/Tokens';
 
-import { Colors, Spacing, Typography, Layout } from '@/constants/Tokens';
-
-/**
- * Track Screen
- * Placeholder for future longitudinal insights feature
- */
 export default function TrackScreen() {
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const isHydrated = useTrackingStoreHydrated();
+
+  const handleDatePress = (date: string) => {
+    setSelectedDate(date);
+    setModalVisible(true);
+  };
+
+  const handleCloseModal = () => {
+    setModalVisible(false);
+    setSelectedDate(null);
+  };
+
+  // Show loading state while hydrating
+  if (!isHydrated) {
+    return <View style={{ flex: 1, backgroundColor: '#FFF5F8' }} />;
+  }
+
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.iconContainer}>
-          <Ionicons name="analytics" size={64} color={Colors.textTertiary} />
-        </View>
-        <Text style={styles.title}>Track Your Progress</Text>
-        <Text style={styles.description}>
-          Longitudinal skin insights and tracking features coming soon
-        </Text>
-      </View>
-    </View>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: Colors.appBackground }}>
+      {/* <SafeAreaView style={{ flex: 1,  }}> */}
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="#FFF5F8"
+        />
+
+        {/* Main Calendar View */}
+        <CalendarView onDatePress={handleDatePress} />
+
+      {/* Routine Modal */}
+      {true && (
+        <RoutineModal
+          date={selectedDate || '2025-11-19'}
+          visible={modalVisible}
+          onClose={handleCloseModal}
+        />
+      )}
+      {/* </SafeAreaView> */}
+    </GestureHandlerRootView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.backgroundBlush,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: Layout.screenMarginHorizontal,
-  },
-  content: {
-    alignItems: 'center',
-    maxWidth: 300,
-  },
-  iconContainer: {
-    marginBottom: Spacing.large,
-  },
-  title: {
-    ...Typography.h2,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.default,
-    textAlign: 'center',
-  },
-  description: {
-    ...Typography.body,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-  },
-});

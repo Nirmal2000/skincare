@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
+  IssueItem,
   RoutineIntake,
   RoutinePlan,
   UpgradedFaceAnalysisResult,
@@ -40,6 +41,44 @@ export type ScanRunStatus =
   | 'routine_ready' // Routine generated
   | 'failed'; // Analysis or upload failed
 
+// Metric types for dashboard/stats
+export interface SkinHealthMetrics {
+  score: number;
+  skinAge: {
+    estimated: number;
+    relative: 'younger' | 'similar' | 'older' | 'unknown';
+  };
+  skinType: string;
+  skinTone: string;
+}
+
+export interface ScoreConcern {
+  category: keyof typeof SCORE_CATEGORIES;
+  score: number;
+  label: string;
+}
+
+export interface IssuesSummary {
+  total: number;
+  critical: number; // intensity > 0.7
+  byCategory: Record<string, number>;
+}
+
+// Score categories for grouping concerns/strengths
+const SCORE_CATEGORIES = {
+  'Texture & Pores': ['roughness', 'pores', 'blackheads'],
+  'Acne & Oil': ['acne', 'oily_shine'],
+  'Aging': ['wrinkles', 'pigmentation'],
+  'Health': ['hydration', 'sensitivity_redness', 'dark_circles'],
+} as const;
+
+// Helper to format skin tone for display
+const formatSkinTone = (skinTone: UpgradedFaceAnalysisResult['global_profile']['skin_tone']): string => {
+  const lightness = skinTone.lightness.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  const undertone = skinTone.undertone === 'unknown' ? '' : ` with ${skinTone.undertone} undertones`;
+  return `${lightness}${undertone}`;
+};
+
 interface ScanStore {
   runs: ScanRun[];
   currentRunId: string | null;
@@ -50,6 +89,13 @@ interface ScanStore {
   getCurrentRun: () => ScanRun | undefined;
   getRunById: (id: string) => ScanRun | undefined;
   getRecentRuns: (limit: number) => ScanRun[];
+
+  // Metric selectors
+  getLatestCompletedScan: () => ScanRun | null;
+  getSkinHealthMetrics: () => SkinHealthMetrics | null;
+  getTopConcerns: (limit?: number) => ScoreConcern[];
+  getTopStrengths: (limit?: number) => ScoreConcern[];
+  getIssuesCount: () => IssuesSummary;
 
   // Actions
   createRun: (photoUri: string, userId: string) => string; // Returns run ID
@@ -91,6 +137,109 @@ export const useScanStore = create<ScanStore>()(
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )
           .slice(0, limit);
+      },
+
+      getLatestCompletedScan: () => {
+        const recentRuns = get().getRecentRuns(1);
+        return recentRuns.find(run => run.status === 'completed') || null;
+      },
+
+      getSkinHealthMetrics: (): SkinHealthMetrics | null => {
+        const latestScan = get().getLatestCompletedScan();
+        if (!latestScan?.result) return null;
+
+        const profile = latestScan.result.global_profile;
+        return {
+          score: profile.scores.overall,
+          skinAge: {
+            estimated: profile.skin_age.estimated_age,
+            relative: profile.skin_age.relative_to_real_age
+          },
+          skinType: profile.skin_type.label.charAt(0).toUpperCase() + profile.skin_type.label.slice(1),
+          skinTone: formatSkinTone(profile.skin_tone)
+        };
+      },
+
+      getTopConcerns: (limit = 3): ScoreConcern[] => {
+        const latestScan = get().getLatestCompletedScan();
+        if (!latestScan?.result) return [];
+
+        const scores = latestScan.result.global_profile.scores;
+        const concerns: ScoreConcern[] = [];
+
+        // Calculate average score for each category
+        Object.entries(SCORE_CATEGORIES).forEach(([categoryName, scoreKeys]) => {
+          const validScores = scoreKeys
+            .map(key => scores[key as keyof typeof scores])
+            .filter(score => score !== undefined && score !== null);
+
+          if (validScores.length > 0) {
+            const avgScore = validScores.reduce((sum, score) => sum + score, 0) / validScores.length;
+            concerns.push({
+              category: categoryName as keyof typeof SCORE_CATEGORIES,
+              score: Math.round(avgScore),
+              label: categoryName
+            });
+          }
+        });
+
+        // Sort by lowest score first (concerns), take limit
+        return concerns
+          .sort((a, b) => a.score - b.score)
+          .slice(0, limit);
+      },
+
+      getTopStrengths: (limit = 3): ScoreConcern[] => {
+        const latestScan = get().getLatestCompletedScan();
+        if (!latestScan?.result) return [];
+
+        const scores = latestScan.result.global_profile.scores;
+        const strengths: ScoreConcern[] = [];
+
+        // Calculate average score for each category
+        Object.entries(SCORE_CATEGORIES).forEach(([categoryName, scoreKeys]) => {
+          const validScores = scoreKeys
+            .map(key => scores[key as keyof typeof scores])
+            .filter(score => score !== undefined && score !== null);
+
+          if (validScores.length > 0) {
+            const avgScore = validScores.reduce((sum, score) => sum + score, 0) / validScores.length;
+            strengths.push({
+              category: categoryName as keyof typeof SCORE_CATEGORIES,
+              score: Math.round(avgScore),
+              label: categoryName
+            });
+          }
+        });
+
+        // Sort by highest score first (strengths), take limit
+        return strengths
+          .sort((a, b) => b.score - a.score)
+          .slice(0, limit);
+      },
+
+      getIssuesCount: (): IssuesSummary => {
+        const latestScan = get().getLatestCompletedScan();
+        if (!latestScan?.result) {
+          return { total: 0, critical: 0, byCategory: {} };
+        }
+
+        const issues = latestScan.result.issues;
+        let total = 0;
+        let critical = 0;
+        const byCategory: Record<string, number> = {};
+
+        // Count issues by category
+        Object.entries(issues).forEach(([categoryName, issueList]) => {
+          const categoryCount = issueList.length;
+          byCategory[categoryName] = categoryCount;
+          total += categoryCount;
+
+          // Count critical issues (high intensity)
+          critical += issueList.filter((issue: IssueItem) => issue.intensity > 0.7).length;
+        });
+
+        return { total, critical, byCategory };
       },
 
       createRun: (photoUri, userId) => {

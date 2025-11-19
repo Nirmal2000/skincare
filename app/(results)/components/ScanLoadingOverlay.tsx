@@ -11,7 +11,7 @@ export default function ScanLoadingOverlay() {
       {/* First progress bar: Analysing scan results (0-5s) */}
       <AnalysisProgressBar
         label="Analysing scan results..."
-        duration={5000}
+        duration={10000}
         delay={0}
         onComplete={() => setFirstBarComplete(true)}
       />
@@ -20,7 +20,7 @@ export default function ScanLoadingOverlay() {
       {firstBarComplete && (
         <AnalysisProgressBar
           label="Building scan report..."
-          duration={5000}
+          duration={10000}
           delay={0}
           maxProgress={95}
         />
