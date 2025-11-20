@@ -238,7 +238,7 @@ function RoutineSection({
           style={{
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: Colors.brandSecondary,
+            backgroundColor: Colors.white,
             borderRadius: BorderRadius.medium,
             paddingHorizontal: Spacing.medium,
             paddingVertical: Spacing.small,
@@ -267,7 +267,7 @@ function RoutineSection({
               paddingVertical: Spacing.tiny,
               backgroundColor: newItemName.trim()
                 ? Colors.brandPrimary
-                : Colors.brandSecondary,
+                : Colors.white,
               borderRadius: BorderRadius.small,
             }}
           >
