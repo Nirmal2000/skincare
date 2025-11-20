@@ -152,13 +152,6 @@ export const ONBOARDING_QUESTIONS: Question[] = [
     ],
   },
   {
-    id: 'country',
-    title: 'Where are you located?',
-    description: "We'll recommend products available in your region.",
-    type: 'text',
-    placeholder: 'e.g., United States, Canada, UK',
-  },
-  {
     id: 'budget_preference',
     title: "What's your budget preference?",
     description: "We'll prioritize products in your preferred price range.",
