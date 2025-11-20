@@ -2,6 +2,7 @@ import { Button } from '@/components/Button';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { Colors, Spacing, Typography } from '@/constants/Tokens';
 import { signInWithApple, signInWithGoogle } from '@/features/auth/oauth';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -70,17 +71,26 @@ export default function SignInScreen() {
         {/* Auth Buttons */}
         <View style={styles.authButtons}>
           <Button
-            title="Continue with Google"
-            onPress={handleGoogleSignIn}
+            title="Continue with Email"
+            onPress={() => router.push('/(auth)/email-entry')}
             variant="primary"
             disabled={loading}
+          />
+          <Button
+            title="Continue with Google"
+            onPress={handleGoogleSignIn}
+            variant="secondary"
+            disabled={loading}
+            style={styles.blackButton}
+            textStyle={styles.whiteText}
           />
           <Button
             title="Continue with Apple"
             onPress={handleAppleSignIn}
             variant="secondary"
             disabled={loading}
-            style={styles.appleButton}
+            style={styles.blackButton}
+            textStyle={styles.whiteText}
           />
         </View>
 
@@ -134,8 +144,11 @@ const styles = StyleSheet.create({
   authButtons: {
     gap: Spacing.base,
   },
-  appleButton: {
-    marginTop: Spacing.small,
+  blackButton: {
+    backgroundColor: '#000000',
+  },
+  whiteText: {
+    color: '#FFFFFF',
   },
   footer: {
     ...Typography.caption,

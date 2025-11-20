@@ -63,6 +63,11 @@ export default function AuthLayout() {
       }}
     >
       <Stack.Screen name="signin" />
+      <Stack.Screen name="email-entry" />
+      <Stack.Screen name="verify-otp" />
+      <Stack.Screen name="set-password" />
+      <Stack.Screen name="email-signin" />
+      <Stack.Screen name="reset-password" />
     </Stack>
   );
 }
