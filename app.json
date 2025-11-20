@@ -81,7 +81,7 @@
     "extra": {
       "supabaseUrl": "https://szpwelqikxpjmshckqjp.supabase.co",
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6cHdlbHFpa3hwam1zaGNrcWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MDU1MDIsImV4cCI6MjA3ODA4MTUwMn0.aj3e7ciUqm67GvSeGj_F67VQYWm44kQXHtVUBW4FecA",
-      "EXPO_PUBLIC_FACE_API_BASE_URL": "https://441c640505c6.ngrok-free.app",
+      "EXPO_PUBLIC_FACE_API_BASE_URL": "https://ff-backend-sizz.onrender.com",
       "REVENUECAT_IOS_API_KEY": "appl_siXEwVRvHnZvouhLvFkUYRscwXr",
       "router": {},
       "eas": {

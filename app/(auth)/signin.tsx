@@ -4,7 +4,7 @@ import { Colors, Spacing, Typography } from '@/constants/Tokens';
 import { signInWithApple, signInWithGoogle } from '@/features/auth/oauth';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function SignInScreen() {
@@ -96,7 +96,20 @@ export default function SignInScreen() {
 
         {/* Footer */}
         <Text style={styles.footer}>
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          By continuing, you agree to our{' '}
+          <Text
+            style={styles.link}
+            onPress={() => Linking.openURL('https://www.thebetterskin.online/terms')}
+          >
+            Terms of Service
+          </Text>{' '}
+          and{' '}
+          <Text
+            style={styles.link}
+            onPress={() => Linking.openURL('https://www.thebetterskin.online/privacy')}
+          >
+            Privacy Policy
+          </Text>
         </Text>
       </View>
     </SafeAreaView>
@@ -155,5 +168,9 @@ const styles = StyleSheet.create({
     color: Colors.textTertiary,
     textAlign: 'center',
     marginTop: Spacing.large,
+  },
+  link: {
+    color: Colors.brandPrimary,
+    textDecorationLine: 'underline',
   },
 });

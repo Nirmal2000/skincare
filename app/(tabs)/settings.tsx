@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import {
   Alert,
   Image,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -175,7 +176,7 @@ export default function SettingsScreen() {
         style={styles.scrollView}
         contentContainerStyle={[
           styles.content,
-          { paddingBottom: Math.max(insets.bottom, Spacing.large) },
+          { paddingBottom: 100 },
         ]}
         contentInsetAdjustmentBehavior="never"
         showsVerticalScrollIndicator={false}
@@ -219,6 +220,30 @@ export default function SettingsScreen() {
 
         {/* Data & Privacy Section */}
         <Text style={styles.sectionHeader}>Data & Privacy</Text>
+
+        <Pressable onPress={() => Linking.openURL('https://www.thebetterskin.online/privacy')}>
+          <Card variant="listItem">
+            <View style={styles.settingRow}>
+              <View style={styles.settingLeft}>
+                <Ionicons name="shield-checkmark-outline" size={20} color={Colors.textPrimary} />
+                <Text style={styles.settingTitle}>Privacy Policy</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
+            </View>
+          </Card>
+        </Pressable>
+
+        <Pressable onPress={() => Linking.openURL('https://www.thebetterskin.online/terms')}>
+          <Card variant="listItem">
+            <View style={styles.settingRow}>
+              <View style={styles.settingLeft}>
+                <Ionicons name="document-text-outline" size={20} color={Colors.textPrimary} />
+                <Text style={styles.settingTitle}>Terms of Service</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color={Colors.textTertiary} />
+            </View>
+          </Card>
+        </Pressable>
 
         <Pressable onPress={handleResetPreferences}>
           <Card variant="listItem">

@@ -125,17 +125,17 @@ export default function EmailSignInScreen() {
                 style={styles.eyeIcon}
                 onPress={() => setShowPassword(!showPassword)}
               >
-                <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text>
+                {/* <Text style={styles.eyeText}>{showPassword ? '👁️' : '👁️‍🗨️'}</Text> */}
               </TouchableOpacity>
             </View>
 
             {/* Forgot Password Link */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               onPress={() => router.push('/(auth)/reset-password')}
               style={styles.forgotPasswordContainer}
             >
               <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           {/* Sign In Button */}
