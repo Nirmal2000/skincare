@@ -81,7 +81,7 @@ export default function EmailEntryScreen() {
             </TouchableOpacity>
             <Text style={styles.title}>Create your account</Text>
             <Text style={styles.subtitle}>
-              We'll send you a verification code to confirm your email before continuing
+              We&apos;ll send you a verification code to confirm your email before continuing
             </Text>
           </View>
 
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   },
   input: {
     ...Typography.body,
-    backgroundColor: Colors.surface,
+    backgroundColor: Colors.white,
     borderRadius: 12,
     paddingHorizontal: Spacing.medium,
     paddingVertical: Spacing.medium,

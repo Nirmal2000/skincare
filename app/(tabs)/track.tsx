@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 import { StatusBar, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import CalendarView from '../../features/tracking/components/CalendarView';
 import RoutineModal from '../../features/tracking/components/RoutineModal';
 import { useTrackingStoreHydrated } from '../../features/tracking/stores/tracking-store';
-import { Colors } from '@/constants/Tokens';
+import { Colors, Spacing } from '@/constants/Tokens';
+import { RoutineRemindersCard } from '@/features/notifications/components/RoutineRemindersCard';
 
 export default function TrackScreen() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const isHydrated = useTrackingStoreHydrated();
-  const insets = useSafeAreaInsets();
 
   const handleDatePress = (date: string) => {
     setSelectedDate(date);
@@ -33,9 +33,13 @@ export default function TrackScreen() {
       <StatusBar barStyle="dark-content" />
 
       <SafeAreaView edges={['top']} style={{ flex: 1, backgroundColor: Colors.appBackground }}>
-        <View style={{ paddingTop: 8, flex: 1 }}>
-          {/* Main Calendar View */}
-          <CalendarView onDatePress={handleDatePress} />
+        <View style={{ flex: 1 }}>
+          <RoutineRemindersCard />
+
+          <View style={{ flex: 1, paddingTop: Spacing.large }}>
+            {/* Main Calendar View */}
+            <CalendarView onDatePress={handleDatePress} />
+          </View>
         </View>
       </SafeAreaView>
 

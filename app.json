@@ -16,7 +16,8 @@
         "NSMicrophoneUsageDescription": "Microphone access is required only when recording video with audio during capture.",
         "NSPhotoLibraryUsageDescription": "BetterSkin imports photos from your library so you can scan existing images.",
         "NSPhotoLibraryAddUsageDescription": "BetterSkin saves your scan photos locally within the photo library.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSUserNotificationsUsageDescription": "Allow BetterSkin to send AM and PM routine reminders so you stay on track with your skincare rituals."
       },
       "bundleIdentifier": "com.thebetterskin.betterskin",
       "appleTeamId": "FQVD6NGK4X"
@@ -34,7 +35,8 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO",
         "android.permission.READ_MEDIA_IMAGES",
-        "android.permission.READ_EXTERNAL_STORAGE"
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "package": "com.thebetterskin.betterskin"
     },
@@ -76,7 +78,8 @@
         {
           "cameraPermission": "Allow BetterSkin to access your camera for live face detection."
         }
-      ]
+      ],
+      "expo-notifications"
     ],
     "extra": {
       "supabaseUrl": "https://szpwelqikxpjmshckqjp.supabase.co",
