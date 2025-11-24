@@ -79,9 +79,9 @@ export default function EmailEntryScreen() {
             >
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
-            <Text style={styles.title}>Enter your email</Text>
+            <Text style={styles.title}>Create your account</Text>
             <Text style={styles.subtitle}>
-              We'll send you a verification code to confirm your email address
+              We'll send you a verification code to confirm your email before continuing
             </Text>
           </View>
 
@@ -101,6 +101,7 @@ export default function EmailEntryScreen() {
               editable={!loading}
             />
           </View>
+          
 
           {/* Continue Button */}
           <View style={styles.buttonContainer}>
@@ -113,12 +114,7 @@ export default function EmailEntryScreen() {
           </View>
 
           {/* Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.push('/(auth)/email-signin')}>
-              <Text style={styles.footerLink}>Sign in with password</Text>
-            </TouchableOpacity>
-          </View>
+          
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -185,20 +181,5 @@ const styles = StyleSheet.create({
   },
   buttonContainer: {
     marginBottom: Spacing.large,
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  footerText: {
-    ...Typography.body,
-    color: Colors.textSecondary,
-  },
-  footerLink: {
-    ...Typography.body,
-    color: Colors.primary,
-    fontWeight: '600',
   },
 });

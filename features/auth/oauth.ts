@@ -81,6 +81,8 @@ export async function signInWithGoogle(): Promise<void> {
 
         if (access_token && refresh_token) {
           console.log('[Google Sign-In] Tokens found, setting session');
+          console.log('[Google Sign-In] Access Token:', access_token);
+          console.log('[Google Sign-In] Refresh Token:', refresh_token);
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: access_token as string,
             refresh_token: refresh_token as string,
@@ -182,6 +184,8 @@ export async function signInWithApple(): Promise<void> {
 
         if (access_token && refresh_token) {
           console.log('[Apple Sign-In] Tokens found, setting session');
+          console.log('[Apple Sign-In] Access Token:', access_token);
+          console.log('[Apple Sign-In] Refresh Token:', refresh_token);
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: access_token as string,
             refresh_token: refresh_token as string,

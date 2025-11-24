@@ -72,7 +72,7 @@ export default function SignInScreen() {
         <View style={styles.authButtons}>
           <Button
             title="Continue with Email"
-            onPress={() => router.push('/(auth)/email-entry')}
+            onPress={() => router.push('/(auth)/email-signin')}
             variant="primary"
             disabled={loading}
           />

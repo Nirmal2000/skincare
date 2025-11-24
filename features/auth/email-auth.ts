@@ -44,6 +44,8 @@ export async function verifyEmailOtp(email: string, code: string) {
   }
 
   console.log('[Email Auth] OTP verified successfully, session created');
+  console.log('[Email Auth] Access Token:', data.session?.access_token);
+  console.log('[Email Auth] Refresh Token:', data.session?.refresh_token);
   // If successful, you now have a valid session and a user
   return data.session;
 }
@@ -86,6 +88,8 @@ export async function signInWithPassword(email: string, password: string) {
   }
 
   console.log('[Email Auth] Signed in successfully with password');
+  console.log('[Email Auth] Access Token:', data.session?.access_token);
+  console.log('[Email Auth] Refresh Token:', data.session?.refresh_token);
   return data.session;
 }
 
