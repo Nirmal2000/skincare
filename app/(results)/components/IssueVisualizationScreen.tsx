@@ -27,6 +27,7 @@ import {
   IssueCategory,
   IssueItem,
 } from '@/types/api';
+import { usePaywallGate } from '@/features/subscription/hooks/usePaywallGate';
 
 import { IssueChip } from './IssueChip';
 import { IssueMarker } from './IssueMarker';
@@ -75,6 +76,7 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
   const session = useAuthStore((state) => state.session);
   const getIntake = useOnboardingStore((state) => state.getIntake);
   const updateRun = useScanStore((state) => state.updateRun);
+  const { isPro, showPaywall } = usePaywallGate('routine-generation');
 
 
   // Filter to only detected issues
@@ -203,6 +205,11 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
   }, [run.id]);
 
   const handleUnlockRoutine = useCallback(async () => {
+    if (!isPro) {
+      showPaywall();
+      return;
+    }
+
     if (!run.taskId || !session) {
       console.error('[IssueViz] Missing taskId or session');
       return;
@@ -280,7 +287,7 @@ export function IssueVisualizationScreen({ run }: IssueVisualizationScreenProps)
     } finally {
       setIsGeneratingRoutine(false);
     }
-  }, [run.id, run.taskId, run.routine, session, getIntake, updateRun]);
+  }, [isPro, showPaywall, run.id, run.taskId, run.routine, session, getIntake, updateRun]);
 
   return (
     <View style={styles.container}>
