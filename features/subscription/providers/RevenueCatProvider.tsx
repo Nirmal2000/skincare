@@ -132,6 +132,7 @@ export const RevenueCatProvider: React.FC<RevenueCatProviderProps> = ({ children
  */
 export const useRevenueCat = (): SubscriptionContextValue => {
   const context = useContext(RevenueCatContext);
+  console.log("[useRevenueCat] Context:", context)
   if (!context) {
     throw new Error('useRevenueCat must be used within RevenueCatProvider');
   }

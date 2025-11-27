@@ -153,7 +153,7 @@ export default function PaywallScreen() {
         {/* Package Selection */}
         <View style={styles.packagesContainer}>
           {packages.map((pkg) => {
-            const product = pkg.storeProduct;
+            const product = pkg.product;
             const isSelected = selectedPackage?.identifier === pkg.identifier;
             const isBestValue = pkg.packageType === Purchases.PACKAGE_TYPE.ANNUAL;
             const isPopular = pkg.packageType === Purchases.PACKAGE_TYPE.MONTHLY;
@@ -206,7 +206,18 @@ export default function PaywallScreen() {
 
                   {product.subscriptionPeriod && (
                     <Text style={styles.packagePeriod}>
-                      per {product.subscriptionPeriod.unit.toLowerCase()}
+                      per {(() => {
+                        switch (pkg.packageType) {
+                          case Purchases.PACKAGE_TYPE.WEEKLY:
+                            return 'week';
+                          case Purchases.PACKAGE_TYPE.MONTHLY:
+                            return 'month';
+                          case Purchases.PACKAGE_TYPE.ANNUAL:
+                            return 'year';
+                          default:
+                            return ''; // fallback
+                        }
+                      })()}
                     </Text>
                   )}
 

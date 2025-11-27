@@ -27,6 +27,7 @@ import {
 export default function ManageSubscriptionScreen() {
   const router = useRouter();
   const { customerInfo, isPro, restorePurchases, isLoadingCustomerInfo } = useSubscription();
+  console.log("[ManageSubscriptionScreen] customerInfo:", customerInfo, "isPro:", isPro);
   const [isRestoring, setIsRestoring] = useState(false);
 
   const entitlement = customerInfo?.entitlements.active[PRO_ENTITLEMENT_ID];

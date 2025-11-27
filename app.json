@@ -82,8 +82,8 @@
       "expo-notifications"
     ],
     "extra": {
-      "supabaseUrl": "https://szpwelqikxpjmshckqjp.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN6cHdlbHFpa3hwam1zaGNrcWpwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI1MDU1MDIsImV4cCI6MjA3ODA4MTUwMn0.aj3e7ciUqm67GvSeGj_F67VQYWm44kQXHtVUBW4FecA",
+      "supabaseUrl": "https://xuywsgvenjzbarhtgwmz.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh1eXdzZ3Zlbmp6YmFyaHRnd216Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQyMDYxODQsImV4cCI6MjA3OTc4MjE4NH0.9A9UxwAsg3m_4FSWp1wrilZ3tWU6T5szql0x1Kq9d-4",
       "EXPO_PUBLIC_FACE_API_BASE_URL": "https://ff-backend-sizz.onrender.com",
       "REVENUECAT_IOS_API_KEY": "appl_siXEwVRvHnZvouhLvFkUYRscwXr",
       "router": {},

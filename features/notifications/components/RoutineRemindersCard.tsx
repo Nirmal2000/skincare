@@ -230,7 +230,7 @@ export function RoutineRemindersCard() {
         style={{
           paddingVertical: Spacing.medium,
           borderBottomWidth:
-            reminder.id === REMINDER_ORDER[REMINDER_ORDER.length - 1]
+            reminder.id === VISIBLE_REMINDERS[VISIBLE_REMINDERS.length - 1]
               ? 0
               : 1,
           borderColor: Colors.borderSoft,

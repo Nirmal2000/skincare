@@ -3,8 +3,10 @@ import Purchases, { LOG_LEVEL } from 'react-native-purchases';
 import Constants from 'expo-constants';
 
 const REVENUECAT_IOS_API_KEY = Constants.expoConfig?.extra?.REVENUECAT_IOS_API_KEY || '';
+const DEFAULT_PRO_ENTITLEMENT_ID = 'BetterSkin Pro';
 
-export const PRO_ENTITLEMENT_ID = 'pro';
+export const PRO_ENTITLEMENT_ID =
+  Constants.expoConfig?.extra?.REVENUECAT_PRO_ENTITLEMENT_ID || DEFAULT_PRO_ENTITLEMENT_ID;
 
 export async function initRevenueCat(appUserId?: string | null) {
   if (Platform.OS !== 'ios') {
