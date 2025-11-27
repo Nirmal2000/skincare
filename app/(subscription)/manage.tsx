@@ -10,6 +10,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
@@ -117,17 +119,39 @@ export default function ManageSubscriptionScreen() {
     router.push('/(subscription)/paywall');
   };
 
+  const renderHeader = () => (
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.topBarTitle}>Manage Subscription</Text>
+        <View style={styles.topBarSpacer} />
+      </View>
+    </SafeAreaView>
+  );
+
   if (isLoadingCustomerInfo) {
     return (
-      <View style={styles.centerContent}>
-        <ActivityIndicator size="large" color={Colors.brandPrimary} />
-        <Text style={styles.loadingText}>Loading subscription info...</Text>
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={styles.centerContent}>
+          <ActivityIndicator size="large" color={Colors.brandPrimary} />
+          <Text style={styles.loadingText}>Loading subscription info...</Text>
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      {renderHeader()}
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -296,6 +320,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.appBackground,
+  },
+  safeArea: {
+    backgroundColor: Colors.appBackground,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Layout.screenMarginHorizontal,
+    paddingBottom: Spacing.small,
+    paddingTop: Spacing.small,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.base,
+  },
+  topBarTitle: {
+    ...Typography.h3,
+    color: Colors.textPrimary,
+    flex: 1,
+    textAlign: 'center',
+  },
+  topBarSpacer: {
+    width: 40,
   },
   scrollView: {
     flex: 1,

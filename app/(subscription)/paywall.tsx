@@ -8,6 +8,8 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Purchases, { PurchasesPackage } from 'react-native-purchases';
 import * as Haptics from 'expo-haptics';
@@ -81,9 +83,28 @@ export default function PaywallScreen() {
     setSelectedPackage(pkg);
   };
 
+  const renderHeader = () => (
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <Text style={styles.topBarTitle}>Upgrade to Pro</Text>
+        <View style={styles.topBarSpacer} />
+      </View>
+    </SafeAreaView>
+  );
+
   if (isPro) {
     return (
       <View style={styles.container}>
+        {renderHeader()}
         <View style={styles.centerContent}>
           <Text style={styles.title}>You&apos;re Already Pro!</Text>
           <Text style={styles.subtitle}>
@@ -102,148 +123,157 @@ export default function PaywallScreen() {
 
   if (isLoadingOfferings) {
     return (
-      <View style={styles.centerContent}>
-        <ActivityIndicator size="large" color={Colors.brandPrimary} />
-        <Text style={styles.loadingText}>Loading plans...</Text>
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={styles.centerContent}>
+          <ActivityIndicator size="large" color={Colors.brandPrimary} />
+          <Text style={styles.loadingText}>Loading plans...</Text>
+        </View>
       </View>
     );
   }
 
   if (!packages.length) {
     return (
-      <View style={styles.centerContent}>
-        <Text style={styles.errorText}>
-          No subscription packages available.{'\n'}
-          Please check your connection and try again.
-        </Text>
-        <Button
-          title="Go Back"
-          onPress={() => router.back()}
-          variant="secondary"
-          style={styles.button}
-        />
+      <View style={styles.container}>
+        {renderHeader()}
+        <View style={styles.centerContent}>
+          <Text style={styles.errorText}>
+            No subscription packages available.{'\n'}
+            Please check your connection and try again.
+          </Text>
+          <Button
+            title="Go Back"
+            onPress={() => router.back()}
+            variant="secondary"
+            style={styles.button}
+          />
+        </View>
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Unlock Premium Features</Text>
-          <Text style={styles.subtitle}>
-            Get the most out of BetterSkin with advanced analytics and unlimited scans
-          </Text>
-        </View>
+      {renderHeader()}
+      <View style={styles.flexContent}>
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Unlock Premium Features</Text>
+            <Text style={styles.subtitle}>
+              Get the most out of BetterSkin with advanced analytics and unlimited scans
+            </Text>
+          </View>
 
-        {/* Features List */}
-        <View style={styles.featuresContainer}>
-          <FeatureItem icon="✓" text="Unlimited skin scans" />
-          <FeatureItem icon="✓" text="Advanced facial area analysis" />
-          <FeatureItem icon="✓" text="Track progress over time" />
-          <FeatureItem icon="✓" text="Personalized skincare insights" />
-          <FeatureItem icon="✓" text="Priority support" />
-        </View>
+          {/* Features List */}
+          <View style={styles.featuresContainer}>
+            <FeatureItem icon="✓" text="Unlimited skin scans" />
+            <FeatureItem icon="✓" text="Advanced facial area analysis" />
+            <FeatureItem icon="✓" text="Track progress over time" />
+            <FeatureItem icon="✓" text="Personalized skincare insights" />
+            <FeatureItem icon="✓" text="Priority support" />
+          </View>
 
-        {/* Package Selection */}
-        <View style={styles.packagesContainer}>
-          {packages.map((pkg) => {
-            const product = pkg.product;
-            const isSelected = selectedPackage?.identifier === pkg.identifier;
-            const isBestValue = pkg.packageType === Purchases.PACKAGE_TYPE.ANNUAL;
-            const isPopular = pkg.packageType === Purchases.PACKAGE_TYPE.MONTHLY;
+          {/* Package Selection */}
+          <View style={styles.packagesContainer}>
+            {packages.map((pkg) => {
+              const product = pkg.product;
+              const isSelected = selectedPackage?.identifier === pkg.identifier;
+              const isBestValue = pkg.packageType === Purchases.PACKAGE_TYPE.ANNUAL;
+              const isPopular = pkg.packageType === Purchases.PACKAGE_TYPE.MONTHLY;
 
-            const packageTitle =
-              pkg.packageType === Purchases.PACKAGE_TYPE.ANNUAL
-                ? 'Yearly'
-                : pkg.packageType === Purchases.PACKAGE_TYPE.MONTHLY
-                ? 'Monthly'
-                : pkg.packageType === Purchases.PACKAGE_TYPE.WEEKLY
-                ? 'Weekly'
-                : product.title;
+              const packageTitle =
+                pkg.packageType === Purchases.PACKAGE_TYPE.ANNUAL
+                  ? 'Yearly'
+                  : pkg.packageType === Purchases.PACKAGE_TYPE.MONTHLY
+                  ? 'Monthly'
+                  : pkg.packageType === Purchases.PACKAGE_TYPE.WEEKLY
+                  ? 'Weekly'
+                  : product.title;
 
-            return (
-              <TouchableOpacity
-                key={pkg.identifier}
-                style={[
-                  styles.packageCard,
-                  isSelected && styles.packageCardSelected,
-                  isBestValue && styles.packageCardBestValue,
-                ]}
-                onPress={() => handleSelectPackage(pkg)}
-                activeOpacity={0.7}
-              >
-                {isBestValue && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>BEST VALUE</Text>
-                  </View>
-                )}
-                {isPopular && !isBestValue && (
-                  <View style={[styles.badge, styles.badgePopular]}>
-                    <Text style={styles.badgeText}>POPULAR</Text>
-                  </View>
-                )}
-
-                <View style={styles.packageContent}>
-                  <View style={styles.packageHeader}>
-                    <Text style={styles.packageTitle}>{packageTitle}</Text>
-                    <View
-                      style={[
-                        styles.radioButton,
-                        isSelected && styles.radioButtonSelected,
-                      ]}
-                    >
-                      {isSelected && <View style={styles.radioButtonInner} />}
+              return (
+                <TouchableOpacity
+                  key={pkg.identifier}
+                  style={[
+                    styles.packageCard,
+                    isSelected && styles.packageCardSelected,
+                    isBestValue && styles.packageCardBestValue,
+                  ]}
+                  onPress={() => handleSelectPackage(pkg)}
+                  activeOpacity={0.7}
+                >
+                  {isBestValue && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText}>BEST VALUE</Text>
                     </View>
-                  </View>
-
-                  <Text style={styles.packagePrice}>{product.priceString}</Text>
-
-                  {product.subscriptionPeriod && (
-                    <Text style={styles.packagePeriod}>
-                      per {(() => {
-                        switch (pkg.packageType) {
-                          case Purchases.PACKAGE_TYPE.WEEKLY:
-                            return 'week';
-                          case Purchases.PACKAGE_TYPE.MONTHLY:
-                            return 'month';
-                          case Purchases.PACKAGE_TYPE.ANNUAL:
-                            return 'year';
-                          default:
-                            return ''; // fallback
-                        }
-                      })()}
-                    </Text>
+                  )}
+                  {isPopular && !isBestValue && (
+                    <View style={[styles.badge, styles.badgePopular]}>
+                      <Text style={styles.badgeText}>POPULAR</Text>
+                    </View>
                   )}
 
-                  {/* Show intro price if available */}
-                  {product.introPrice &&
-                    product.introPrice.price &&
-                    product.introPrice.price > 0 && (
-                      <Text style={styles.introPrice}>
-                        {product.introPrice.priceString} for{' '}
-                        {product.introPrice.periodNumberOfUnits}{' '}
-                        {product.introPrice.periodUnit.toLowerCase()}
+                  <View style={styles.packageContent}>
+                    <View style={styles.packageHeader}>
+                      <Text style={styles.packageTitle}>{packageTitle}</Text>
+                      <View
+                        style={[
+                          styles.radioButton,
+                          isSelected && styles.radioButtonSelected,
+                        ]}
+                      >
+                        {isSelected && <View style={styles.radioButtonInner} />}
+                      </View>
+                    </View>
+
+                    <Text style={styles.packagePrice}>{product.priceString}</Text>
+
+                    {product.subscriptionPeriod && (
+                      <Text style={styles.packagePeriod}>
+                        per {(() => {
+                          switch (pkg.packageType) {
+                            case Purchases.PACKAGE_TYPE.WEEKLY:
+                              return 'week';
+                            case Purchases.PACKAGE_TYPE.MONTHLY:
+                              return 'month';
+                            case Purchases.PACKAGE_TYPE.ANNUAL:
+                              return 'year';
+                            default:
+                              return '';
+                          }
+                        })()}
                       </Text>
                     )}
-                </View>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
 
-        {/* Legal Text */}
-        <Text style={styles.legalText}>
-          Payment will be charged to your Apple ID account. Subscription
-          automatically renews unless canceled at least 24 hours before the end
-          of the current period. Manage or cancel anytime in Settings.
-        </Text>
-      </ScrollView>
+                    {/* Show intro price if available */}
+                    {product.introPrice &&
+                      product.introPrice.price &&
+                      product.introPrice.price > 0 && (
+                        <Text style={styles.introPrice}>
+                          {product.introPrice.priceString} for{' '}
+                          {product.introPrice.periodNumberOfUnits}{' '}
+                          {product.introPrice.periodUnit.toLowerCase()}
+                        </Text>
+                      )}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+
+          {/* Legal Text */}
+          <Text style={styles.legalText}>
+            Payment will be charged to your Apple ID account. Subscription
+            automatically renews unless canceled at least 24 hours before the end
+            of the current period. Manage or cancel anytime in Settings.
+          </Text>
+        </ScrollView>
+      </View>
 
       {/* Bottom CTA */}
       <View style={styles.bottomBar}>
@@ -280,6 +310,37 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.appBackground,
+  },
+  safeArea: {
+    backgroundColor: Colors.appBackground,
+  },
+  topBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Layout.screenMarginHorizontal,
+    paddingBottom: Spacing.small,
+    paddingTop: Spacing.small,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: Colors.surfaceCard,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: Spacing.base,
+  },
+  topBarTitle: {
+    ...Typography.h3,
+    color: Colors.textPrimary,
+    flex: 1,
+    textAlign: 'center',
+  },
+  topBarSpacer: {
+    width: 40,
+  },
+  flexContent: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
