@@ -85,7 +85,7 @@ export default function PaywallScreen() {
     return (
       <View style={styles.container}>
         <View style={styles.centerContent}>
-          <Text style={styles.title}>You're Already Pro!</Text>
+          <Text style={styles.title}>You&apos;re Already Pro!</Text>
           <Text style={styles.subtitle}>
             You have access to all premium features.
           </Text>
