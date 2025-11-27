@@ -77,6 +77,7 @@ interface TrackingState {
 
   // Create initial routine for a date
   initializeRoutineForDate: (date: string) => void;
+  ensureRoutineForDate: (date: string) => void;
 }
 
 /**
@@ -87,6 +88,31 @@ const createEmptyRoutine = (): DailyRoutine => ({
   pm: [],
   lifestyle: [],
 });
+
+const cloneRoutineForNewDate = (routine: DailyRoutine): DailyRoutine => ({
+  am: routine.am.map((item) => ({
+    id: generateId(),
+    name: item.name,
+    completed: false,
+  })),
+  pm: routine.pm.map((item) => ({
+    id: generateId(),
+    name: item.name,
+    completed: false,
+  })),
+  lifestyle: routine.lifestyle.map((item) => ({
+    id: generateId(),
+    name: item.name,
+    completed: false,
+  })),
+});
+
+const getDateFromString = (dateStr: string): Date => {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+};
+const FALLBACK_LOOKBACK_DAYS = 31;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Generate a unique ID for items
@@ -338,6 +364,45 @@ export const useTrackingStore = create<TrackingState>()(
             logs: {
               ...state.logs,
               [date]: createEmptyRoutine(),
+            },
+          };
+        });
+      },
+      ensureRoutineForDate: (date) => {
+        set((state) => {
+          if (state.logs[date]) {
+            return state;
+          }
+
+          const targetDate = getDateFromString(date);
+          const lookbackThreshold = targetDate.getTime() - FALLBACK_LOOKBACK_DAYS * DAY_IN_MS;
+
+          const candidateDate = Object.keys(state.logs)
+            .filter((dateKey) => {
+              const routine = state.logs[dateKey];
+              if (!routine) return false;
+              const hasItems =
+                routine.am.length > 0 ||
+                routine.pm.length > 0 ||
+                routine.lifestyle.length > 0;
+              if (!hasItems) return false;
+
+              const candidateTime = getDateFromString(dateKey).getTime();
+              return candidateTime < targetDate.getTime() && candidateTime >= lookbackThreshold;
+            })
+            .sort(
+              (a, b) =>
+                getDateFromString(b).getTime() - getDateFromString(a).getTime()
+            )[0];
+
+          if (!candidateDate) {
+            return state;
+          }
+
+          return {
+            logs: {
+              ...state.logs,
+              [date]: cloneRoutineForNewDate(state.logs[candidateDate]),
             },
           };
         });

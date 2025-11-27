@@ -58,8 +58,7 @@ export async function startAnalysis(
       formData.append('real_age', String(realAge));
     }
 
-    const apiBaseUrl = getApiBaseUrl();
-    console.log('[Face Analysis API] Sending token to backend:', token);
+    const apiBaseUrl = getApiBaseUrl();    
     const apiResponse = await fetch(`${apiBaseUrl}/start-task`, {
       method: 'POST',
       headers: {
@@ -101,8 +100,7 @@ export async function pollTaskStatus(
   token: string
 ): Promise<TaskStatusResponse> {
   try {
-    const apiBaseUrl = getApiBaseUrl();
-    console.log('[Face Analysis API] Sending token to backend (poll):', token);
+    const apiBaseUrl = getApiBaseUrl(); 
     const response = await fetch(`${apiBaseUrl}/tasks/${taskId}`, {
       method: 'GET',
       headers: {
@@ -199,7 +197,6 @@ export async function generateRoutine(
 ): Promise<GenerateRoutineResponse> {
   try {
     const apiBaseUrl = getApiBaseUrl();
-    console.log('[Face Analysis API] Sending token to backend (recommend):', token);
     const response = await fetch(`${apiBaseUrl}/recommend`, {
       method: 'POST',
       headers: {
