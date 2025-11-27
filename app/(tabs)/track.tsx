@@ -43,14 +43,14 @@ export default function TrackScreen() {
         <ScrollView
           style={{ flex: 1 }}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: Spacing.xxl }}
+          contentContainerStyle={{ paddingBottom: Spacing.xxl + 100 }}
         >
-          <RoutineRemindersCard />
-
-          <View style={{ paddingTop: Spacing.large }}>
+          <View style={{ paddingTop: Spacing.small }}>
             {/* Main Calendar View */}
             <CalendarView onDatePress={handleDatePress} />
           </View>
+
+          <RoutineRemindersCard />
         </ScrollView>
       </SafeAreaView>
 

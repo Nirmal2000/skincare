@@ -7,12 +7,15 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  ImageBackground,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import Purchases, { PurchasesPackage } from 'react-native-purchases';
 import * as Haptics from 'expo-haptics';
+
 import { useSubscription } from '@/features/subscription/hooks/useSubscription';
 import { Button } from '@/components/Button';
 import {
@@ -20,17 +23,55 @@ import {
   Typography,
   Spacing,
   BorderRadius,
-  Shadows,
-  Layout,
 } from '@/constants/Tokens';
+
+const FEATURE_LIST = [
+  'Advanced AI Skin Analysis',
+  'Personalized Daily Skin Routine',
+  'Adaptive Smart Sknly AI',
+  'Skin-Friendly Products Suggestions',
+];
+
+const backgroundImage = require('@/assets/images/ob1.jpg');
+
+function getPackageTitle(pkg: PurchasesPackage, fallback: string) {
+  switch (pkg.packageType) {
+    case Purchases.PACKAGE_TYPE.ANNUAL:
+      return 'Sknly Yearly Pro';
+    case Purchases.PACKAGE_TYPE.MONTHLY:
+      return 'Sknly Monthly Pro';
+    case Purchases.PACKAGE_TYPE.WEEKLY:
+      return 'Sknly Weekly Pro';
+    default:
+      return fallback;
+  }
+}
+
+function getPackagePeriod(pkg: PurchasesPackage) {
+  switch (pkg.packageType) {
+    case Purchases.PACKAGE_TYPE.ANNUAL:
+      return 'year';
+    case Purchases.PACKAGE_TYPE.MONTHLY:
+      return 'month';
+    case Purchases.PACKAGE_TYPE.WEEKLY:
+      return 'week';
+    default:
+      return '';
+  }
+}
 
 export default function PaywallScreen() {
   const router = useRouter();
-  const { offerings, isLoadingOfferings, purchasePackage, isPro } = useSubscription();
+  const {
+    offerings,
+    isLoadingOfferings,
+    purchasePackage,
+    isPro,
+    restorePurchases,
+  } = useSubscription();
   const [selectedPackage, setSelectedPackage] = useState<PurchasesPackage | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
 
-  // Sort packages: Annual > Monthly > Weekly
   const packages = useMemo(() => {
     const currentOffering = offerings?.current;
     if (!currentOffering) return [];
@@ -47,7 +88,6 @@ export default function PaywallScreen() {
     );
   }, [offerings]);
 
-  // Auto-select the annual package (best value)
   React.useEffect(() => {
     if (packages.length > 0 && !selectedPackage) {
       const annualPkg = packages.find((p) => p.packageType === Purchases.PACKAGE_TYPE.ANNUAL);
@@ -83,200 +123,169 @@ export default function PaywallScreen() {
     setSelectedPackage(pkg);
   };
 
-  const renderHeader = () => (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <View style={styles.topBar}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.topBarTitle}>Upgrade to Pro</Text>
-        <View style={styles.topBarSpacer} />
-      </View>
-    </SafeAreaView>
+  const handleRestorePurchases = async () => {
+    try {
+      const info = await restorePurchases();
+      if (info) {
+        Alert.alert('Restored', 'Your previous purchases have been restored.');
+      } else {
+        Alert.alert('Restore Failed', 'No purchases to restore.');
+      }
+    } catch (error) {
+      Alert.alert('Restore Failed', 'Something went wrong. Please try again.');
+    }
+  };
+
+  const renderBackground = (content: React.ReactNode) => (
+    <ImageBackground
+      source={backgroundImage}
+      style={styles.background}
+      resizeMode="cover"
+    >
+      <LinearGradient
+        colors={['rgba(5, 5, 9, 0.1)', 'rgba(5, 5, 9, 0.85)', 'rgba(5, 5, 9, 0.95)']}
+        style={styles.overlay}
+      />
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+        {content}
+      </SafeAreaView>
+    </ImageBackground>
   );
 
   if (isPro) {
-    return (
-      <View style={styles.container}>
-        {renderHeader()}
-        <View style={styles.centerContent}>
-          <Text style={styles.title}>You&apos;re Already Pro!</Text>
-          <Text style={styles.subtitle}>
-            You have access to all premium features.
+    return renderBackground(
+      <>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.closeButton}
+          >
+            <Ionicons name="close" size={26} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.stateContainer}>
+          <Text style={styles.stateTitle}>You&apos;re Already Pro!</Text>
+          <Text style={styles.stateSubtitle}>
+            You have access to every premium feature.
           </Text>
           <Button
             title="Go Back"
             onPress={() => router.back()}
-            variant="primary"
-            style={styles.button}
+            variant="white"
+            style={styles.stateButton}
           />
         </View>
-      </View>
+      </>
     );
   }
 
   if (isLoadingOfferings) {
-    return (
-      <View style={styles.container}>
-        {renderHeader()}
-        <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color={Colors.brandPrimary} />
-          <Text style={styles.loadingText}>Loading plans...</Text>
+    return renderBackground(
+      <>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.closeButton}
+          >
+            <Ionicons name="close" size={26} color={Colors.white} />
+          </TouchableOpacity>
         </View>
-      </View>
+        <View style={styles.stateContainer}>
+          <ActivityIndicator size="large" color={Colors.white} />
+          <Text style={styles.stateSubtitle}>Loading plans...</Text>
+        </View>
+      </>
     );
   }
 
   if (!packages.length) {
-    return (
-      <View style={styles.container}>
-        {renderHeader()}
-        <View style={styles.centerContent}>
-          <Text style={styles.errorText}>
-            No subscription packages available.{'\n'}
-            Please check your connection and try again.
+    return renderBackground(
+      <>
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.closeButton}
+          >
+            <Ionicons name="close" size={26} color={Colors.white} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.stateContainer}>
+          <Text style={styles.stateTitle}>No plans available</Text>
+          <Text style={styles.stateSubtitle}>
+            Please check your connection and try again later.
           </Text>
           <Button
             title="Go Back"
             onPress={() => router.back()}
-            variant="secondary"
-            style={styles.button}
+            variant="white"
+            style={styles.stateButton}
           />
         </View>
-      </View>
+      </>
     );
   }
 
-  return (
-    <View style={styles.container}>
-      {renderHeader()}
-      <View style={styles.flexContent}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
+  return renderBackground(
+    <>
+      <View style={styles.topBar}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.closeButton}
         >
-          {/* Header */}
-          <View style={styles.header}>
-            <Text style={styles.title}>Unlock Premium Features</Text>
-            <Text style={styles.subtitle}>
-              Get the most out of BetterSkin with advanced analytics and unlimited scans
-            </Text>
-          </View>
-
-          {/* Features List */}
-          <View style={styles.featuresContainer}>
-            <FeatureItem icon="✓" text="Unlimited skin scans" />
-            <FeatureItem icon="✓" text="Advanced facial area analysis" />
-            <FeatureItem icon="✓" text="Track progress over time" />
-            <FeatureItem icon="✓" text="Personalized skincare insights" />
-            <FeatureItem icon="✓" text="Priority support" />
-          </View>
-
-          {/* Package Selection */}
-          <View style={styles.packagesContainer}>
-            {packages.map((pkg) => {
-              const product = pkg.product;
-              const isSelected = selectedPackage?.identifier === pkg.identifier;
-              const isBestValue = pkg.packageType === Purchases.PACKAGE_TYPE.ANNUAL;
-              const isPopular = pkg.packageType === Purchases.PACKAGE_TYPE.MONTHLY;
-
-              const packageTitle =
-                pkg.packageType === Purchases.PACKAGE_TYPE.ANNUAL
-                  ? 'Yearly'
-                  : pkg.packageType === Purchases.PACKAGE_TYPE.MONTHLY
-                  ? 'Monthly'
-                  : pkg.packageType === Purchases.PACKAGE_TYPE.WEEKLY
-                  ? 'Weekly'
-                  : product.title;
-
-              return (
-                <TouchableOpacity
-                  key={pkg.identifier}
-                  style={[
-                    styles.packageCard,
-                    isSelected && styles.packageCardSelected,
-                    isBestValue && styles.packageCardBestValue,
-                  ]}
-                  onPress={() => handleSelectPackage(pkg)}
-                  activeOpacity={0.7}
-                >
-                  {isBestValue && (
-                    <View style={styles.badge}>
-                      <Text style={styles.badgeText}>BEST VALUE</Text>
-                    </View>
-                  )}
-                  {isPopular && !isBestValue && (
-                    <View style={[styles.badge, styles.badgePopular]}>
-                      <Text style={styles.badgeText}>POPULAR</Text>
-                    </View>
-                  )}
-
-                  <View style={styles.packageContent}>
-                    <View style={styles.packageHeader}>
-                      <Text style={styles.packageTitle}>{packageTitle}</Text>
-                      <View
-                        style={[
-                          styles.radioButton,
-                          isSelected && styles.radioButtonSelected,
-                        ]}
-                      >
-                        {isSelected && <View style={styles.radioButtonInner} />}
-                      </View>
-                    </View>
-
-                    <Text style={styles.packagePrice}>{product.priceString}</Text>
-
-                    {product.subscriptionPeriod && (
-                      <Text style={styles.packagePeriod}>
-                        per {(() => {
-                          switch (pkg.packageType) {
-                            case Purchases.PACKAGE_TYPE.WEEKLY:
-                              return 'week';
-                            case Purchases.PACKAGE_TYPE.MONTHLY:
-                              return 'month';
-                            case Purchases.PACKAGE_TYPE.ANNUAL:
-                              return 'year';
-                            default:
-                              return '';
-                          }
-                        })()}
-                      </Text>
-                    )}
-
-                    {/* Show intro price if available */}
-                    {product.introPrice &&
-                      product.introPrice.price &&
-                      product.introPrice.price > 0 && (
-                        <Text style={styles.introPrice}>
-                          {product.introPrice.priceString} for{' '}
-                          {product.introPrice.periodNumberOfUnits}{' '}
-                          {product.introPrice.periodUnit.toLowerCase()}
-                        </Text>
-                      )}
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-
-          {/* Legal Text */}
-          <Text style={styles.legalText}>
-            Payment will be charged to your Apple ID account. Subscription
-            automatically renews unless canceled at least 24 hours before the end
-            of the current period. Manage or cancel anytime in Settings.
-          </Text>
-        </ScrollView>
+          <Ionicons name="close" size={26} color={Colors.white} />
+        </TouchableOpacity>
       </View>
 
-      {/* Bottom CTA */}
-      <View style={styles.bottomBar}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.heroSection}>
+          <Text style={styles.heroTitle}>Start Your Glow-Up✨</Text>
+          <View style={styles.featuresList}>
+            {FEATURE_LIST.map((feature) => (
+              <FeatureItem key={feature} text={feature} />
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.planContainer}>
+          {packages.map((pkg) => {
+            const product = pkg.product;
+            const isSelected = selectedPackage?.identifier === pkg.identifier;
+            const planTitle = getPackageTitle(pkg, product.title);
+            const planPeriod = getPackagePeriod(pkg);
+            const priceCopy = planPeriod
+              ? `${product.priceString}/${planPeriod}`
+              : product.priceString;
+            const isBestValue = pkg.packageType === Purchases.PACKAGE_TYPE.ANNUAL;
+
+            return (
+              <TouchableOpacity
+                key={pkg.identifier}
+                style={[
+                  styles.planCard,
+                  isSelected && styles.planCardSelected,
+                ]}
+                onPress={() => handleSelectPackage(pkg)}
+                activeOpacity={0.8}
+              >
+                {isBestValue && <Text style={styles.planBadge}>BEST VALUE</Text>}
+                <View style={styles.planCardContent}>
+                  <View>
+                    <Text style={styles.planTitle}>{planTitle}</Text>
+                    <Text style={styles.planPrice}>{priceCopy}</Text>
+                  </View>
+                  <View style={[styles.radioButton, isSelected && styles.radioButtonSelected]}>
+                    {isSelected && <View style={styles.radioButtonInner} />}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         <Button
           title={isPurchasing ? 'Processing...' : 'Continue'}
           onPress={handlePurchase}
@@ -285,21 +294,32 @@ export default function PaywallScreen() {
           loading={isPurchasing}
           style={styles.ctaButton}
         />
-      </View>
-    </View>
+
+        <Text style={styles.promiseText}>No commitment, cancel anytime</Text>
+
+        <View style={styles.footerLinks}>
+          <Text style={styles.footerLinkText}>Privacy</Text>
+          <View style={styles.footerDivider} />
+          <TouchableOpacity onPress={handleRestorePurchases}>
+            <Text style={styles.footerLinkText}>Restore</Text>
+          </TouchableOpacity>
+          <View style={styles.footerDivider} />
+          <Text style={styles.footerLinkText}>Terms</Text>
+        </View>
+      </ScrollView>
+    </>
   );
 }
 
 interface FeatureItemProps {
-  icon: string;
   text: string;
 }
 
-function FeatureItem({ icon, text }: FeatureItemProps) {
+function FeatureItem({ text }: FeatureItemProps) {
   return (
-    <View style={styles.featureItem}>
+    <View style={styles.featureRow}>
       <View style={styles.featureIcon}>
-        <Text style={styles.featureIconText}>{icon}</Text>
+        <Ionicons name="checkmark" size={16} color={Colors.white} />
       </View>
       <Text style={styles.featureText}>{text}</Text>
     </View>
@@ -307,220 +327,163 @@ function FeatureItem({ icon, text }: FeatureItemProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    backgroundColor: Colors.appBackground,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
   },
   safeArea: {
-    backgroundColor: Colors.appBackground,
+    flex: 1,
+    paddingHorizontal: Spacing.large,
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: Layout.screenMarginHorizontal,
-    paddingBottom: Spacing.small,
-    paddingTop: Spacing.small,
+    width: '100%',
+    alignItems: 'flex-start',
+    marginBottom: Spacing.large,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.surfaceCard,
+  closeButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(0,0,0,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: Spacing.base,
-  },
-  topBarTitle: {
-    ...Typography.h3,
-    color: Colors.textPrimary,
-    flex: 1,
-    textAlign: 'center',
-  },
-  topBarSpacer: {
-    width: 40,
-  },
-  flexContent: {
-    flex: 1,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Layout.screenMarginHorizontal,
-    paddingBottom: Spacing.xxl,
+    paddingBottom: Spacing.xxxl,
   },
-  centerContent: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: Layout.screenMarginHorizontal,
-  },
-
-  // Header
-  header: {
-    marginTop: Spacing.large,
+  heroSection: {
     marginBottom: Spacing.xl,
   },
-  title: {
+  heroTitle: {
     ...Typography.h1,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.small,
-  },
-  subtitle: {
-    ...Typography.bodyLarge,
-    color: Colors.textSecondary,
-    lineHeight: 24,
-  },
-
-  // Features
-  featuresContainer: {
-    marginBottom: Spacing.xl,
-  },
-  featureItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: Spacing.default,
-  },
-  featureIcon: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: Colors.brandPrimary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: Spacing.base,
-  },
-  featureIconText: {
     color: Colors.white,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  featureText: {
-    ...Typography.body,
-    color: Colors.textPrimary,
-    flex: 1,
-  },
-
-  // Packages
-  packagesContainer: {
     marginBottom: Spacing.large,
   },
-  packageCard: {
-    backgroundColor: Colors.surfaceCard,
+  featuresList: {
+    gap: Spacing.small,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.small,
+  },
+  featureIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: Colors.successGreen,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureText: {
+    ...Typography.bodyLarge,
+    color: Colors.white,
+    flex: 1,
+  },
+  planContainer: {
+    gap: Spacing.small,
+    marginBottom: Spacing.large,
+  },
+  planCard: {
     borderRadius: BorderRadius.large,
     padding: Spacing.medium,
-    marginBottom: Spacing.base,
-    borderWidth: 2,
-    borderColor: Colors.borderSubtle,
-    ...Shadows.cardLight,
-    position: 'relative',
+    backgroundColor: 'rgba(255,255,255,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.35)',
   },
-  packageCardSelected: {
-    borderColor: Colors.brandPrimary,
-    borderWidth: 3,
+  planCardSelected: {
+    borderColor: Colors.white,
+    backgroundColor: 'rgba(255,255,255,0.28)',
   },
-  packageCardBestValue: {
-    backgroundColor: '#F8F9FF',
-  },
-  badge: {
-    position: 'absolute',
-    top: -10,
-    right: Spacing.medium,
-    backgroundColor: Colors.successGreen,
-    paddingHorizontal: Spacing.base,
-    paddingVertical: 4,
-    borderRadius: BorderRadius.small,
-  },
-  badgePopular: {
-    backgroundColor: Colors.brandPrimary,
-  },
-  badgeText: {
+  planBadge: {
     ...Typography.caption,
     color: Colors.white,
-    fontWeight: '700',
+    alignSelf: 'flex-start',
+    marginBottom: Spacing.tiny,
     letterSpacing: 0.5,
   },
-  packageContent: {
-    marginTop: Spacing.small,
-  },
-  packageHeader: {
+  planCardContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: Spacing.small,
+    justifyContent: 'space-between',
   },
-  packageTitle: {
+  planTitle: {
     ...Typography.h3,
-    color: Colors.textPrimary,
+    color: Colors.white,
+    marginBottom: Spacing.tiny,
   },
-  packagePrice: {
-    ...Typography.h2,
-    color: Colors.textPrimary,
-    marginBottom: 2,
-  },
-  packagePeriod: {
-    ...Typography.body,
-    color: Colors.textSecondary,
-  },
-  introPrice: {
-    ...Typography.bodySmall,
-    color: Colors.successGreen,
-    marginTop: Spacing.tiny,
+  planPrice: {
+    ...Typography.bodyLarge,
+    color: 'rgba(255,255,255,0.8)',
   },
   radioButton: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     borderWidth: 2,
-    borderColor: Colors.borderSubtle,
+    borderColor: 'rgba(255,255,255,0.4)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   radioButtonSelected: {
-    borderColor: Colors.brandPrimary,
+    borderColor: Colors.white,
   },
   radioButtonInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: Colors.brandPrimary,
-  },
-
-  // Legal
-  legalText: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
-    textAlign: 'center',
-    lineHeight: 16,
-    marginBottom: Spacing.default,
-  },
-
-  // Bottom Bar
-  bottomBar: {
-    paddingHorizontal: Layout.screenMarginHorizontal,
-    paddingBottom: Spacing.large,
-    paddingTop: Spacing.default,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
     backgroundColor: Colors.white,
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderSoft,
   },
   ctaButton: {
     width: '100%',
+    marginBottom: Spacing.default,
   },
-  button: {
-    marginTop: Spacing.large,
+  promiseText: {
+    ...Typography.caption,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
+    marginBottom: Spacing.small,
   },
-
-  // Loading/Error states
-  loadingText: {
+  footerLinks: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: Spacing.small,
+  },
+  footerLinkText: {
+    ...Typography.caption,
+    color: 'rgba(255,255,255,0.7)',
+  },
+  footerDivider: {
+    width: 1,
+    height: 12,
+    backgroundColor: 'rgba(255,255,255,0.4)',
+  },
+  stateContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.large,
+  },
+  stateTitle: {
+    ...Typography.h1,
+    color: Colors.white,
+    textAlign: 'center',
+    marginBottom: Spacing.small,
+  },
+  stateSubtitle: {
     ...Typography.body,
-    color: Colors.textSecondary,
+    color: 'rgba(255,255,255,0.85)',
+    textAlign: 'center',
     marginTop: Spacing.default,
   },
-  errorText: {
-    ...Typography.body,
-    color: Colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 24,
+  stateButton: {
+    marginTop: Spacing.xl,
+    width: '60%',
   },
 });

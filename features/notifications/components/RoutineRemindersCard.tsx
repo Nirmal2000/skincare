@@ -2,6 +2,7 @@ import DateTimePicker, {
   DateTimePickerAndroid,
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
+import Feather from '@expo/vector-icons/Feather';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -219,10 +220,9 @@ export function RoutineRemindersCard() {
   );
 
   const renderReminderRow = (reminder: RoutineReminder) => {
-    const description =
-      reminder.enabled
-        ? `Scheduled for ${formatDisplayTime(reminder.time)}`
-        : 'Disabled';
+    const description = reminder.enabled
+      ? 'Tap below to adjust the reminder time.'
+      : 'Reminders are off for this slot.';
 
     return (
       <View
@@ -265,10 +265,11 @@ export function RoutineRemindersCard() {
             value={reminder.enabled}
             onValueChange={(value) => handleToggleReminder(reminder, value)}
             trackColor={{
-              false: Colors.borderSubtle,
-              true: Colors.brandSecondary,
+              false: Colors.borderSoft,
+              true: Colors.brandPrimary,
             }}
-            thumbColor={reminder.enabled ? Colors.brandPrimary : Colors.white}
+            thumbColor={Colors.white}
+            ios_backgroundColor={Colors.borderSoft}
             disabled={!!pendingSlot}
           />
         </View>
@@ -280,31 +281,25 @@ export function RoutineRemindersCard() {
             alignItems: 'center',
             justifyContent: 'space-between',
             paddingVertical: Spacing.small,
-            paddingHorizontal: Spacing.small,
-            backgroundColor: Colors.surfaceCard,
+            paddingHorizontal: Spacing.medium,
+            backgroundColor: Colors.backgroundLight,
             borderRadius: BorderRadius.medium,
-            borderWidth: 1,
-            borderColor: Colors.borderSubtle,
           }}
         >
-          <View>
-            <Text
-              style={{ ...Typography.caption, color: Colors.textSecondary }}
-            >
-              Reminder Time
-            </Text>
-            <Text style={{ ...Typography.body, color: Colors.textPrimary }}>
-              {formatDisplayTime(reminder.time)}
-            </Text>
-          </View>
-          <Text
-            style={{
-              ...Typography.bodySmall,
-              color: Colors.brandPrimary,
-            }}
-          >
-            Edit
+          <Text style={{ ...Typography.body, color: Colors.textPrimary }}>
+            Reminder time · {formatDisplayTime(reminder.time)}
           </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+            <Text
+              style={{
+                ...Typography.bodySmall,
+                color: Colors.brandPrimary,
+              }}
+            >
+              Edit
+            </Text>
+            <Feather name="chevron-right" size={16} color={Colors.brandPrimary} />
+          </View>
         </Pressable>
       </View>
     );
@@ -425,6 +420,8 @@ export function RoutineRemindersCard() {
               mode="time"
               display="spinner"
               value={iosPickerDate}
+              themeVariant="light"
+              textColor={Colors.textPrimary}
               onChange={(_event, date) => {
                 if (date) {
                   setIosPickerDate(date);

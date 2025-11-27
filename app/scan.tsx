@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import {
   CameraView,
-  FaceDetectionResult,
+  // FaceDetectionResult,
   FaceDetectorClassifications,
   FaceDetectorMode,
   useCameraPermissions,
@@ -39,24 +39,31 @@ export default function ScanScreen() {
   const [isCapturing, setIsCapturing] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
-  const { isCentered, faceCount, landmarks, handleFacesDetected } = useFaceDetection(
-    viewportSize.width,
-    viewportSize.height
-  );
+  /*
+   * Temporarily disable face detection so the capture button remains active
+   * regardless of positioning feedback.
+   */
+  // const { isCentered, faceCount, landmarks, handleFacesDetected } = useFaceDetection(
+  //   viewportSize.width,
+  //   viewportSize.height
+  // );
+  const isCentered = true;
+  // const faceCount = 1;
+  const landmarks = null;
 
 
   // Callbacks
-  const onFacesDetected = useCallback(
-    (result: FaceDetectionResult) => {
-      handleFacesDetected(result);
-      if (result.faces.length > 0) {
-        console.log(
-          `[Scan Screen] Detected ${result.faces.length} face(s), centered: ${isCentered}`
-        );
-      }
-    },
-    [handleFacesDetected, isCentered]
-  );
+  // const onFacesDetected = useCallback(
+  //   (result: FaceDetectionResult) => {
+  //     handleFacesDetected(result);
+  //     if (result.faces.length > 0) {
+  //       console.log(
+  //         `[Scan Screen] Detected ${result.faces.length} face(s), centered: ${isCentered}`
+  //       );
+  //     }
+  //   },
+  //   [handleFacesDetected, isCentered]
+  // );
 
   const handleCameraLayout = useCallback(
     (event: any) => {
@@ -201,7 +208,7 @@ export default function ScanScreen() {
           minDetectionInterval: 200,
           detectLandmarks: 2
         }}
-        onFacesDetected={onFacesDetected}
+        // onFacesDetected={onFacesDetected}
         onCameraReady={() => {
           console.log('[Scan Screen] Camera ready');
           setCameraReady(true);
@@ -258,19 +265,7 @@ export default function ScanScreen() {
         )}
 
         <View style={styles.statusContainer}>
-          {!isCentered && faceCount === 0 && (
-            <Text style={styles.statusText}>
-              Move closer and center your face
-            </Text>
-          )}
-          {!isCentered && faceCount > 1 && (
-            <Text style={styles.statusText}>Only one face should be visible</Text>
-          )}
-          {isCentered && !isCapturing && !isUploading && (
-            <Text style={[styles.statusText, styles.readyText]}>
-              Face centered - tap to capture
-            </Text>
-          )}
+          <Text style={styles.statusText}>Center you face and acpture</Text>
         </View>
       </View>
     </View>
